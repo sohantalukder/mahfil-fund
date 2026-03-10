@@ -1661,6 +1661,49 @@ textarea.db-textarea {
   }
 }
 
+/* ─── User Portal responsive sidebar ────────────────────── */
+
+/* Static in-flow sidebar: transparent wrapper on desktop */
+.up-sidebar-static {
+  display: contents;
+}
+
+/* Fixed drawer sidebar for mobile */
+.up-sidebar-drawer {
+  display: none;
+}
+
+/* Hamburger hidden on desktop */
+.up-hamburger {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .up-sidebar-static {
+    display: none;
+  }
+
+  .up-sidebar-drawer {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+  }
+
+  .up-portal.up-sidebar-open .up-sidebar-drawer {
+    transform: translateX(0);
+  }
+
+  .up-hamburger {
+    display: flex !important;
+    margin-right: 8px;
+  }
+}
+
 /* ─── Motion & animation utilities ───────────────────────── */
 
 @keyframes fade-in-up {

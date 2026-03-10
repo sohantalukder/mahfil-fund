@@ -11,16 +11,12 @@
   },
   "dependencies": {
     "@mahfil/api-sdk": "workspace:*",
-    "@mahfil/i18n": "workspace:*",
-    "@mahfil/theme": "workspace:*",
-    "@mahfil/types": "workspace:*",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.2",
-    "i18next": "^25.5.2",
+    "@tanstack/react-query": "^5.66.0",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-i18next": "^16.1.2"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@types/node": "^20",
