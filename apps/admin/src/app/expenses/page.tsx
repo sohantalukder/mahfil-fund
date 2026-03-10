@@ -6,6 +6,7 @@ import { PageShell } from '../components/shell';
 import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { ListToolbar } from '../components/list-toolbar';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type Expense = {
@@ -49,6 +50,7 @@ export default function AdminExpensesPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.get<{ events: Event[] }>('/events')
@@ -103,28 +105,54 @@ export default function AdminExpensesPage() {
   const total = expenses.reduce((s, x) => s + x.amount, 0);
   const hasEvents = !eventsLoading && events.length > 0;
 
+  const filteredExpenses = expenses.filter((x) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      x.title.toLowerCase().includes(q) ||
+      x.category.toLowerCase().includes(q) ||
+      (x.vendor ?? '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <PageShell
       title="Expense Management"
       subtitle="Review, add, and manage event expenses."
-      actions={
-        <>
-          <select className="db-input" style={{ minWidth: 160 }} value={eventId}
-            onChange={(e) => { setEventId(e.target.value); load(e.target.value); }}>
-            {eventsLoading && <option value="">Loading…</option>}
-            {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ' (Active)' : ''}</option>
-            ))}
-          </select>
-          {hasEvents && (
-            <Button type="button" onClick={openCreate} disabled={!eventId || eventsLoading}>
-              + Add Expense
-            </Button>
-          )}
-        </>
-      }
     >
+      <ListToolbar
+        searchPlaceholder="Search by title, category, or vendor…"
+        searchValue={search}
+        onSearchChange={setSearch}
+        primaryAction={
+          hasEvents
+            ? {
+                label: '+ Add Expense',
+                onClick: openCreate,
+                disabled: !eventId || eventsLoading,
+              }
+            : undefined
+        }
+      >
+        <select
+          className="db-input"
+          style={{ minWidth: 160 }}
+          value={eventId}
+          onChange={(e) => {
+            setEventId(e.target.value);
+            load(e.target.value);
+          }}
+        >
+          {eventsLoading && <option value="">Loading…</option>}
+          {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>
+              {ev.name}
+              {ev.isActive ? ' (Active)' : ''}
+            </option>
+          ))}
+        </select>
+      </ListToolbar>
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Expenses</div>
@@ -143,7 +171,11 @@ export default function AdminExpensesPage() {
       <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Expenses</span>
-          <span className="db-stat-badge db-stat-badge-blue">{expenses.length} items</span>
+          <span className="db-stat-badge db-stat-badge-blue">
+            {search.trim()
+              ? `${filteredExpenses.length} of ${expenses.length} items`
+              : `${expenses.length} items`}
+          </span>
         </div>
         {!eventId ? (
           <div className="db-empty">Select an event to load expenses.</div>
@@ -155,7 +187,7 @@ export default function AdminExpensesPage() {
               <tr><th>Title</th><th>Category</th><th>Method</th><th>Date</th><th style={{ textAlign: 'right' }}>Amount</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              {expenses.map((x) => (
+              {filteredExpenses.map((x) => (
                 <tr key={x.id}>
                   <td style={{ color: 'var(--db-td-em)' }}>{x.title}</td>
                   <td>{x.category}</td>

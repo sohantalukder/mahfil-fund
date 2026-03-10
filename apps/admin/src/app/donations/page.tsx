@@ -6,6 +6,7 @@ import { PageShell } from '../components/shell';
 import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { ListToolbar } from '../components/list-toolbar';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 
@@ -89,6 +90,7 @@ export default function AdminDonationsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api
@@ -259,6 +261,16 @@ export default function AdminDonationsPage() {
   const uniqueDonors = new Set(donations.map((d) => d.donorId)).size;
   const hasEvents = !eventsLoading && events.length > 0;
 
+  const filteredDonations = donations.filter((x) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      x.donorSnapshotName.toLowerCase().includes(q) ||
+      x.donorSnapshotPhone.toLowerCase().includes(q) ||
+      fmt(x.paymentMethod).toLowerCase().includes(q)
+    );
+  });
+
   const filteredDonors = useMemo(() => {
     const q = donorSearch.trim().toLowerCase();
     if (!q) return donors;
@@ -315,35 +327,41 @@ export default function AdminDonationsPage() {
     <PageShell
       title="Donation Management"
       subtitle="Review, add, and manage event donations."
-      actions={
-        <>
-          <select
-            className="db-input"
-            style={{ minWidth: 160 }}
-            value={eventId}
-            onChange={(e) => {
-              const id = e.target.value;
-              setEventId(id);
-              loadDonations(id);
-            }}
-          >
-            {eventsLoading && <option value="">Loading…</option>}
-            {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.name}
-                {ev.isActive ? ' (Active)' : ''}
-              </option>
-            ))}
-          </select>
-          {hasEvents && (
-            <Button type="button" onClick={openCreate} disabled={!eventId || eventsLoading || donorsLoading}>
-              + Add Donation
-            </Button>
-          )}
-        </>
-      }
     >
+      <ListToolbar
+        searchPlaceholder="Search by donor, phone, or method…"
+        searchValue={search}
+        onSearchChange={setSearch}
+        primaryAction={
+          hasEvents
+            ? {
+                label: '+ Add Donation',
+                onClick: openCreate,
+                disabled: !eventId || eventsLoading || donorsLoading,
+              }
+            : undefined
+        }
+      >
+        <select
+          className="db-input"
+          style={{ minWidth: 160 }}
+          value={eventId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setEventId(id);
+            loadDonations(id);
+          }}
+        >
+          {eventsLoading && <option value="">Loading…</option>}
+          {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>
+              {ev.name}
+              {ev.isActive ? ' (Active)' : ''}
+            </option>
+          ))}
+        </select>
+      </ListToolbar>
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Collected</div>
@@ -362,7 +380,11 @@ export default function AdminDonationsPage() {
       <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Donations</span>
-          <span className="db-stat-badge db-stat-badge-green">{donations.length} items</span>
+          <span className="db-stat-badge db-stat-badge-green">
+            {search.trim()
+              ? `${filteredDonations.length} of ${donations.length} items`
+              : `${donations.length} items`}
+          </span>
         </div>
         {!eventId ? (
           <div className="db-empty">Select an event to load donations.</div>
@@ -381,7 +403,7 @@ export default function AdminDonationsPage() {
               </tr>
             </thead>
             <tbody>
-              {donations.map((x) => {
+              {filteredDonations.map((x) => {
                 const initials = (x.donorSnapshotName || 'DN')
                   .split(' ')
                   .map((n: string) => n[0])

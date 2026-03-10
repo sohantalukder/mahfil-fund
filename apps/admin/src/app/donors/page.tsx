@@ -14,6 +14,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Table, Tbody, Td, Th, Thead, Tr } from '../components/ui/table';
 import { Form, FormField } from '../components/ui/form';
 import { Skeleton } from '../components/ui/skeleton';
+import { ListToolbar } from '../components/list-toolbar';
 
 type Donor = {
   id: string;
@@ -179,30 +180,17 @@ export default function AdminDonorsPage() {
     <PageShell
       title="Donor Management"
       subtitle="Search, add, edit, and remove donor records."
-      actions={
-        <Button type="button" onClick={openCreate}>
-          + Add Donor
-        </Button>
-      }
     >
-      <div className="db-toolbar flex flex-col gap-3 sm:flex-row animate-page">
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Search by name or phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load()}
-            className="db-input w-full max-w-md"
-          />
-        </div>
-        <Button
-          type="button"
-          onClick={() => load()}
-          className="w-full sm:w-auto"
-        >
-          Search
-        </Button>
-      </div>
+      <ListToolbar
+        searchPlaceholder="Search by name or phone…"
+        searchValue={search}
+        onSearchChange={setSearch}
+        onSearchSubmit={() => load()}
+        primaryAction={{
+          label: '+ Add Donor',
+          onClick: openCreate,
+        }}
+      />
 
       <div className="db-table-card animate-card">
         <div className="db-table-header">
