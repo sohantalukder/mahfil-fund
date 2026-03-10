@@ -118,6 +118,7 @@ export function PageShell({
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User>({ name: 'Admin', email: '', initials: 'AF' });
+  const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -210,7 +211,23 @@ export function PageShell({
               <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
               <line x1="10.5" y1="10.5" x2="14.5" y2="14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <input placeholder="Search donors, events, expenses…" />
+            <input
+              placeholder="Search donors, events, expenses…"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const q = searchValue.trim();
+                  if (!q) return;
+                  const url = `/donors?search=${encodeURIComponent(q)}`;
+                  if (pathname === '/donors') {
+                    router.replace(url);
+                  } else {
+                    router.push(url);
+                  }
+                }
+              }}
+            />
           </div>
           <div className="db-topbar-spacer" />
           <button className="db-icon-btn" type="button" aria-label="Notifications">

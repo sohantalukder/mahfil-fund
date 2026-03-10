@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 import { ActionsMenu, ConfirmModal } from '../components/actions';
@@ -38,6 +39,7 @@ const ICON_DELETE = (
 export default function AdminDonorsPage() {
   const api = useMemo(() => getApi(), []);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [donors, setDonors] = useState<Donor[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,12 @@ export default function AdminDonorsPage() {
     setDonors((res.data as any).donors ?? res.data ?? []);
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const initial = searchParams.get('search') ?? '';
+    setSearch(initial);
+    load(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(d: Donor) {

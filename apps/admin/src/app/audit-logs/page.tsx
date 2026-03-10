@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { getApi } from '@/lib/api';
+import { useState } from 'react';
+import { useApiQuery } from '@/lib/query';
 import { PageShell } from '../components/shell';
 
 type AuditLog = {
@@ -23,34 +23,39 @@ const ACTION_COLOR: Record<string, string> = {
 };
 
 export default function AdminAuditLogsPage() {
-  const api = useMemo(() => getApi(), []);
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
   const [take, setTake] = useState(50);
 
-  async function load(ent = entityType, act = action, t = take) {
-    setLoading(true); setError(null);
-    const params = new URLSearchParams({ take: String(t) });
-    if (ent) params.set('entityType', ent);
-    if (act) params.set('action', act);
-    const res = await api.get<{ logs: AuditLog[] }>(`/audit-logs?${params}`);
-    setLoading(false);
-    if (!res.success) { setError(res.error.message); return; }
-    const list = (res.data as any).logs ?? res.data ?? [];
-    setLogs(list);
-  }
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useApiQuery<{ logs: AuditLog[] }>(
+    ['audit-logs', entityType, action, take],
+    async (client) => {
+      const params = new URLSearchParams({ take: String(take) });
+      if (entityType) params.set('entityType', entityType);
+      if (action) params.set('action', action);
+      const res = await client.get<{ logs: AuditLog[] }>(`/audit-logs?${params}`);
+      if (!res.success) {
+        throw new Error(res.error.message);
+      }
+      const d = res.data as { logs?: AuditLog[] } | AuditLog[];
+      const list = Array.isArray(d) ? d : (d.logs ?? []);
+      setLogs(list);
+      return { logs: list };
+    },
+  );
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function applyFilter() { load(entityType, action, take); }
-  function clear() { setEntityType(''); setAction(''); setTake(50); load('', '', 50); }
+  function applyFilter() { refetch(); }
+  function clear() { setEntityType(''); setAction(''); setTake(50); refetch(); }
 
   return (
     <PageShell title="Audit Logs" subtitle="Track all admin actions across the system.">
-      {error && <div className="db-error">{error}</div>}
+      {error && <div className="db-error">{error.message}</div>}
 
       <div className="db-toolbar" style={{ marginBottom: 16 }}>
         <select className="db-input" style={{ maxWidth: 180 }} value={entityType}
@@ -84,10 +89,12 @@ export default function AdminAuditLogsPage() {
       <div className="db-table-card">
         <div className="db-table-header">
           <span className="db-table-title">Activity Log</span>
-          <span className="db-stat-badge db-stat-badge-blue">{logs.length} entries</span>
+          <span className="db-stat-badge db-stat-badge-blue">
+            {isLoading ? 'Loading…' : `${logs.length} entries`}
+          </span>
         </div>
-        {loading && <div className="db-empty">Loading…</div>}
-        {!loading && logs.length === 0 ? (
+        {isLoading && <div className="db-empty">Loading…</div>}
+        {!isLoading && logs.length === 0 ? (
           <div className="db-empty">No audit logs found for the selected filters.</div>
         ) : (
           <table className="db-table">

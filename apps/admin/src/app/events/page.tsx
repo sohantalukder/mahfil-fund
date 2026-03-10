@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 
@@ -19,25 +20,31 @@ const fmtBDT = (n: number) => new Intl.NumberFormat('en-BD', { style: 'currency'
 
 export default function AdminEventsPage() {
   const api = useMemo(() => getApi(), []);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState({ ...BLANK });
   const [editId, setEditId] = useState('');
-  const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState('');
 
-  async function load() {
-    setLoading(true); setError(null);
-    const res = await api.get<{ events: Event[] }>('/events');
-    setLoading(false);
-    if (!res.success) { setError(res.error.message); return; }
-    const list = (res.data as any).events ?? res.data ?? [];
-    setEvents(list);
-  }
+  const queryClient = useQueryClient();
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const {
+    data: eventsData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['events'],
+    queryFn: async () => {
+      const res = await api.get<{ events: Event[] }>('/events');
+      if (!res.success) {
+        throw new Error(res.error.message);
+      }
+      const d = res.data as { events?: Event[] } | Event[];
+      const list = Array.isArray(d) ? d : (d.events ?? []);
+      return list;
+    },
+  });
+
+  const events = eventsData ?? [];
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(ev: Event) {
@@ -51,36 +58,70 @@ export default function AdminEventsPage() {
     setEditId(ev.id); setModal('edit');
   }
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const body = {
+        name: form.name,
+        year: Number(form.year),
+        startsAt: form.startsAt ? new Date(form.startsAt) : undefined,
+        endsAt: form.endsAt ? new Date(form.endsAt) : undefined,
+        targetAmount: form.targetAmount ? parseFloat(form.targetAmount) : undefined,
+      };
+      const res = modal === 'create'
+        ? await api.post<Event>('/events', body)
+        : await api.patch<Event>(`/events/${editId}`, body);
+      if (!res.success) {
+        throw new Error(res.error.message);
+      }
+      return res;
+    },
+    onSuccess: () => {
+      setModal(null);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
+
   async function save() {
-    setSaving(true); setError(null);
-    const body = {
-      name: form.name,
-      year: Number(form.year),
-      startsAt: form.startsAt ? new Date(form.startsAt) : undefined,
-      endsAt: form.endsAt ? new Date(form.endsAt) : undefined,
-      targetAmount: form.targetAmount ? parseFloat(form.targetAmount) : undefined,
-    };
-    const res = modal === 'create'
-      ? await api.post<Event>('/events', body)
-      : await api.patch<Event>(`/events/${editId}`, body);
-    setSaving(false);
-    if (!res.success) { setError(res.error.message); return; }
-    setModal(null); load();
+    await saveMutation.mutateAsync();
   }
 
+  const activateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/events/${id}/activate`, {});
+      if (!res.success) {
+        throw new Error((res as any).error?.message || 'Activation failed');
+      }
+      return res;
+    },
+    onMutate: (id: string) => {
+      setActivating(id);
+    },
+    onSettled: () => {
+      setActivating('');
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
+
   async function activate(id: string) {
-    setActivating(id);
-    const res = await api.post(`/events/${id}/activate`, {});
-    setActivating('');
-    if (!res.success) { setError((res as any).error?.message || 'Activation failed'); return; }
-    load();
+    await activateMutation.mutateAsync(id);
   }
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/events/${id}`);
+      if (!res.success) {
+        throw new Error((res as any).error?.message || 'Delete failed');
+      }
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
 
   async function remove(id: string) {
     if (!confirm('Delete this event? All associated data may be affected.')) return;
-    const res = await api.delete(`/events/${id}`);
-    if (!res.success) { setError((res as any).error?.message || 'Delete failed'); return; }
-    load();
+    await deleteMutation.mutateAsync(id);
   }
 
   const f = (k: keyof typeof form, v: string | number) => setForm((p) => ({ ...p, [k]: v }));
@@ -91,14 +132,18 @@ export default function AdminEventsPage() {
       subtitle="Create, edit, activate, and manage Mahfil events."
       actions={<button className="db-btn db-btn-primary" type="button" onClick={openCreate}>+ New Event</button>}
     >
-      {error && <div className="db-error">{error}</div>}
+      {error && <div className="db-error">{(error as Error).message}</div>}
 
       <div className="db-table-card">
         <div className="db-table-header">
           <span className="db-table-title">Events</span>
-          <span className="db-stat-badge db-stat-badge-blue">{events.length} total</span>
+          <span className="db-stat-badge db-stat-badge-blue">
+            {isLoading ? 'Loading…' : `${events.length} total`}
+          </span>
         </div>
-        {events.length === 0 && !loading ? (
+        {isLoading ? (
+          <div className="db-empty">Loading events…</div>
+        ) : events.length === 0 ? (
           <div className="db-empty">No events found. Create your first event.</div>
         ) : (
           <table className="db-table">
@@ -114,7 +159,7 @@ export default function AdminEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {events.map((ev) => (
+              {events.map((ev: Event) => (
                 <tr key={ev.id}>
                   <td style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>{ev.name}</td>
                   <td>{ev.year}</td>

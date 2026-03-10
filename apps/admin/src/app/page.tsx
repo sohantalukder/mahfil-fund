@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getApi } from '@/lib/api';
+import { useApiQuery } from '@/lib/query';
 import { PageShell } from './components/shell';
+import { Skeleton } from './components/ui/skeleton';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type EventSummary = {
@@ -39,46 +41,74 @@ const fmt = (n: number) =>
 
 export default function AdminDashboard() {
   const api = useMemo(() => getApi(), []);
-  const [events, setEvents] = useState<Event[]>([]);
   const [activeId, setActiveId] = useState('');
-  const [summary, setSummary] = useState<EventSummary | null>(null);
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [eventsLoading, setEventsLoading] = useState(true);
 
-  // Load events on mount, auto-select active one
-  useEffect(() => {
-    api.get<{ events: Event[] }>('/events')
-      .then((res) => {
-        const list = res.success ? (res.data.events ?? (res.data as any) ?? []) : [];
-        setEvents(list);
-        const active = list.find((e: Event) => e.isActive) || list[0];
-        if (active) { setActiveId(active.id); loadSummary(active.id); }
-      })
-      .catch(() => {})
-      .finally(() => setEventsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const {
+    data: eventsData,
+    isLoading: eventsLoading,
+    error: eventsError,
+  } = useApiQuery<{ events: Event[] }>(
+    ['events'],
+    (client) =>
+      client.get<{ events: Event[] }>('/events').then((res) => {
+        if (!res.success) {
+          throw new Error(res.error.message);
+        }
+        const data = res.data as { events?: Event[] } | Event[];
+        const list = Array.isArray(data) ? data : (data.events ?? []);
+        return { events: list };
+      }),
+    {
+      onSuccess: (data: { events: Event[] }) => {
+        if (!activeId) {
+          const list = data.events;
+          const active = list.find((e) => e.isActive) || list[0];
+          if (active) setActiveId(active.id);
+        }
+      },
+    },
+  );
 
-  async function loadSummary(id: string) {
-    if (!id) return;
-    setLoading(true); setError(null);
-    try {
+  const {
+    data: summaryAndDonations,
+    isLoading: summaryLoading,
+    error: summaryError,
+  } = useApiQuery<{ summary: EventSummary | null; donations: Donation[] }>(
+    ['event-summary', activeId],
+    async (client) => {
+      if (!activeId) {
+        return { summary: null, donations: [] };
+      }
       const [sumRes, donRes] = await Promise.all([
-        api.get<any>(`/reports/event-summary?eventId=${id}`),
-        api.get<any>(`/donations?eventId=${id}&limit=5`),
+        client.get<any>(`/reports/event-summary?eventId=${activeId}`),
+        client.get<any>(`/donations?eventId=${activeId}&limit=5`),
       ]);
-      if (sumRes.success) {
-        const d = sumRes.data;
-        setSummary((d.summary ?? d) as EventSummary);
-      } else { setError(sumRes.error.message); }
+
+      if (!sumRes.success) {
+        throw new Error(sumRes.error.message);
+      }
+
+      const sumData = sumRes.data;
+      const summary = (sumData.summary ?? sumData) as EventSummary;
+
+      let donations: Donation[] = [];
       if (donRes.success) {
         const d = donRes.data;
-        setDonations((d.donations ?? d ?? []) as Donation[]);
+        donations = ((d.donations ?? d ?? []) as Donation[]);
       }
-    } finally { setLoading(false); }
-  }
+
+      return { summary, donations };
+    },
+    {
+      enabled: !!activeId,
+    },
+  );
+
+  const events = eventsData?.events ?? [];
+  const summary = summaryAndDonations?.summary ?? null;
+  const donations = summaryAndDonations?.donations ?? [];
+  const loading = summaryLoading;
+  const error = eventsError?.message ?? summaryError?.message ?? null;
 
   const bal = summary?.balance ?? 0;
 
@@ -88,20 +118,23 @@ export default function AdminDashboard() {
       subtitle="Welcome back — here's what's happening with the Iftar Mahfil."
       actions={
         <>
-          <select
-            className="db-input"
-            style={{ minWidth: 160 }}
-            value={activeId}
-            onChange={(e) => { setActiveId(e.target.value); loadSummary(e.target.value); }}
-          >
-            {eventsLoading && <option value="">Loading events…</option>}
-            {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.name} {ev.isActive ? '(Active)' : ''}
-              </option>
-            ))}
-          </select>
+          {eventsLoading ? (
+            <Skeleton className="h-9 w-40 rounded-md" />
+          ) : (
+            <select
+              className="db-input"
+              style={{ minWidth: 160 }}
+              value={activeId}
+              onChange={(e) => { setActiveId(e.target.value); }}
+            >
+              {events.length === 0 && <option value="">No events found</option>}
+              {events.map((ev: Event) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.name} {ev.isActive ? '(Active)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
           <Link href="/expenses" className="db-btn">+ Add Expense</Link>
           <Link href="/donors" className="db-btn db-btn-primary">+ New Donation</Link>
         </>
@@ -111,67 +144,78 @@ export default function AdminDashboard() {
 
       {/* Stat cards */}
       <div className="db-stat-grid">
-        <div className="db-stat-card">
-          <div className="db-stat-top">
-            <div className="db-stat-icon">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                <rect x="1" y="4" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-              </svg>
+        {summaryLoading ? (
+          <>
+            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
+            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
+            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
+            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
+          </>
+        ) : (
+          <>
+            <div className="db-stat-card">
+              <div className="db-stat-top">
+                <div className="db-stat-icon">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="4" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                  </svg>
+                </div>
+                <span className="db-stat-badge db-stat-badge-green">
+                  {`${summary?.totalDonationsCount ?? 0} txns`}
+                </span>
+              </div>
+              <div className="db-stat-title">Total Collections</div>
+              <div className="db-stat-value">{fmt(summary?.totalCollection ?? 0)}</div>
             </div>
-            <span className="db-stat-badge db-stat-badge-green">
-              {loading ? '…' : `${summary?.totalDonationsCount ?? 0} txns`}
-            </span>
-          </div>
-          <div className="db-stat-title">Total Collections</div>
-          <div className="db-stat-value">{loading ? '—' : fmt(summary?.totalCollection ?? 0)}</div>
-        </div>
 
-        <div className="db-stat-card">
-          <div className="db-stat-top">
-            <div className="db-stat-icon" style={{ color: '#f59e0b' }}>
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M2 4h12l-1.5 8H3.5L2 4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                <circle cx="5.5" cy="14" r="1" /><circle cx="10.5" cy="14" r="1" />
-              </svg>
+            <div className="db-stat-card">
+              <div className="db-stat-top">
+                <div className="db-stat-icon" style={{ color: '#f59e0b' }}>
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2 4h12l-1.5 8H3.5L2 4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <circle cx="5.5" cy="14" r="1" /><circle cx="10.5" cy="14" r="1" />
+                  </svg>
+                </div>
+                <span className="db-stat-badge db-stat-badge-red">
+                  {`${summary?.totalExpensesCount ?? 0} items`}
+                </span>
+              </div>
+              <div className="db-stat-title">Total Expenses</div>
+              <div className="db-stat-value">{fmt(summary?.totalExpenses ?? 0)}</div>
             </div>
-            <span className="db-stat-badge db-stat-badge-red">
-              {loading ? '…' : `${summary?.totalExpensesCount ?? 0} items`}
-            </span>
-          </div>
-          <div className="db-stat-title">Total Expenses</div>
-          <div className="db-stat-value">{loading ? '—' : fmt(summary?.totalExpenses ?? 0)}</div>
-        </div>
 
-        <div className="db-stat-card">
-          <div className="db-stat-top">
-            <div className="db-stat-icon" style={{ color: '#60a5fa' }}>
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M5 8h6M8 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-              </svg>
+            <div className="db-stat-card">
+              <div className="db-stat-top">
+                <div className="db-stat-icon" style={{ color: '#60a5fa' }}>
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M5 8h6M8 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                  </svg>
+                </div>
+                <span className={`db-stat-badge ${bal >= 0 ? 'db-stat-badge-green' : 'db-stat-badge-red'}`}>
+                  {bal >= 0 ? 'Surplus' : 'Deficit'}
+                </span>
+              </div>
+              <div className="db-stat-title">Current Balance</div>
+              <div className="db-stat-value">{fmt(bal)}</div>
             </div>
-            <span className={`db-stat-badge ${bal >= 0 ? 'db-stat-badge-green' : 'db-stat-badge-red'}`}>
-              {loading ? '…' : (bal >= 0 ? 'Surplus' : 'Deficit')}
-            </span>
-          </div>
-          <div className="db-stat-title">Current Balance</div>
-          <div className="db-stat-value">{loading ? '—' : fmt(bal)}</div>
-        </div>
 
-        <div className="db-stat-card">
-          <div className="db-stat-top">
-            <div className="db-stat-icon">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                <circle cx="8" cy="5" r="3" />
-                <path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z" />
-              </svg>
+            <div className="db-stat-card">
+              <div className="db-stat-top">
+                <div className="db-stat-icon">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="5" r="3" />
+                    <path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z" />
+                  </svg>
+                </div>
+                <span className="db-stat-badge db-stat-badge-blue">Donors</span>
+              </div>
+              <div className="db-stat-title">Total Donors</div>
+              <div className="db-stat-value">{summary?.totalDonors ?? 0}</div>
             </div>
-            <span className="db-stat-badge db-stat-badge-blue">Donors</span>
-          </div>
-          <div className="db-stat-title">Total Donors</div>
-          <div className="db-stat-value">{loading ? '—' : (summary?.totalDonors ?? 0)}</div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Chart + Categories */}
@@ -233,7 +277,15 @@ export default function AdminDashboard() {
           <span className="db-table-title">Recent Donations</span>
           <Link href="/donors" className="db-view-all">View All</Link>
         </div>
-        {donations.length === 0 && !loading ? (
+        {summaryLoading ? (
+          <div className="p-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+        ) : donations.length === 0 ? (
           <div className="db-empty">
             {activeId ? 'No donations found for this event.' : 'Select an event above to load data.'}
           </div>
@@ -248,8 +300,13 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {donations.map((d) => {
-                const initials = (d.donorName || 'DN').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+              {donations.map((d: Donation) => {
+                const initials = (d.donorName || 'DN')
+                  .split(' ')
+                  .map((n: string) => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2);
                 return (
                   <tr key={d.id}>
                     <td>

@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useTheme } from '../providers';
 import { PageShell } from '../components/shell';
 
 export default function AdminSettingsPage() {
   const { theme, setTheme } = useTheme();
+  const [saving, setSaving] = useState(false);
 
   return (
     <PageShell title="Settings" subtitle="Manage appearance preferences for the admin panel.">
@@ -20,19 +22,31 @@ export default function AdminSettingsPage() {
               <button
                 type="button"
                 className={'db-btn' + (theme === 'light' ? ' db-btn-primary' : '')}
-                onClick={() => setTheme('light')}
+                disabled={saving}
+                onClick={() => {
+                  setSaving(true);
+                  setTheme('light');
+                  setTimeout(() => setSaving(false), 300);
+                }}
               >
                 ☀ Light
               </button>
               <button
                 type="button"
                 className={'db-btn' + (theme === 'dark' ? ' db-btn-primary' : '')}
-                onClick={() => setTheme('dark')}
+                disabled={saving}
+                onClick={() => {
+                  setSaving(true);
+                  setTheme('dark');
+                  setTimeout(() => setSaving(false), 300);
+                }}
               >
                 ● Dark
               </button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>Changes apply immediately.</p>
+            <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>
+              {saving ? 'Applying theme…' : 'Changes apply immediately.'}
+            </p>
           </div>
         </div>
 
