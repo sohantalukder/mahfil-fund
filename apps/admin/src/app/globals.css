@@ -1523,6 +1523,144 @@ textarea.db-textarea {
   font-size: 13px;
 }
 
+/* ─── User panel (mobile-first) ─────────────────────────── */
+
+.up-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at top, #0f172a 0, #020617 38%, #020617 100%);
+  color: #e5e7eb;
+}
+
+.up-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+}
+
+.up-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.up-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: rgba(16, 185, 129, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.up-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.up-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.up-subtitle {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.up-header-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.up-main {
+  flex: 1;
+  display: flex;
+  padding: 8px 12px 72px;
+}
+
+.up-main-inner {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.up-main-card {
+  background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.06), rgba(15, 23, 42, 0.9));
+  border-radius: 20px;
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 22px 45px rgba(15, 23, 42, 0.9);
+  padding: 16px 14px 18px;
+}
+
+.up-nav-bottom {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 0 14px 12px;
+}
+
+.up-nav-inner {
+  max-width: 480px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.up-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  text-decoration: none;
+}
+
+.up-nav-dot {
+  width: 10px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(75, 85, 99, 0.65);
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.up-nav-dot[data-active='true'] {
+  background: #22c55e;
+  transform: scaleX(1.35);
+}
+
+.up-nav-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.up-nav-label-active {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .up-shell {
+    background: radial-gradient(circle at top, #020617 0, #020617 100%);
+  }
+
+  .up-main {
+    padding-inline: 20px;
+  }
+}
+
 /* ─── Motion & animation utilities ───────────────────────── */
 
 @keyframes fade-in-up {

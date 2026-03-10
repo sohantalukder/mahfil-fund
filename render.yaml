@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: mahfil-api
+    runtime: node
+    plan: starter          # change to: free | starter | standard | pro
+    region: singapore      # change to: oregon | ohio | frankfurt | singapore
+    branch: main
+    rootDir: .
+
+    buildCommand: pnpm install --frozen-lockfile && pnpm turbo build --filter=@mahfil/api...
+
+    # Runs migrations before the new version goes live (zero-downtime deploy)
+    preDeployCommand: pnpm --filter=@mahfil/api exec prisma migrate deploy
+
+    startCommand: node apps/api/dist/server.js
+
+    # Render exposes PORT automatically; Fastify should read process.env.PORT
+    healthCheckPath: /health   # add GET /health → { status: "ok" } to your API
+
+    autoDeploy: false          # GitHub Actions controls deployments
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PNPM_VERSION
+        value: "10"
+
+      # Render injects PORT automatically — no need to set it here
+
+      # ── Supabase ─────────────────────────────────────────────────────────────
+      - key: SUPABASE_URL
+        sync: false            # Set manually in Render dashboard
+
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # ── Database ──────────────────────────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false            # Use Supabase "Transaction" or "Session" pooler URL
+
+      # ── CORS ──────────────────────────────────────────────────────────────────
+      - key: CORS_ORIGIN
+        sync: false            # e.g. https://mahfil.app,https://admin.mahfil.app
+
+      # ── Proxy ─────────────────────────────────────────────────────────────────
+      - key: TRUST_PROXY
+        value: "true"
