@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
+import { Button } from '../components/ui/button';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 
@@ -58,14 +59,28 @@ export default function AdminReportsPage() {
       title="Reports"
       subtitle="Financial summaries and statistics per event."
       actions={
-        <select className="db-input" style={{ minWidth: 200 }} value={eventId}
-          onChange={(e) => { setEventId(e.target.value); loadSummary(e.target.value); }}>
-          {eventsLoading && <option value="">Loading…</option>}
-          {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
-          {events.map((ev) => (
-            <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ' (Active)' : ''}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="db-input"
+            style={{ minWidth: 200 }}
+            value={eventId}
+            onChange={(e) => { setEventId(e.target.value); loadSummary(e.target.value); }}
+          >
+            {eventsLoading && <option value="">Loading…</option>}
+            {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ' (Active)' : ''}</option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => loadSummary()}
+            disabled={!eventId || loading}
+          >
+            Refresh
+          </Button>
+        </div>
       }
     >
       {error && <div className="db-error">{error}</div>}
@@ -75,29 +90,29 @@ export default function AdminReportsPage() {
       {summary && !loading && (
         <>
           {/* Key metrics */}
-          <div className="db-stat-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 24 }}>
-            <div className="db-stat-card">
+          <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 24 }}>
+            <div className="db-stat-card animate-card">
               <div className="db-stat-title">Total Collection</div>
               <div className="db-stat-value" style={{ color: '#059669' }}>{fmtBDT(summary.totalCollection)}</div>
             </div>
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-title">Total Expenses</div>
               <div className="db-stat-value" style={{ color: '#dc2626' }}>{fmtBDT(summary.totalExpenses)}</div>
             </div>
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-title">Net Balance</div>
               <div className="db-stat-value" style={{ color: balanceColor }}>{fmtBDT(summary.balance)}</div>
             </div>
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-title">Total Donors</div>
               <div className="db-stat-value">{summary.totalDonors}</div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="animate-page">
             {/* Collections by method */}
             {summary.donationsByMethod && Object.keys(summary.donationsByMethod).length > 0 && (
-              <div className="db-table-card" style={{ padding: 20 }}>
+              <div className="db-table-card animate-card" style={{ padding: 20 }}>
                 <div className="db-table-header" style={{ marginBottom: 16 }}>
                   <span className="db-table-title">Collections by Method</span>
                 </div>
@@ -122,7 +137,7 @@ export default function AdminReportsPage() {
 
             {/* Expenses by category */}
             {summary.expensesByCategory && Object.keys(summary.expensesByCategory).length > 0 && (
-              <div className="db-table-card" style={{ padding: 20 }}>
+              <div className="db-table-card animate-card" style={{ padding: 20 }}>
                 <div className="db-table-header" style={{ marginBottom: 16 }}>
                   <span className="db-table-title">Expenses by Category</span>
                 </div>
@@ -147,7 +162,7 @@ export default function AdminReportsPage() {
           </div>
 
           {/* Summary table */}
-          <div className="db-table-card" style={{ marginTop: 20 }}>
+          <div className="db-table-card animate-card" style={{ marginTop: 20 }}>
             <div className="db-table-header">
               <span className="db-table-title">Financial Summary — {summary.eventName}</span>
             </div>

@@ -17,6 +17,8 @@
   --radius-md: 12px;
   --radius-pill: 999px;
   --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --transition-soft: 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  --transition-fast: 160ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
 /* Explicit dark theme via data-theme, used by Providers */
@@ -508,7 +510,8 @@ form.form {
   --db-av-bg:       #f0fdf4;
   --db-av-bd:       #d1fae5;
   --db-av-clr:      #16a34a;
-  --db-act:         #d1d5db;
+  /* Action link/buttons (e.g. table row actions) */
+  --db-act:         #4b5563;
   --db-bar-bg:      #e5e7eb;
   --db-toast-success: #f0fdf4;
   --db-toast-error:   #fef2f2;
@@ -1049,6 +1052,52 @@ form.form {
   flex-shrink: 0;
 }
 
+/* Pie chart */
+.db-pie-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 8px 12px;
+}
+
+.db-pie {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, var(--db-card-bg) 0, var(--db-card-bg) 35%, #e5f5ea 36%, #e5f5ea 100%);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.db-pie::before {
+  content: '';
+  position: absolute;
+  inset: 26%;
+  border-radius: inherit;
+  background: var(--db-card-bg);
+}
+
+.db-pie-inner {
+  position: relative;
+  text-align: center;
+  z-index: 1;
+}
+
+.db-pie-label {
+  font-size: 11px;
+  color: var(--db-subtitle);
+  margin-bottom: 2px;
+}
+
+.db-pie-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--db-title);
+}
+
 /* Expense categories */
 .db-cat-list { display: flex; flex-direction: column; gap: 14px; }
 .db-cat-row  { display: flex; flex-direction: column; gap: 5px; }
@@ -1235,6 +1284,28 @@ form.form {
   overflow-y: auto;
 }
 
+@media (max-width: 640px) {
+  .db-overlay {
+    align-items: flex-start;
+    padding: 16px 12px;
+  }
+
+  .db-modal {
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+  }
+}
+
+@media (max-height: 720px) {
+  .db-overlay {
+    align-items: flex-start;
+  }
+
+  .db-modal {
+    margin-top: 12px;
+  }
+}
+
 .db-modal-title {
   font-size: 17px;
   font-weight: 700;
@@ -1256,9 +1327,10 @@ form.form {
   letter-spacing: 0.02em;
 }
 
-.db-input,
-.db-select,
-.db-textarea {
+input.db-input,
+select.db-input,
+select.db-select,
+textarea.db-textarea {
   padding: 8px 11px;
   border-radius: 8px;
   border: 1px solid var(--db-srch-bd);
@@ -1449,4 +1521,68 @@ form.form {
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.2);
   font-size: 13px;
+}
+
+/* ─── Motion & animation utilities ───────────────────────── */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-page {
+  animation: fade-in-up 240ms var(--transition-soft) both;
+}
+
+.animate-card {
+  animation: fade-in-up 260ms var(--transition-soft) both;
+}
+
+.animate-modal {
+  animation: scale-in 220ms var(--transition-soft) both;
+}
+
+.animate-dropdown {
+  transform-origin: top right;
+  animation: scale-in 200ms var(--transition-fast) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*='animate-'] {
+    animation: none !important;
+  }
+
+  .db-btn,
+  .db-card,
+  .db-stat-card,
+  .db-table-card,
+  .db-login-card {
+    transition: none !important;
+  }
 }

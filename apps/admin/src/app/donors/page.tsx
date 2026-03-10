@@ -26,6 +26,16 @@ type Donor = {
   note?: string;
 };
 
+type Donation = {
+  id: string;
+  eventId: string;
+  donorId: string;
+  amount: number;
+  paymentMethod: string;
+  donationDate: string;
+  note?: string | null;
+};
+
 type DonorFormValues = {
   fullName: string;
   phone: string;
@@ -70,6 +80,9 @@ export default function AdminDonorsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Donor | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [donationPanel, setDonationPanel] = useState<Donor | null>(null);
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [donationsLoading, setDonationsLoading] = useState(false);
 
   const form = useForm<DonorFormValues>({
     defaultValues: BLANK,
@@ -144,20 +157,42 @@ export default function AdminDonorsPage() {
 
   const isSubmitting = form.formState.isSubmitting || saving;
 
+  async function openDonations(donor: Donor) {
+    setDonationPanel(donor);
+    setDonations([]);
+    setDonationsLoading(true);
+    try {
+      const res = await api.get<{ donations: Donation[] }>(`/donations?donorId=${encodeURIComponent(donor.id)}`);
+      if (!res.success) {
+        toast(res.error.message, 'error');
+      } else {
+        setDonations((res.data as any).donations ?? res.data ?? []);
+      }
+    } finally {
+      setDonationsLoading(false);
+    }
+  }
+
+  const donorTotal = donations.reduce((sum, d) => sum + d.amount, 0);
+
   return (
     <PageShell
       title="Donor Management"
       subtitle="Search, add, edit, and remove donor records."
-      actions={<button className="db-btn db-btn-primary" type="button" onClick={openCreate}>+ Add Donor</button>}
+      actions={
+        <Button type="button" onClick={openCreate}>
+          + Add Donor
+        </Button>
+      }
     >
-      <div className="db-toolbar flex flex-col gap-3 sm:flex-row">
+      <div className="db-toolbar flex flex-col gap-3 sm:flex-row animate-page">
         <div className="flex-1 min-w-0">
           <Input
             placeholder="Search by name or phone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
-            className="w-full max-w-md"
+            className="db-input w-full max-w-md"
           />
         </div>
         <Button
@@ -169,7 +204,7 @@ export default function AdminDonorsPage() {
         </Button>
       </div>
 
-      <div className="db-table-card">
+      <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Donors</span>
           <span className="db-stat-badge db-stat-badge-blue">{donors.length} results</span>
@@ -216,10 +251,13 @@ export default function AdminDonorsPage() {
                       </span>
                     </Td>
                     <Td>
-                      <ActionsMenu items={[
-                        { label: 'Edit', icon: ICON_EDIT, onClick: () => openEdit(d) },
-                        { label: 'Delete', icon: ICON_DELETE, onClick: () => setDeleteTarget(d), danger: true },
-                      ]} />
+                      <ActionsMenu
+                        items={[
+                          { label: 'View Donations', icon: ICON_EDIT, onClick: () => openDonations(d) },
+                          { label: 'Edit', icon: ICON_EDIT, onClick: () => openEdit(d) },
+                          { label: 'Delete', icon: ICON_DELETE, onClick: () => setDeleteTarget(d), danger: true },
+                        ]}
+                      />
                     </Td>
                   </Tr>
                 );
@@ -231,7 +269,7 @@ export default function AdminDonorsPage() {
 
       {modal && (
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="db-modal w-full max-w-xl">
+          <div className="db-modal w-full max-w-xl animate-modal">
             <div className="db-modal-title">{modal === 'create' ? 'Add Donor' : 'Edit Donor'}</div>
             <Form form={form} onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -245,6 +283,7 @@ export default function AdminDonorsPage() {
                     <Input
                       {...field}
                       placeholder="Full name"
+                      className="db-input"
                     />
                   )}
                 </FormField>
@@ -258,6 +297,7 @@ export default function AdminDonorsPage() {
                     <Input
                       {...field}
                       placeholder="+880…"
+                      className="db-input"
                     />
                   )}
                 </FormField>
@@ -273,6 +313,7 @@ export default function AdminDonorsPage() {
                     <Input
                       {...field}
                       placeholder="Optional"
+                      className="db-input"
                     />
                   )}
                 </FormField>
@@ -284,6 +325,7 @@ export default function AdminDonorsPage() {
                   {(field) => (
                     <NativeSelect
                       {...field}
+                      className="db-select"
                     >
                       <option value="individual">Individual</option>
                       <option value="family">Family</option>
@@ -303,6 +345,7 @@ export default function AdminDonorsPage() {
                   <Input
                     {...field}
                     placeholder="Address"
+                    className="db-input"
                   />
                 )}
               </FormField>
@@ -317,6 +360,7 @@ export default function AdminDonorsPage() {
                   <Textarea
                     {...field}
                     placeholder="Internal notes…"
+                    className="db-textarea"
                   />
                 )}
               </FormField>
@@ -340,6 +384,70 @@ export default function AdminDonorsPage() {
               </div>
             </Form>
           </div>
+        </div>
+      )}
+
+      {donationPanel && (
+        <div className="db-table-card animate-card" style={{ marginTop: 20 }}>
+          <div className="db-table-header">
+            <div>
+              <span className="db-table-title">
+                Donations – {donationPanel.fullName}
+              </span>
+              <div className="db-page-subtitle">
+                {donationsLoading
+                  ? 'Loading donation history…'
+                  : donations.length === 0
+                  ? 'No donations found for this donor.'
+                  : `${donations.length} donations • Total ${new Intl.NumberFormat('en-BD', {
+                      style: 'currency',
+                      currency: 'BDT',
+                      maximumFractionDigits: 0,
+                    }).format(donorTotal)}`}
+              </div>
+            </div>
+            <Button type="button" variant="outline" onClick={() => setDonationPanel(null)}>
+              Close
+            </Button>
+          </div>
+          {donationsLoading ? (
+            <div className="p-4 space-y-2">
+              {[1, 2, 3].map((key) => (
+                <div key={key} className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-1/6" />
+                </div>
+              ))}
+            </div>
+          ) : donations.length === 0 ? null : (
+            <Table className="db-table">
+              <Thead>
+                <Tr>
+                  <Th>Date</Th>
+                  <Th>Method</Th>
+                  <Th style={{ textAlign: 'right' }}>Amount</Th>
+                  <Th>Note</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {donations.map((x) => (
+                  <Tr key={x.id}>
+                    <Td>{new Date(x.donationDate).toLocaleDateString()}</Td>
+                    <Td>{fmt(x.paymentMethod)}</Td>
+                    <Td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--db-td-em)' }}>
+                      {new Intl.NumberFormat('en-BD', {
+                        style: 'currency',
+                        currency: 'BDT',
+                        maximumFractionDigits: 0,
+                      }).format(x.amount)}
+                    </Td>
+                    <Td>{x.note || '—'}</Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
         </div>
       )}
 

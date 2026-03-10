@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
+import { Button } from '../components/ui/button';
 
 type Event = {
   id: string;
@@ -23,6 +24,7 @@ export default function AdminEventsPage() {
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState({ ...BLANK });
   const [editId, setEditId] = useState('');
+  const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState('');
 
   const queryClient = useQueryClient();
@@ -44,7 +46,7 @@ export default function AdminEventsPage() {
     },
   });
 
-  const events = eventsData ?? [];
+  const events = Array.isArray(eventsData) ? eventsData : (eventsData ? (eventsData as any).events ?? [] : []);
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(ev: Event) {
@@ -82,7 +84,12 @@ export default function AdminEventsPage() {
   });
 
   async function save() {
-    await saveMutation.mutateAsync();
+    setSaving(true);
+    try {
+      await saveMutation.mutateAsync();
+    } finally {
+      setSaving(false);
+    }
   }
 
   const activateMutation = useMutation({
@@ -130,11 +137,15 @@ export default function AdminEventsPage() {
     <PageShell
       title="Event Management"
       subtitle="Create, edit, activate, and manage Mahfil events."
-      actions={<button className="db-btn db-btn-primary" type="button" onClick={openCreate}>+ New Event</button>}
+      actions={
+        <Button type="button" onClick={openCreate}>
+          + New Event
+        </Button>
+      }
     >
       {error && <div className="db-error">{(error as Error).message}</div>}
 
-      <div className="db-table-card">
+      <div className="db-table-card animate-page">
         <div className="db-table-header">
           <span className="db-table-title">Events</span>
           <span className="db-stat-badge db-stat-badge-blue">
@@ -190,7 +201,7 @@ export default function AdminEventsPage() {
 
       {modal && (
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="db-modal">
+          <div className="db-modal animate-modal">
             <div className="db-modal-title">{modal === 'create' ? 'New Event' : 'Edit Event'}</div>
             <div className="db-form-row">
               <div className="db-field">
@@ -217,11 +228,16 @@ export default function AdminEventsPage() {
               <input className="db-input" type="number" value={form.targetAmount} onChange={(e) => f('targetAmount', e.target.value)} placeholder="0" />
             </div>
             <div className="db-form-actions">
-              <button className="db-btn" type="button" onClick={() => setModal(null)}>Cancel</button>
-              <button className="db-btn db-btn-primary" type="button"
-                disabled={saving || !form.name || !form.year} onClick={save}>
+              <Button type="button" variant="outline" onClick={() => setModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !form.name || !form.year}
+                onClick={save}
+              >
                 {saving ? 'Saving…' : (modal === 'create' ? 'Create Event' : 'Save Changes')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
+import { Button } from '../components/ui/button';
 
 type AppUser = {
   id: string;
@@ -119,17 +120,17 @@ export default function AdminUsersPage() {
       title="User Management"
       subtitle="Manage staff accounts, roles, and access control."
       actions={
-        <button className="db-btn db-btn-primary" type="button" onClick={() => setInviteModal(true)}>
+        <Button type="button" onClick={() => setInviteModal(true)}>
           + Invite User
-        </button>
+        </Button>
       }
     >
       {error && <div className="db-error">{error}</div>}
 
       {/* Stats */}
-      <div className="db-stat-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
+      <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
         {ALL_ROLES.map((role) => (
-          <div className="db-stat-card" key={role}>
+          <div className="db-stat-card animate-card" key={role}>
             <div className="db-stat-title">{fmt(role)}s</div>
             <div className="db-stat-value" style={{ color: ROLE_COLOR[role], fontSize: 28 }}>
               {users.filter((u) => u.roles.includes(role)).length}
@@ -139,7 +140,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users table */}
-      <div className="db-table-card">
+      <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">All Users</span>
           <span className="db-stat-badge db-stat-badge-blue">{users.length} members</span>
@@ -300,7 +301,7 @@ export default function AdminUsersPage() {
       {/* Invite modal */}
       {inviteModal && (
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setInviteModal(false)}>
-          <div className="db-modal">
+          <div className="db-modal animate-modal">
             <div className="db-modal-title">Invite User</div>
             <p style={{ fontSize: 13, color: 'var(--db-td)', marginBottom: 16 }}>
               An invitation email will be sent. The user will appear in this list after they log in for the first time.
@@ -320,11 +321,16 @@ export default function AdminUsersPage() {
                 placeholder="Optional" />
             </div>
             <div className="db-form-actions">
-              <button className="db-btn" type="button" onClick={() => setInviteModal(false)}>Cancel</button>
-              <button className="db-btn db-btn-primary" type="button"
-                disabled={inviting || !inviteForm.email} onClick={invite}>
+              <Button type="button" variant="outline" onClick={() => setInviteModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={inviting || !inviteForm.email}
+                onClick={invite}
+              >
                 {inviting ? 'Sending…' : 'Send Invite'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -333,7 +339,7 @@ export default function AdminUsersPage() {
       {/* Role edit modal */}
       {roleModal && (
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setRoleModal(null)}>
-          <div className="db-modal">
+          <div className="db-modal animate-modal">
             <div className="db-modal-title">
               Edit Roles — {roleModal.fullName || roleModal.email || roleModal.id.slice(0, 8)}
             </div>
@@ -367,10 +373,16 @@ export default function AdminUsersPage() {
               })}
             </div>
             <div className="db-form-actions">
-              <button className="db-btn" type="button" onClick={() => setRoleModal(null)}>Cancel</button>
-              <button className="db-btn db-btn-primary" type="button" disabled={savingRoles} onClick={saveRoles}>
+              <Button type="button" variant="outline" onClick={() => setRoleModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={savingRoles}
+                onClick={saveRoles}
+              >
                 {savingRoles ? 'Saving…' : 'Save Roles'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

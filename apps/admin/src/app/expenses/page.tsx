@@ -5,6 +5,7 @@ import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
+import { Button } from '../components/ui/button';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type Expense = {
@@ -100,6 +101,7 @@ export default function AdminExpensesPage() {
 
   const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
   const total = expenses.reduce((s, x) => s + x.amount, 0);
+  const hasEvents = !eventsLoading && events.length > 0;
 
   return (
     <PageShell
@@ -115,26 +117,30 @@ export default function AdminExpensesPage() {
               <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ' (Active)' : ''}</option>
             ))}
           </select>
-          <button className="db-btn db-btn-primary" type="button" onClick={openCreate} disabled={!eventId || eventsLoading}>+ Add Expense</button>
+          {hasEvents && (
+            <Button type="button" onClick={openCreate} disabled={!eventId || eventsLoading}>
+              + Add Expense
+            </Button>
+          )}
         </>
       }
     >
-      <div className="db-stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-        <div className="db-stat-card">
+      <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
+        <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Expenses</div>
           <div className="db-stat-value">{fmtBDT(total)}</div>
         </div>
-        <div className="db-stat-card">
+        <div className="db-stat-card animate-card">
           <div className="db-stat-title">Number of Items</div>
           <div className="db-stat-value">{expenses.length}</div>
         </div>
-        <div className="db-stat-card">
+        <div className="db-stat-card animate-card">
           <div className="db-stat-title">Avg per Item</div>
           <div className="db-stat-value">{expenses.length ? fmtBDT(total / expenses.length) : '—'}</div>
         </div>
       </div>
 
-      <div className="db-table-card">
+      <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Expenses</span>
           <span className="db-stat-badge db-stat-badge-blue">{expenses.length} items</span>
@@ -171,7 +177,7 @@ export default function AdminExpensesPage() {
 
       {modal && (
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="db-modal">
+          <div className="db-modal animate-modal">
             <div className="db-modal-title">{modal === 'create' ? 'Add Expense' : 'Edit Expense'}</div>
             <div className="db-form-row">
               <div className="db-field">
@@ -213,11 +219,16 @@ export default function AdminExpensesPage() {
               <textarea className="db-textarea" value={form.note} onChange={(e) => f('note', e.target.value)} placeholder="Optional notes…" />
             </div>
             <div className="db-form-actions">
-              <button className="db-btn" type="button" onClick={() => setModal(null)}>Cancel</button>
-              <button className="db-btn db-btn-primary" type="button"
-                disabled={saving || !form.title || !form.category || !form.amount} onClick={save}>
+              <Button type="button" variant="outline" onClick={() => setModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !form.title || !form.category || !form.amount}
+                onClick={save}
+              >
                 {saving ? 'Saving…' : (modal === 'create' ? 'Add Expense' : 'Save Changes')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getApi } from '@/lib/api';
 import { useApiQuery } from '@/lib/query';
 import { PageShell } from './components/shell';
 import { Skeleton } from './components/ui/skeleton';
+import { Button } from './components/ui/button';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type EventSummary = {
@@ -18,26 +19,12 @@ type EventSummary = {
   totalExpensesCount: number;
 };
 type Donation = { id: string; donorName?: string; amount: number; paymentMethod: string; donationDate: string; status?: string };
+type ExpenseForChart = { id: string; category: string; amount: number };
 
-const CHART_DATA = [
-  { month: 'Jan', collections: 1800, expenses: 1200 },
-  { month: 'Feb', collections: 1600, expenses: 1400 },
-  { month: 'Mar', collections: 2400, expenses: 1600 },
-  { month: 'Apr', collections: 2000, expenses: 1200 },
-  { month: 'May', collections: 2800, expenses: 1800 },
-  { month: 'Jun', collections: 2200, expenses: 1800 },
-];
-const CHART_MAX = 3000;
-
-const EXPENSE_CATS = [
-  { name: 'Catering & Food', pct: 55, color: '#22c55e' },
-  { name: 'Venue & Setup',   pct: 26, color: '#4ade80' },
-  { name: 'Logistics',       pct: 15, color: '#86efac' },
-  { name: 'Marketing',       pct: 5,  color: '#bbf7d0' },
-];
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n);
+const fmtBDT = (n: number) =>
+  `৳ ${new Intl.NumberFormat('en-BD', {
+    maximumFractionDigits: 0,
+  }).format(n)}`;
 
 export default function AdminDashboard() {
   const api = useMemo(() => getApi(), []);
@@ -58,16 +45,15 @@ export default function AdminDashboard() {
         const list = Array.isArray(data) ? data : (data.events ?? []);
         return { events: list };
       }),
-    {
-      onSuccess: (data: { events: Event[] }) => {
-        if (!activeId) {
-          const list = data.events;
-          const active = list.find((e) => e.isActive) || list[0];
-          if (active) setActiveId(active.id);
-        }
-      },
-    },
   );
+
+  useEffect(() => {
+    if (!activeId && eventsData?.events?.length) {
+      const list = eventsData.events;
+      const active = list.find((e) => e.isActive) || list[0];
+      if (active) setActiveId(active.id);
+    }
+  }, [activeId, eventsData]);
 
   const {
     data: summaryAndDonations,
@@ -93,8 +79,16 @@ export default function AdminDashboard() {
 
       let donations: Donation[] = [];
       if (donRes.success) {
-        const d = donRes.data;
-        donations = ((d.donations ?? d ?? []) as Donation[]);
+        const d = donRes.data as any;
+        const raw = (d.donations ?? d ?? []) as any[];
+        donations = raw.map((item) => ({
+          id: item.id,
+          donorName: item.donorSnapshotName ?? item.donorName ?? 'Unknown',
+          amount: item.amount,
+          paymentMethod: item.paymentMethod,
+          donationDate: item.donationDate,
+          status: item.status,
+        }));
       }
 
       return { summary, donations };
@@ -110,7 +104,71 @@ export default function AdminDashboard() {
   const loading = summaryLoading;
   const error = eventsError?.message ?? summaryError?.message ?? null;
 
+  const {
+    data: expensesData,
+    isLoading: expensesLoading,
+    error: expensesError,
+  } = useApiQuery<{ expenses: ExpenseForChart[] }>(
+    ['event-expenses', activeId],
+    async (client) => {
+      if (!activeId) {
+        return { expenses: [] };
+      }
+
+      const res = await client.get<any>(`/expenses?eventId=${activeId}`);
+      if (!res.success) {
+        throw new Error(res.error.message);
+      }
+
+      const d = res.data as any;
+      const raw = (d.expenses ?? d ?? []) as any[];
+      const expenses: ExpenseForChart[] = raw.map((item) => ({
+        id: item.id,
+        category: item.category || 'Uncategorized',
+        amount: item.amount,
+      }));
+
+      return { expenses };
+    },
+    {
+      enabled: !!activeId,
+    },
+  );
+
   const bal = summary?.balance ?? 0;
+  const expenses = expensesData?.expenses ?? [];
+
+  const totalExpensesForChart = expenses.reduce((sum, x) => sum + x.amount, 0);
+
+  const categoryTotals = expenses.reduce<Record<string, number>>((acc, curr) => {
+    const key = curr.category || 'Uncategorized';
+    acc[key] = (acc[key] ?? 0) + curr.amount;
+    return acc;
+  }, {});
+
+  const categoryEntries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+
+  const PIE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#34d399', '#10b981', '#6ee7b7'];
+
+  const categoryWithMeta = categoryEntries.map(([name, amount], index) => {
+    const pct = totalExpensesForChart > 0 ? Math.round((amount / totalExpensesForChart) * 100) : 0;
+    const color = PIE_COLORS[index % PIE_COLORS.length];
+    return { name, amount, pct, color };
+  });
+
+  let pieGradient = '';
+  if (totalExpensesForChart > 0 && categoryWithMeta.length > 0) {
+    let currentAngle = 0;
+    const segments: string[] = [];
+    categoryWithMeta.forEach((cat, idx) => {
+      const angle = (cat.amount / totalExpensesForChart) * 360;
+      const start = currentAngle;
+      const end = currentAngle + angle;
+      currentAngle = end;
+      segments.push(`${cat.color} ${start.toFixed(1)}deg ${end.toFixed(1)}deg`);
+    });
+    pieGradient = `conic-gradient(${segments.join(', ')})`;
+  }
 
   return (
     <PageShell
@@ -135,15 +193,19 @@ export default function AdminDashboard() {
               ))}
             </select>
           )}
-          <Link href="/expenses" className="db-btn">+ Add Expense</Link>
-          <Link href="/donors" className="db-btn db-btn-primary">+ New Donation</Link>
+          <Button variant="outline">
+            <Link href="/expenses">+ Add Expense</Link>
+          </Button>
+          <Button>
+            <Link href="/donations">+ New Donation</Link>
+          </Button>
         </>
       }
     >
-      {error && <div className="db-error">{error}</div>}
+      {(error || expensesError) && <div className="db-error">{error || expensesError?.message}</div>}
 
       {/* Stat cards */}
-      <div className="db-stat-grid">
+      <div className="db-stat-grid animate-page">
         {summaryLoading ? (
           <>
             <Skeleton className="h-28 rounded-xl bg-neutral-100" />
@@ -153,7 +215,7 @@ export default function AdminDashboard() {
           </>
         ) : (
           <>
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-top">
                 <div className="db-stat-icon">
                   <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
@@ -166,10 +228,10 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="db-stat-title">Total Collections</div>
-              <div className="db-stat-value">{fmt(summary?.totalCollection ?? 0)}</div>
+              <div className="db-stat-value">{fmtBDT(summary?.totalCollection ?? 0)}</div>
             </div>
 
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-top">
                 <div className="db-stat-icon" style={{ color: '#f59e0b' }}>
                   <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
@@ -182,10 +244,10 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="db-stat-title">Total Expenses</div>
-              <div className="db-stat-value">{fmt(summary?.totalExpenses ?? 0)}</div>
+              <div className="db-stat-value">{fmtBDT(summary?.totalExpenses ?? 0)}</div>
             </div>
 
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-top">
                 <div className="db-stat-icon" style={{ color: '#60a5fa' }}>
                   <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
@@ -198,10 +260,10 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="db-stat-title">Current Balance</div>
-              <div className="db-stat-value">{fmt(bal)}</div>
+              <div className="db-stat-value">{fmtBDT(bal)}</div>
             </div>
 
-            <div className="db-stat-card">
+            <div className="db-stat-card animate-card">
               <div className="db-stat-top">
                 <div className="db-stat-icon">
                   <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
@@ -218,61 +280,84 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Chart + Categories */}
-      <div className="db-bottom-row">
-        <div className="db-card">
+      {/* Expense breakdown */}
+      <div className="db-bottom-row animate-page">
+        <div className="db-card animate-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="db-card-title">Collection vs Expenses</div>
-              <div className="db-card-subtitle">Monthly breakdown for 2024</div>
+              <div className="db-card-title">Expense Breakdown</div>
+              <div className="db-card-subtitle">By category for the selected event</div>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--db-subtitle)', background: 'var(--db-srch-bg)', padding: '3px 8px', borderRadius: 6, border: '1px solid var(--db-srch-bd)' }}>
-              Last 6 Months
-            </span>
           </div>
-          <div className="db-chart-wrap">
-            {CHART_DATA.map((d) => (
-              <div key={d.month} className="db-chart-group">
-                <div className="db-chart-bars">
-                  <div className="db-bar db-bar-collections" style={{ height: `${(d.collections / CHART_MAX) * 110}px` }} />
-                  <div className="db-bar db-bar-expenses"    style={{ height: `${(d.expenses    / CHART_MAX) * 110}px` }} />
-                </div>
-                <div className="db-chart-month">{d.month}</div>
+          <div className="db-pie-wrap">
+            {expensesLoading ? (
+              <Skeleton className="h-40 w-40 rounded-full bg-neutral-100" />
+            ) : totalExpensesForChart <= 0 || categoryWithMeta.length === 0 ? (
+              <div className="db-empty" style={{ padding: 32 }}>
+                No expense data available for this event.
               </div>
-            ))}
+            ) : (
+              <div className="db-pie" style={{ backgroundImage: pieGradient || undefined }}>
+                <div className="db-pie-inner">
+                  <div className="db-pie-label">Total Expenses</div>
+                  <div className="db-pie-value">
+                    {fmtBDT(summary?.totalExpenses ?? totalExpensesForChart)}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="db-chart-legend">
-            <div className="db-legend-item"><div className="db-legend-dot" style={{ background: '#22c55e' }} />Collections</div>
-            <div className="db-legend-item"><div className="db-legend-dot" style={{ background: '#f59e0b' }} />Expenses</div>
-          </div>
+          {categoryWithMeta.length > 0 && (
+            <div className="db-chart-legend">
+              {categoryWithMeta.map((cat) => (
+                <div key={cat.name} className="db-legend-item">
+                  <div className="db-legend-dot" style={{ background: cat.color }} />
+                  <span>{cat.name}</span>
+                  <span style={{ fontSize: 10, color: 'var(--db-subtitle)' }}>{cat.pct}%</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="db-card">
+        <div className="db-card animate-card">
           <div className="db-card-title">Expense Categories</div>
           <div style={{ height: 16 }} />
           <div className="db-cat-list">
-            {EXPENSE_CATS.map((cat) => {
-              const total = summary?.totalExpenses ?? 0;
-              const amt = Math.round(total * cat.pct / 100);
-              return (
+            {(expensesLoading && categoryWithMeta.length === 0) ? (
+              <div className="db-empty" style={{ padding: 24 }}>
+                Loading categories…
+              </div>
+            ) : categoryWithMeta.length === 0 ? (
+              <div className="db-empty" style={{ padding: 24 }}>
+                No categorized expenses for this event.
+              </div>
+            ) : (
+              categoryWithMeta.map((cat) => (
                 <div key={cat.name} className="db-cat-row">
                   <div className="db-cat-header">
                     <span className="db-cat-name">{cat.name}</span>
-                    <span className="db-cat-amount">{total > 0 ? fmt(amt) : '—'}</span>
+                    <span className="db-cat-amount">
+                      {fmtBDT(cat.amount)} ({cat.pct}%)
+                    </span>
                   </div>
                   <div className="db-cat-track">
                     <div className="db-cat-fill" style={{ width: `${cat.pct}%`, background: cat.color }} />
                   </div>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
-          <Link href="/reports" className="db-download-btn">Download Full Expense Report</Link>
+          {categoryWithMeta.length > 0 && (
+            <Link href="/reports" className="db-download-btn">
+              Download Full Expense Report
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Recent donations */}
-      <div className="db-table-card">
+      <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Recent Donations</span>
           <Link href="/donors" className="db-view-all">View All</Link>
@@ -315,7 +400,7 @@ export default function AdminDashboard() {
                         <span style={{ color: 'var(--db-td-em)' }}>{d.donorName || 'Unknown'}</span>
                       </div>
                     </td>
-                    <td style={{ color: 'var(--db-td-em)', fontWeight: 600 }}>{fmt(d.amount)}</td>
+                    <td style={{ color: 'var(--db-td-em)', fontWeight: 600 }}>{fmtBDT(d.amount)}</td>
                     <td>{d.paymentMethod}</td>
                     <td>{new Date(d.donationDate).toLocaleDateString()}</td>
                   </tr>

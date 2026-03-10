@@ -76,7 +76,7 @@ export async function registerDonorRoutes(app: FastifyInstance) {
 
   app.patch(
     '/donors/:id',
-    { preHandler: [requireRoles(app, ['super_admin', 'admin', 'collector'])] },
+    { preHandler: async (req) => app.requireAuth(req) },
     async (req) => {
       const params = parseWith(z.object({ id: z.string().uuid() }), req.params);
       const body = parseWith(DonorUpdateSchema, req.body);

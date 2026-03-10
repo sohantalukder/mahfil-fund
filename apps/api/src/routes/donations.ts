@@ -15,14 +15,23 @@ export async function registerDonationRoutes(app: FastifyInstance) {
   app.get('/donations', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
     const query = parseWith(
       z.object({
-        eventId: z.string().uuid(),
+        eventId: z.string().uuid().optional(),
         donorId: z.string().uuid().optional(),
         from: z.coerce.date().optional(),
         to: z.coerce.date().optional(),
-        paymentMethod: z.enum(['CASH', 'BKASH', 'NAGAD', 'BANK']).optional()
+        paymentMethod: z.enum(['CASH', 'BKASH', 'NAGAD', 'BANK']).optional(),
+        limit: z.coerce.number().int().min(1).max(200).optional()
       }),
       req.query
     );
+
+    const donationDate =
+      query.from || query.to
+        ? {
+            gte: query.from,
+            lte: query.to
+          }
+        : undefined;
 
     const donations = await app.prisma.donation.findMany({
       where: {
@@ -30,13 +39,10 @@ export async function registerDonationRoutes(app: FastifyInstance) {
         eventId: query.eventId,
         donorId: query.donorId,
         paymentMethod: query.paymentMethod,
-        donationDate: {
-          gte: query.from,
-          lte: query.to
-        }
+        donationDate
       },
       orderBy: [{ donationDate: 'desc' }, { createdAt: 'desc' }],
-      take: 200
+      take: query.limit ?? 200
     });
 
     return ok({ donations }, { serverTime: new Date().toISOString(), requestId: req.requestId });
