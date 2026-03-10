@@ -1,0 +1,146 @@
+[
+  {
+    "id": "1988deee2f8e41f5a8b5d6364d1f0229",
+    "name": "Settings & Event Management",
+    "slug": "settings-event-management",
+    "imageFile": "settings-event-management.png",
+    "codeFile": "settings-event-management.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "269ed0371db4483fbb101621c8e8000a",
+    "name": "Summary Details (Light Mode)",
+    "slug": "summary-details-light",
+    "imageFile": "summary-details-light.png",
+    "codeFile": "summary-details-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "32829c76a1604e4389159b48a331b02b",
+    "name": "Financial Summary (Light Mode)",
+    "slug": "financial-summary-light",
+    "imageFile": "financial-summary-light.png",
+    "codeFile": "financial-summary-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "92b09f04a6cb409591f26f8c47a0e03a",
+    "name": "Donor List (Light Mode)",
+    "slug": "donor-list-light",
+    "imageFile": "donor-list-light.png",
+    "codeFile": "donor-list-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "a081482c28244f6fb5eef5f87a4d0955",
+    "name": "Add Expense (Light Mode)",
+    "slug": "add-expense-light",
+    "imageFile": "add-expense-light.png",
+    "codeFile": "add-expense-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "a2f270a520c547d7a36bfd0256862d63",
+    "name": "Reports (Light Mode)",
+    "slug": "reports-light",
+    "imageFile": "reports-light.png",
+    "codeFile": "reports-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "b64ed7ca3dd04a5ebc2d08deebca5bcf",
+    "name": "Expense List with Search",
+    "slug": "expense-list-search",
+    "imageFile": "expense-list-search.png",
+    "codeFile": "expense-list-search.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "c26e5b22837648dbb9f0002f38beb52a",
+    "name": "Expense List (Light Mode)",
+    "slug": "expense-list-light",
+    "imageFile": "expense-list-light.png",
+    "codeFile": "expense-list-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "debef0aa8b584c92a835c25cf9a608a2",
+    "name": "Dashboard (Light Mode)",
+    "slug": "dashboard-light",
+    "imageFile": "dashboard-light.png",
+    "codeFile": "dashboard-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "e06a191d974b4fbc81ec8565a0eca44b",
+    "name": "Add Donation (Light Mode)",
+    "slug": "add-donation-light",
+    "imageFile": "add-donation-light.png",
+    "codeFile": "add-donation-light.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "525186c4a311408082ecdbe31ba4bd2d",
+    "name": "Financial Summary & Reports",
+    "slug": "financial-summary-reports",
+    "imageFile": "financial-summary-reports.png",
+    "codeFile": "financial-summary-reports.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "8cf9a0ab6d07451d8489dadfa020458e",
+    "name": "Settings - Import Success Notification",
+    "slug": "settings-import-success",
+    "imageFile": "settings-import-success.png",
+    "codeFile": "settings-import-success.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "ec1805333eeb4c739482ea0b9071b73b",
+    "name": "Settings with Cloud Sync",
+    "slug": "settings-cloud-sync",
+    "imageFile": "settings-cloud-sync.png",
+    "codeFile": "settings-cloud-sync.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "f32f55e1c417418c8517899f41c8b11a",
+    "name": "Admin Dashboard (Web)",
+    "slug": "admin-dashboard-web",
+    "imageFile": "admin-dashboard-web.png",
+    "codeFile": "admin-dashboard-web.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "b21f377a5d524360b8b77b00146e91f9",
+    "name": "Donor Management Portal (Web)",
+    "slug": "donor-management-portal-web",
+    "imageFile": "donor-management-portal-web.png",
+    "codeFile": "donor-management-portal-web.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  },
+  {
+    "id": "5c8290c5e2004dbfb2a39c9c4e5531c5",
+    "name": "Expense Management Portal (Web)",
+    "slug": "expense-management-portal-web",
+    "imageFile": "expense-management-portal-web.png",
+    "codeFile": "expense-management-portal-web.tsx",
+    "imageUrl": "",
+    "codeUrl": ""
+  }
+]

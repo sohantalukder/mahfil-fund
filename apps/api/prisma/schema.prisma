@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRoleName {
+  super_admin
+  admin
+  collector
+  viewer
+}
+
+enum Locale {
+  bn
+  en
+}
+
+enum DonorType {
+  individual
+  family
+  business
+  organization
+}
+
+enum PaymentMethod {
+  CASH
+  BKASH
+  NAGAD
+  BANK
+}
+
+enum RecordStatus {
+  ACTIVE
+  DELETED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+}
+
+enum SyncOpStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  authUserId  String   @unique @db.Uuid
+  email       String?
+  phone       String?
+  fullName    String?
+  isActive    Boolean  @default(true)
+
+  roles       UserRole[]
+
+  eventsCreated     Event[]     @relation("EventCreatedBy")
+  eventsUpdated     Event[]     @relation("EventUpdatedBy")
+  donorsCreated     Donor[]     @relation("DonorCreatedBy")
+  donorsUpdated     Donor[]     @relation("DonorUpdatedBy")
+  donationsCreated  Donation[]  @relation("DonationCreatedBy")
+  donationsUpdated  Donation[]  @relation("DonationUpdatedBy")
+  expensesCreated   Expense[]   @relation("ExpenseCreatedBy")
+  expensesUpdated   Expense[]   @relation("ExpenseUpdatedBy")
+
+  auditLogs         AuditLog[]
+  syncOperations    SyncOperation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([authUserId])
+}
+
+model Role {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      UserRoleName  @unique
+  users     UserRole[]
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model UserRole {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+}
+
+model Event {
+  id                String         @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?        @unique @db.Uuid
+
+  name              String
+  year              Int
+  startsAt          DateTime?
+  endsAt            DateTime?
+  isActive          Boolean        @default(false)
+
+  status            RecordStatus   @default(ACTIVE)
+  createdByUserId   String?        @db.Uuid
+  updatedByUserId   String?        @db.Uuid
+  createdMetaId     String?        @db.Uuid
+
+  createdBy         User?          @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?          @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta       RequestMetadata? @relation("EventCreatedMeta", fields: [createdMetaId], references: [id])
+
+  donations          Donation[]
+  expenses           Expense[]
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  @@unique([year])
+  @@index([isActive])
+}
+
+model Donor {
+  id                String       @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?      @unique @db.Uuid
+
+  fullName          String
+  phone             String
+  altPhone          String?
+  address           String?
+  district          String?
+  thana             String?
+  donorType         DonorType
+  note              String?
+  preferredLanguage Locale       @default(bn)
+  tags              String[]     @default([])
+
+  status            RecordStatus @default(ACTIVE)
+  createdByUserId   String?      @db.Uuid
+  updatedByUserId   String?      @db.Uuid
+  createdMetaId     String?      @db.Uuid
+
+  createdBy         User?        @relation("DonorCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?        @relation("DonorUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta       RequestMetadata? @relation("DonorCreatedMeta", fields: [createdMetaId], references: [id])
+
+  donations         Donation[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+
+  @@index([phone])
+  @@index([fullName])
+}
+
+model Donation {
+  id                String        @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?       @unique @db.Uuid
+
+  eventId           String        @db.Uuid
+  donorId           String        @db.Uuid
+
+  donorSnapshotName String
+  donorSnapshotPhone String
+
+  amount            Int
+  paymentMethod     PaymentMethod
+  donationDate      DateTime
+  note              String?
+  receiptNo         String?
+  transactionId     String?
+
+  status            RecordStatus  @default(ACTIVE)
+  createdByUserId   String?       @db.Uuid
+  updatedByUserId   String?       @db.Uuid
+  createdMetaId     String?       @db.Uuid
+
+  event             Event         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  donor             Donor         @relation(fields: [donorId], references: [id], onDelete: Restrict)
+
+  createdBy         User?         @relation("DonationCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?         @relation("DonationUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta       RequestMetadata? @relation("DonationCreatedMeta", fields: [createdMetaId], references: [id])
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  @@index([eventId, donationDate])
+  @@index([donorId, eventId])
+}
+
+model Expense {
+  id                String        @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?       @unique @db.Uuid
+
+  eventId           String        @db.Uuid
+  title             String
+  category          String
+  amount            Int
+  expenseDate       DateTime
+  vendor            String?
+  paymentMethod     PaymentMethod
+  note              String?
+
+  status            RecordStatus  @default(ACTIVE)
+  createdByUserId   String?       @db.Uuid
+  updatedByUserId   String?       @db.Uuid
+  createdMetaId     String?       @db.Uuid
+
+  event             Event         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  createdBy         User?         @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?         @relation("ExpenseUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta       RequestMetadata? @relation("ExpenseCreatedMeta", fields: [createdMetaId], references: [id])
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  @@index([eventId, expenseDate])
+  @@index([category])
+}
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  bucket      String
+  objectPath  String
+  mimeType    String?
+  sizeBytes   Int?
+  createdByUserId String? @db.Uuid
+  createdAt   DateTime @default(now())
+}
+
+model RequestMetadata {
+  id          String   @id @default(uuid()) @db.Uuid
+  ip          String?
+  userAgent   String?
+  deviceType  String?
+  client      String?
+  deviceId    String?
+  createdAt   DateTime @default(now())
+
+  createdEvents     Event[]     @relation("EventCreatedMeta")
+  createdDonors     Donor[]     @relation("DonorCreatedMeta")
+  createdDonations  Donation[]  @relation("DonationCreatedMeta")
+  createdExpenses   Expense[]   @relation("ExpenseCreatedMeta")
+  auditLogs         AuditLog[]  @relation("AuditLogMeta")
+
+  @@index([deviceId])
+}
+
+model AuditLog {
+  id            String      @id @default(uuid()) @db.Uuid
+  entityType    String
+  entityId      String      @db.Uuid
+  action        AuditAction
+  actorUserId   String?     @db.Uuid
+  actorRole     UserRoleName?
+  before        Json?
+  after         Json?
+  metaId        String?     @db.Uuid
+
+  meta          RequestMetadata? @relation("AuditLogMeta", fields: [metaId], references: [id])
+  actor         User?       @relation(fields: [actorUserId], references: [id])
+
+  createdAt     DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model IdempotencyKey {
+  key           String   @id
+  userId        String?  @db.Uuid
+  method        String
+  path          String
+  requestHash   String?
+  responseBody  Json?
+  statusCode    Int?
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime?
+
+  @@index([userId, createdAt])
+}
+
+model SyncOperation {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  deviceId    String
+  status      SyncOpStatus @default(PENDING)
+  startedAt   DateTime     @default(now())
+  finishedAt  DateTime?
+  error       String?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deviceId])
+  @@index([status, startedAt])
+}
+

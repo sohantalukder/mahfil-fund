@@ -1,0 +1,130 @@
+[
+  {
+    "id": "1988deee2f8e41f5a8b5d6364d1f0229",
+    "name": "Settings & Event Management",
+    "slug": "settings-event-management",
+    "webPath": "/settings/events",
+    "adminPath": "/settings/events",
+    "mobileRoute": "SettingsEvents"
+  },
+  {
+    "id": "269ed0371db4483fbb101621c8e8000a",
+    "name": "Summary Details (Light Mode)",
+    "slug": "summary-details-light",
+    "webPath": "/dashboard/summary",
+    "adminPath": "/admin/summary",
+    "mobileRoute": "SummaryDetails"
+  },
+  {
+    "id": "32829c76a1604e4389159b48a331b02b",
+    "name": "Financial Summary (Light Mode)",
+    "slug": "financial-summary-light",
+    "webPath": "/financial-summary",
+    "adminPath": "/admin/financial-summary",
+    "mobileRoute": "FinancialSummary"
+  },
+  {
+    "id": "92b09f04a6cb409591f26f8c47a0e03a",
+    "name": "Donor List (Light Mode)",
+    "slug": "donor-list-light",
+    "webPath": "/donors",
+    "adminPath": "/admin/donors",
+    "mobileRoute": "DonorList"
+  },
+  {
+    "id": "a081482c28244f6fb5eef5f87a4d0955",
+    "name": "Add Expense (Light Mode)",
+    "slug": "add-expense-light",
+    "webPath": "/expenses/new",
+    "adminPath": "/admin/expenses/new",
+    "mobileRoute": "AddExpense"
+  },
+  {
+    "id": "a2f270a520c547d7a36bfd0256862d63",
+    "name": "Reports (Light Mode)",
+    "slug": "reports-light",
+    "webPath": "/reports",
+    "adminPath": "/admin/reports",
+    "mobileRoute": "Reports"
+  },
+  {
+    "id": "b64ed7ca3dd04a5ebc2d08deebca5bcf",
+    "name": "Expense List with Search",
+    "slug": "expense-list-search",
+    "webPath": "/expenses",
+    "adminPath": "/admin/expenses",
+    "mobileRoute": "ExpenseList"
+  },
+  {
+    "id": "c26e5b22837648dbb9f0002f38beb52a",
+    "name": "Expense List (Light Mode)",
+    "slug": "expense-list-light",
+    "webPath": "/expenses",
+    "adminPath": "/admin/expenses",
+    "mobileRoute": "ExpenseListCompact"
+  },
+  {
+    "id": "debef0aa8b584c92a835c25cf9a608a2",
+    "name": "Dashboard (Light Mode)",
+    "slug": "dashboard-light",
+    "webPath": "/dashboard",
+    "adminPath": "/admin/dashboard",
+    "mobileRoute": "Dashboard"
+  },
+  {
+    "id": "e06a191d974b4fbc81ec8565a0eca44b",
+    "name": "Add Donation (Light Mode)",
+    "slug": "add-donation-light",
+    "webPath": "/donations/new",
+    "adminPath": "/admin/donations/new",
+    "mobileRoute": "AddDonation"
+  },
+  {
+    "id": "525186c4a311408082ecdbe31ba4bd2d",
+    "name": "Financial Summary & Reports",
+    "slug": "financial-summary-reports",
+    "webPath": "/financials",
+    "adminPath": "/admin/financials",
+    "mobileRoute": "FinancialOverview"
+  },
+  {
+    "id": "8cf9a0ab6d07451d8489dadfa020458e",
+    "name": "Settings - Import Success Notification",
+    "slug": "settings-import-success",
+    "webPath": "/settings/import",
+    "adminPath": "/admin/settings/import",
+    "mobileRoute": "SettingsImport"
+  },
+  {
+    "id": "ec1805333eeb4c739482ea0b9071b73b",
+    "name": "Settings with Cloud Sync",
+    "slug": "settings-cloud-sync",
+    "webPath": "/settings/cloud-sync",
+    "adminPath": "/admin/settings/cloud-sync",
+    "mobileRoute": "CloudSyncSettings"
+  },
+  {
+    "id": "f32f55e1c417418c8517899f41c8b11a",
+    "name": "Admin Dashboard (Web)",
+    "slug": "admin-dashboard-web",
+    "webPath": "/dashboard",
+    "adminPath": "/admin/dashboard",
+    "mobileRoute": "AdminDashboardReference"
+  },
+  {
+    "id": "b21f377a5d524360b8b77b00146e91f9",
+    "name": "Donor Management Portal (Web)",
+    "slug": "donor-management-portal-web",
+    "webPath": "/donors",
+    "adminPath": "/admin/donors",
+    "mobileRoute": "DonorManagementReference"
+  },
+  {
+    "id": "5c8290c5e2004dbfb2a39c9c4e5531c5",
+    "name": "Expense Management Portal (Web)",
+    "slug": "expense-management-portal-web",
+    "webPath": "/expenses",
+    "adminPath": "/admin/expenses",
+    "mobileRoute": "ExpenseManagementReference"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "name": "@mahfil/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "i18next": "^25.5.2"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "echo \"(lint handled at repo root)\""
+  }
+}
+

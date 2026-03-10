@@ -1,0 +1,56 @@
+{
+  "app": {
+    "name": "Mahfil Fund"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "sync": "Sync",
+    "offline": "Offline",
+    "online": "Online",
+    "lastSync": "Last sync"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password"
+  },
+  "events": {
+    "selectEvent": "Select event",
+    "createEvent": "Create event"
+  },
+  "donors": {
+    "donors": "Donors",
+    "addDonor": "Add donor",
+    "fullName": "Full name",
+    "phone": "Phone",
+    "donorType": "Donor type"
+  },
+  "donations": {
+    "donations": "Donations",
+    "addDonation": "Add donation",
+    "amount": "Amount",
+    "paymentMethod": "Payment method",
+    "date": "Date"
+  },
+  "expenses": {
+    "expenses": "Expenses",
+    "addExpense": "Add expense",
+    "title": "Title",
+    "category": "Category",
+    "amount": "Amount",
+    "date": "Date"
+  },
+  "dashboard": {
+    "dashboard": "Dashboard",
+    "totalCollection": "Total collection",
+    "totalExpenses": "Total expenses",
+    "balance": "Balance",
+    "totalDonors": "Total donors"
+  }
+}
+

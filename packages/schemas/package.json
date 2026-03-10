@@ -1,0 +1,17 @@
+{
+  "name": "@mahfil/schemas",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "echo \"(lint handled at repo root)\""
+  }
+}
+

@@ -1,0 +1,56 @@
+{
+  "app": {
+    "name": "মাহফিল ফান্ড"
+  },
+  "common": {
+    "save": "সংরক্ষণ",
+    "cancel": "বাতিল",
+    "delete": "মুছুন",
+    "edit": "সম্পাদনা",
+    "search": "অনুসন্ধান",
+    "sync": "সিঙ্ক",
+    "offline": "অফলাইন",
+    "online": "অনলাইন",
+    "lastSync": "শেষ সিঙ্ক"
+  },
+  "auth": {
+    "login": "লগইন",
+    "logout": "লগআউট",
+    "email": "ইমেইল",
+    "password": "পাসওয়ার্ড"
+  },
+  "events": {
+    "selectEvent": "ইভেন্ট নির্বাচন করুন",
+    "createEvent": "ইভেন্ট তৈরি করুন"
+  },
+  "donors": {
+    "donors": "দাতা তালিকা",
+    "addDonor": "দাতা যোগ করুন",
+    "fullName": "পূর্ণ নাম",
+    "phone": "ফোন",
+    "donorType": "দাতার ধরন"
+  },
+  "donations": {
+    "donations": "অনুদান",
+    "addDonation": "অনুদান যোগ করুন",
+    "amount": "পরিমাণ",
+    "paymentMethod": "পেমেন্ট পদ্ধতি",
+    "date": "তারিখ"
+  },
+  "expenses": {
+    "expenses": "খরচ",
+    "addExpense": "খরচ যোগ করুন",
+    "title": "শিরোনাম",
+    "category": "বিভাগ",
+    "amount": "পরিমাণ",
+    "date": "তারিখ"
+  },
+  "dashboard": {
+    "dashboard": "ড্যাশবোর্ড",
+    "totalCollection": "মোট সংগ্রহ",
+    "totalExpenses": "মোট খরচ",
+    "balance": "অবশিষ্ট",
+    "totalDonors": "মোট দাতা"
+  }
+}
+

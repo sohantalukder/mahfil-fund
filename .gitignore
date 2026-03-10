@@ -1,0 +1,19 @@
+node_modules
+.turbo
+.next
+dist
+.DS_Store
+
+.env
+.env.*
+
+# React Native
+apps/mobile/android/.gradle
+apps/mobile/android/build
+apps/mobile/android/app/build
+apps/mobile/ios/build
+apps/mobile/ios/Pods
+apps/mobile/ios/Podfile.lock
+
+# Prisma
+apps/api/prisma/migrations
