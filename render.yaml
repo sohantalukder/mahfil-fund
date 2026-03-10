@@ -7,7 +7,7 @@ services:
     branch: main
     rootDir: .
 
-    buildCommand: pnpm install --frozen-lockfile && pnpm turbo build --filter=@mahfil/api...
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter=@mahfil/api exec prisma generate && pnpm turbo build --filter=@mahfil/api...
 
     # Runs migrations before the new version goes live (zero-downtime deploy)
     preDeployCommand: pnpm --filter=@mahfil/api exec prisma migrate deploy
