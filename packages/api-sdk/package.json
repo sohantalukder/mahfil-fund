@@ -16,6 +16,9 @@
     "@mahfil/types": "workspace:*",
     "axios": "^1.12.2"
   },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty false",

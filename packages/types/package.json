@@ -16,6 +16,9 @@
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty false",
     "lint": "echo \"(lint handled at repo root)\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
 

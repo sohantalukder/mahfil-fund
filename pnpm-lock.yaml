@@ -444,24 +444,48 @@ importers:
       axios:
         specifier: ^1.12.2
         version: 1.13.6
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/i18n:
     dependencies:
       i18next:
         specifier: ^25.5.2
         version: 25.8.17(typescript@5.9.3)
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/schemas:
     dependencies:
       zod:
         specifier: ^3.25.76
         version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
-  packages/theme: {}
+  packages/theme:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
-  packages/types: {}
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
-  packages/utils: {}
+  packages/utils:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 
