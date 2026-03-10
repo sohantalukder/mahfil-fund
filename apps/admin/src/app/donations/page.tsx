@@ -88,6 +88,7 @@ export default function AdminDonationsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
     api
@@ -134,6 +135,7 @@ export default function AdminDonationsPage() {
       ...BLANK,
       donationDate: new Date().toISOString().slice(0, 10),
     });
+    setSubmitAttempted(false);
     setUseExistingDonor(true);
     setEditId('');
     setModal('create');
@@ -149,6 +151,7 @@ export default function AdminDonationsPage() {
       donationDate: x.donationDate.slice(0, 10),
       note: x.note ?? '',
     });
+    setSubmitAttempted(false);
     setUseExistingDonor(true);
     setEditId(x.id);
     setModal('edit');
@@ -166,6 +169,8 @@ export default function AdminDonationsPage() {
       return;
     }
 
+    setSubmitAttempted(true);
+
     let donorId = form.donorId;
 
     if (modal === 'create' && !useExistingDonor) {
@@ -174,23 +179,30 @@ export default function AdminDonationsPage() {
         return;
       }
       try {
-        const donorRes = await api.post<Donor>('/donors', {
-          fullName: form.donorFullName.trim(),
-          phone: form.donorPhone.trim(),
-          altPhone: null,
-          address: null,
-          donorType: 'individual',
-          note: null,
-          preferredLanguage: 'en',
-          tags: [],
-        });
-        if (!donorRes.success) {
-          toast(donorRes.error.message, 'error');
-          return;
+        const existingByPhone = donors.find(
+          (d) => normalizedPhone(d.phone) === normalizedPhone(form.donorPhone),
+        );
+        if (existingByPhone) {
+          donorId = existingByPhone.id;
+        } else {
+          const donorRes = await api.post<Donor>('/donors', {
+            fullName: form.donorFullName.trim(),
+            phone: form.donorPhone.trim(),
+            altPhone: null,
+            address: null,
+            donorType: 'individual',
+            note: null,
+            preferredLanguage: 'en',
+            tags: [],
+          });
+          if (!donorRes.success) {
+            toast(donorRes.error.message, 'error');
+            return;
+          }
+          const created = (donorRes.data as any).donor ?? donorRes.data;
+          donorId = created.id;
+          setDonors((prev) => [created as Donor, ...prev]);
         }
-        const created = (donorRes.data as any).donor ?? donorRes.data;
-        donorId = created.id;
-        setDonors((prev) => [created as Donor, ...prev]);
       } catch (e) {
         toast('Failed to create donor for this donation.', 'error');
         return;
@@ -198,7 +210,7 @@ export default function AdminDonationsPage() {
     }
 
     const amountValue = parseFloat(form.amount);
-    if (!donorId || Number.isNaN(amountValue) || amountValue <= 0) {
+    if (!donorId || amountInvalid) {
       toast('Donor and a positive amount are required.', 'error');
       return;
     }
@@ -257,6 +269,16 @@ export default function AdminDonationsPage() {
     );
   }, [donors, donorSearch]);
 
+  const amountValue = parseFloat(form.amount);
+  const amountInvalid = Number.isNaN(amountValue) || amountValue <= 0;
+
+  const normalizedPhone = (phone: string) => phone.replace(/\s+/g, '');
+
+  const selectedDonor = useMemo(
+    () => donors.find((d) => d.id === form.donorId) || null,
+    [donors, form.donorId],
+  );
+
   function switchToExistingDonor() {
     setUseExistingDonor(true);
     setForm((prev) => ({
@@ -273,6 +295,20 @@ export default function AdminDonationsPage() {
       donorId: '',
     }));
     setDonorSearch('');
+  }
+
+  function handlePhoneChange(raw: string) {
+    let v = raw.replace(/[^\d+]/g, '');
+    if (!v.startsWith('+880')) {
+      if (v.startsWith('880')) {
+        v = `+${v}`;
+      } else if (v.startsWith('0')) {
+        v = `+880${v.slice(1)}`;
+      } else if (!v.startsWith('+')) {
+        v = `+880${v}`;
+      }
+    }
+    updateForm('donorPhone', v);
   }
 
   return (
@@ -386,6 +422,7 @@ export default function AdminDonationsPage() {
         <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
           <form
             className="db-modal animate-modal"
+            style={{ maxHeight: '90vh', gap: 16 }}
             onSubmit={(e) => {
               e.preventDefault();
               if (!saving) {
@@ -397,131 +434,283 @@ export default function AdminDonationsPage() {
               {modal === 'create' ? 'Add Donation' : 'Edit Donation'}
             </div>
 
-            <div className="db-form-row">
-              <div className="db-field">
-                <label className="db-label">Donor *</label>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12 }}>
-                  <button
-                    type="button"
-                    onClick={switchToExistingDonor}
-                    className="db-chip"
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      border: useExistingDonor ? '1px solid var(--db-accent)' : '1px solid var(--db-card-bd)',
-                      background: useExistingDonor ? 'var(--db-accent-soft)' : 'transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Existing donor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={switchToNewDonor}
-                    className="db-chip"
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      border: !useExistingDonor ? '1px solid var(--db-accent)' : '1px solid var(--db-card-bd)',
-                      background: !useExistingDonor ? 'var(--db-accent-soft)' : 'transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    New donor
-                  </button>
-                </div>
-                <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--db-muted)' }}>
-                  Choose an existing donor from the list or quickly create a new donor for this
-                  donation.
-                </p>
+            <div className="db-field">
+              <label className="db-label">Donor *</label>
+              <div
+                style={{ display: 'inline-flex', gap: 8, marginBottom: 6, fontSize: 12 }}
+                role="tablist"
+                aria-label="Donor mode"
+              >
+                <button
+                  type="button"
+                  onClick={switchToExistingDonor}
+                  role="tab"
+                  aria-selected={useExistingDonor}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: 999,
+                    border: useExistingDonor ? '1px solid #D0D5DD' : '1px solid transparent',
+                    background: useExistingDonor ? 'var(--db-accent-soft)' : 'transparent',
+                    fontWeight: useExistingDonor ? 600 : 500,
+                    color: useExistingDonor ? 'var(--db-accent-deep)' : 'var(--db-fg)',
+                    cursor: 'pointer',
+                    minWidth: 110,
+                  }}
+                >
+                  Existing donor
+                </button>
+                <button
+                  type="button"
+                  onClick={switchToNewDonor}
+                  role="tab"
+                  aria-selected={!useExistingDonor}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: 999,
+                    border: !useExistingDonor ? '1px solid #D0D5DD' : '1px solid transparent',
+                    background: !useExistingDonor ? 'var(--db-accent-soft)' : 'transparent',
+                    fontWeight: !useExistingDonor ? 600 : 500,
+                    color: !useExistingDonor ? 'var(--db-accent-deep)' : 'var(--db-fg)',
+                    cursor: 'pointer',
+                    minWidth: 90,
+                  }}
+                >
+                  New donor
+                </button>
+              </div>
+              <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--db-muted)' }}>
+                Select an existing donor or create a new one.
+              </p>
 
-                {useExistingDonor ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {useExistingDonor ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <input
+                    className="db-input"
+                    placeholder="Search donor name or phone…"
+                    value={donorSearch}
+                    onChange={(e) => setDonorSearch(e.target.value)}
+                    disabled={donorsLoading || donors.length === 0}
+                  />
+                  <div
+                    style={{
+                      maxHeight: 180,
+                      borderRadius: 10,
+                      border: '1px solid var(--db-card-bd)',
+                      padding: 4,
+                      overflowY: 'auto',
+                      background: 'var(--db-card-bg-soft)',
+                    }}
+                  >
+                    {donorsLoading ? (
+                      <div style={{ padding: 8, fontSize: 12, color: 'var(--db-muted)' }}>Loading donors…</div>
+                    ) : donors.length === 0 ? (
+                      <div style={{ padding: 8, fontSize: 12, color: 'var(--db-muted)' }}>
+                        No donors found.{' '}
+                        <button
+                          type="button"
+                          onClick={switchToNewDonor}
+                          style={{
+                            padding: 0,
+                            marginLeft: 4,
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--db-accent)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Create new donor
+                        </button>
+                        .
+                      </div>
+                    ) : filteredDonors.length === 0 ? (
+                      <div style={{ padding: 8, fontSize: 12, color: 'var(--db-muted)' }}>
+                        No donors match your search.{' '}
+                        <button
+                          type="button"
+                          onClick={switchToNewDonor}
+                          style={{
+                            padding: 0,
+                            marginLeft: 4,
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--db-accent)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Create new donor
+                        </button>
+                        .
+                      </div>
+                    ) : (
+                      filteredDonors.map((d) => {
+                        const initials = d.fullName
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2);
+                        const selected = form.donorId === d.id;
+                        return (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => updateForm('donorId', d.id)}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 8,
+                              padding: '6px 8px',
+                              borderRadius: 8,
+                              border: selected ? '1px solid var(--db-accent)' : '1px solid transparent',
+                              background: selected ? 'var(--db-accent-soft)' : 'transparent',
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              textAlign: 'left',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div className="db-donor-avatar" style={{ fontSize: 10 }}>
+                                {initials}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ color: 'var(--db-td-em)' }}>{d.fullName}</span>
+                                <span style={{ fontSize: 11, color: 'var(--db-muted)' }}>{d.phone}</span>
+                              </div>
+                            </div>
+                            {selected && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: 'var(--db-accent-deep)',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                ✓ Selected
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  {selectedDonor && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontSize: 11,
+                        color: 'var(--db-muted)',
+                      }}
+                    >
+                      Selected donor:{' '}
+                      <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>
+                        {selectedDonor.fullName}
+                      </span>{' '}
+                      <span>({selectedDonor.phone})</span>
+                    </div>
+                  )}
+                  {submitAttempted && !form.donorId && (
+                    <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-danger)' }}>
+                      Please select a donor.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div className="db-field" style={{ flex: 1 }}>
+                    <label className="db-label">Full name *</label>
                     <input
                       className="db-input"
-                      placeholder="Search by name or phone"
-                      value={donorSearch}
-                      onChange={(e) => setDonorSearch(e.target.value)}
-                      disabled={donorsLoading || donors.length === 0}
-                    />
-                    <select
-                      className="db-select"
-                      value={form.donorId}
-                      onChange={(e) => updateForm('donorId', e.target.value)}
-                      disabled={donorsLoading || donors.length === 0}
+                      value={form.donorFullName}
+                      onChange={(e) => updateForm('donorFullName', e.target.value)}
+                      placeholder="e.g. Abdullah-Al-Mamun"
                       required
-                    >
-                      <option value="">
-                        {donorsLoading
-                          ? 'Loading donors…'
-                          : donors.length === 0
-                          ? 'No donors found. Switch to “New donor”.'
-                          : filteredDonors.length === 0
-                          ? 'No donors match your search.'
-                          : 'Select donor'}
-                      </option>
-                      {filteredDonors.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.fullName} ({d.phone})
-                        </option>
-                      ))}
-                    </select>
+                    />
+                    {submitAttempted && !form.donorFullName.trim() && (
+                      <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-danger)' }}>
+                        Full name is required.
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div className="db-field" style={{ flex: 1 }}>
-                      <label className="db-label">Full name *</label>
-                      <input
-                        className="db-input"
-                        value={form.donorFullName}
-                        onChange={(e) => updateForm('donorFullName', e.target.value)}
-                        placeholder="Donor full name"
-                        required
-                      />
-                    </div>
-                    <div className="db-field" style={{ flex: 1 }}>
-                      <label className="db-label">Phone *</label>
-                      <input
-                        className="db-input"
-                        type="tel"
-                        inputMode="tel"
-                        value={form.donorPhone}
-                        onChange={(e) => updateForm('donorPhone', e.target.value)}
-                        placeholder="+880…"
-                        required
-                      />
-                    </div>
+                  <div className="db-field" style={{ flex: 1 }}>
+                    <label className="db-label">Phone *</label>
+                    <input
+                      className="db-input"
+                      type="tel"
+                      inputMode="numeric"
+                      value={form.donorPhone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="+880 1XXXXXXXXX"
+                      required
+                    />
+                    {submitAttempted && !form.donorPhone.trim() && (
+                      <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-danger)' }}>
+                        Phone number is required.
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="db-field">
-                <label className="db-label">Amount (BDT) *</label>
+                </div>
+              )}
+            </div>
+
+            <div className="db-field">
+              <label className="db-label">
+                Amount ৳ <span style={{ color: 'var(--db-danger)' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    border: '1px solid var(--db-card-bd)',
+                    background: 'var(--db-card-bg-soft)',
+                    fontSize: 13,
+                  }}
+                >
+                  ৳
+                </div>
                 <input
                   className="db-input"
+                  style={{ flex: 1 }}
                   type="number"
                   min="0"
                   step="1"
                   value={form.amount}
                   onChange={(e) => updateForm('amount', e.target.value)}
-                  placeholder="0"
+                  placeholder="0.00"
                   required
                 />
               </div>
+              {submitAttempted && amountInvalid && (
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-danger)' }}>
+                  Amount must be greater than 0.
+                </div>
+              )}
             </div>
 
             <div className="db-form-row">
               <div className="db-field">
-                <label className="db-label">Payment Method</label>
+                <label className="db-label">
+                  Payment Method <span style={{ color: 'var(--db-danger)' }}>*</span>
+                </label>
                 <select
                   className="db-select"
                   value={form.paymentMethod}
                   onChange={(e) => updateForm('paymentMethod', e.target.value)}
+                  required
                 >
+                  <option value="">Select payment method</option>
                   <option value="CASH">Cash</option>
                   <option value="BKASH">bKash</option>
                   <option value="NAGAD">Nagad</option>
                   <option value="BANK">Bank</option>
                 </select>
+                {submitAttempted && !form.paymentMethod && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-danger)' }}>
+                    Please select a payment method.
+                  </div>
+                )}
               </div>
               <div className="db-field">
                 <label className="db-label">Date *</label>
@@ -532,16 +721,20 @@ export default function AdminDonationsPage() {
                   onChange={(e) => updateForm('donationDate', e.target.value)}
                   required
                 />
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--db-muted)' }}>
+                  Auto-filled with today; you can change it.
+                </div>
               </div>
             </div>
 
             <div className="db-field">
-              <label className="db-label">Note</label>
+              <label className="db-label">Note (optional)</label>
               <textarea
                 className="db-textarea"
+                rows={3}
                 value={form.note}
                 onChange={(e) => updateForm('note', e.target.value)}
-                placeholder="Optional notes…"
+                placeholder="Add any specific instructions or remarks…"
               />
             </div>
 
