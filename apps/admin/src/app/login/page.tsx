@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,33 +19,61 @@ export default function LoginPage() {
     const supabase = createSupabaseBrowserClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (signInError) {
-      setError(signInError.message);
-      return;
-    }
-    const next = params.get('next') || '/';
-    router.replace(next);
+    if (signInError) { setError(signInError.message); return; }
+    router.replace(params.get('next') || '/');
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: '48px auto', padding: 24 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Mahfil Fund Admin</h1>
-      <p style={{ color: '#6b7280', marginBottom: 24 }}>Login to continue</p>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Email</span>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-        </label>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Password</span>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
-        </label>
-        {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
-        <button disabled={loading} type="submit">
-          {loading ? 'Signing in...' : 'Login'}
-        </button>
-      </form>
-    </main>
+    <div className="db-login-page">
+      <div className="db-login-card">
+        <div className="db-login-brand">
+          <div className="db-login-icon">🕌</div>
+          <div>
+            <div className="db-login-brand-name">Iftar Manager</div>
+            <div className="db-login-brand-role">Admin Control Panel</div>
+          </div>
+        </div>
+
+        <div className="db-login-title">Welcome back</div>
+        <div className="db-login-subtitle">Sign in to continue to the admin portal.</div>
+
+        <form onSubmit={onSubmit}>
+          <div className="db-login-field">
+            <label className="db-login-label" htmlFor="email">Email address</label>
+            <input
+              id="email"
+              className="db-login-input"
+              type="email"
+              placeholder="admin@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+          <div className="db-login-field">
+            <label className="db-login-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="db-login-input"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          <button className="db-login-btn" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign In'}
+          </button>
+          {error && <div className="db-login-error">{error}</div>}
+        </form>
+      </div>
+    </div>
   );
 }
 
+export default function LoginPage() {
+  return <Suspense><LoginForm /></Suspense>;
+}

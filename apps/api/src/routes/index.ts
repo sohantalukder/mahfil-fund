@@ -7,6 +7,7 @@ import { registerExpenseRoutes } from './expenses.js';
 import { registerSyncRoutes } from './sync.js';
 import { registerAuditLogRoutes } from './auditLogs.js';
 import { registerReportRoutes } from './reports.js';
+import { registerUserRoutes } from './users.js';
 
 export function registerRoutes(app: FastifyInstance) {
   app.get('/health', async (req) => {
@@ -35,5 +36,6 @@ export function registerRoutes(app: FastifyInstance) {
   registerSyncRoutes(app);
   registerAuditLogRoutes(app);
   registerReportRoutes(app);
+  registerUserRoutes(app);
 }
 
