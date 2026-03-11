@@ -51,13 +51,13 @@ export default function DashboardPage() {
       const user = data.user;
       if (!user) return;
       const fullName: string =
-        (user.user_metadata as any)?.full_name || user.email?.split('@')[0] || 'Friend';
+        (user.user_metadata as Record<string, string>)?.full_name || user.email?.split('@')[0] || 'Friend';
       setDisplayName(fullName);
     });
 
     const api = getApi();
-    api.get<any>('/me').then((res) => {
-      if (res.success) setRoles((res.data as any)?.user?.roles ?? []);
+    api.get<{ user?: { roles?: string[] } }>('/me').then((res) => {
+      if (res.success) setRoles((res.data as { user?: { roles?: string[] } })?.user?.roles ?? []);
     });
   }, []);
 
@@ -65,9 +65,9 @@ export default function DashboardPage() {
     ['user-summary'],
     async () => {
       const api = getApi();
-      const res = await api.get<any>('/reports/user-summary');
+      const res = await api.get<Record<string, unknown>>('/reports/user-summary');
       if (!res.success) throw new Error(res.error.message);
-      const raw = res.data as any;
+      const raw = res.data as Record<string, unknown>;
       return {
         totalDonated: raw.totalDonated ?? 0,
         lastDonationAmount: raw.lastDonationAmount ?? null,
@@ -82,10 +82,10 @@ export default function DashboardPage() {
     ['user-donations-latest'],
     async () => {
       const api = getApi();
-      const res = await api.get<any>('/donations?scope=me&limit=5');
+      const res = await api.get<{ donations?: unknown[]; [key: string]: unknown }>('/donations?scope=me&limit=5');
       if (!res.success) throw new Error(res.error.message);
-      const d = res.data as any;
-      return ((d.donations ?? d ?? []) as any[]).map((item) => ({
+      const d = res.data as { donations?: unknown[] } | unknown[];
+      return ((Array.isArray(d) ? d : ((d as { donations?: unknown[] }).donations ?? [])) as Record<string, unknown>[]).map((item) => ({
         id: item.id,
         amount: item.amount,
         eventName: item.eventName ?? item.eventSnapshotName,

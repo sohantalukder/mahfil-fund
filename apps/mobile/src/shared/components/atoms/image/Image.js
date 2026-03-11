@@ -58,8 +58,16 @@ const ImagePreview = ({ source, resizeMode = 'cover', borderRadius = 0, cache: _
         if (sourceObj?.uri) {
             return {
                 uri: sourceObj.uri,
-                priority: _priority === 'high' ? FastImage.priority.high : _priority === 'low' ? FastImage.priority.low : FastImage.priority.normal,
-                cache: _cache === 'web' ? FastImage.cacheControl.web : _cache === 'cacheOnly' ? FastImage.cacheControl.cacheOnly : FastImage.cacheControl.immutable,
+                priority: _priority === 'high'
+                    ? FastImage.priority.high
+                    : _priority === 'low'
+                        ? FastImage.priority.low
+                        : FastImage.priority.normal,
+                cache: _cache === 'web'
+                    ? FastImage.cacheControl.web
+                    : _cache === 'cacheOnly'
+                        ? FastImage.cacheControl.cacheOnly
+                        : FastImage.cacheControl.immutable,
             };
         }
         return undefined;

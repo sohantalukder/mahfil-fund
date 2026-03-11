@@ -4,7 +4,9 @@ import { api } from '@/services/api/apiClient';
 import { useStore } from '@/state/store';
 export async function refreshPendingCount() {
     const mutations = database.collections.get('offline_mutations');
-    const pending = await mutations.query(Q.where('status', Q.oneOf(['PENDING', 'FAILED']))).fetchCount();
+    const pending = await mutations
+        .query(Q.where('status', Q.oneOf(['PENDING', 'FAILED'])))
+        .fetchCount();
     useStore.getState().setSyncStatus({ pendingCount: pending });
 }
 export async function runSync() {
@@ -21,19 +23,25 @@ export async function runSync() {
             useStore.getState().setSyncStatus({ isSyncing: false });
             return;
         }
-        const ops = mutations.map((m) => ({
-            opId: m.opId,
-            entity: m.entity,
-            op: m.op,
-            payload: m.payload,
-        }));
+        const ops = mutations.map((m) => {
+            const rec = m;
+            return {
+                opId: rec.opId,
+                entity: rec.entity,
+                op: rec.op,
+                payload: rec.payload,
+            };
+        });
         // Mark as syncing
         await database.write(async () => {
             for (const m of mutations) {
                 await m.update((x) => {
-                    x.status = 'SYNCING';
-                    x.lastAttemptAtMs = Date.now();
-                    x.error = null;
+                    const rec = x;
+                    Object.assign(rec, {
+                        status: 'SYNCING',
+                        lastAttemptAtMs: Date.now(),
+                        error: null,
+                    });
                 });
             }
         });
@@ -44,25 +52,33 @@ export async function runSync() {
         await database.write(async () => {
             const donorsCollection = database.collections.get('donors');
             for (const m of mutations) {
-                const r = byOpId.get(m.opId);
+                const mRec = m;
+                const r = byOpId.get(mRec.opId);
                 if (!r)
                     continue;
                 if (r.success) {
                     await m.update((x) => {
-                        x.status = 'SYNCED';
-                        x.error = null;
+                        Object.assign(x, {
+                            status: 'SYNCED',
+                            error: null,
+                        });
                     });
                     // Best-effort: update donor sync status if mutation payload had clientGeneratedId
-                    if (m.entity === 'donor' && m.op === 'create') {
-                        const payload = m.payload;
+                    if (mRec.entity === 'donor' && mRec.op === 'create') {
+                        const payload = mRec.payload;
                         const cg = payload?.clientGeneratedId;
                         if (typeof cg === 'string') {
-                            const matches = await donorsCollection.query(Q.where('client_generated_id', cg)).fetch();
+                            const matches = await donorsCollection
+                                .query(Q.where('client_generated_id', cg))
+                                .fetch();
                             for (const d of matches) {
                                 await d.update((dd) => {
-                                    dd.syncState = 'SYNCED';
-                                    dd.serverId = r.serverId ?? dd.serverId;
-                                    dd.updatedAtMs = Date.now();
+                                    const ddRec = dd;
+                                    Object.assign(ddRec, {
+                                        syncState: 'SYNCED',
+                                        serverId: r.serverId ?? ddRec.serverId,
+                                        updatedAtMs: Date.now(),
+                                    });
                                 });
                             }
                         }
@@ -70,9 +86,12 @@ export async function runSync() {
                 }
                 else {
                     await m.update((x) => {
-                        x.status = 'FAILED';
-                        x.retryCount = (x.retryCount ?? 0) + 1;
-                        x.error = r.error ?? 'Failed';
+                        const xRec = x;
+                        Object.assign(xRec, {
+                            status: 'FAILED',
+                            retryCount: (xRec.retryCount ?? 0) + 1,
+                            error: r.error ?? 'Failed',
+                        });
                     });
                 }
             }
@@ -81,7 +100,9 @@ export async function runSync() {
         await refreshPendingCount();
     }
     catch (e) {
-        useStore.getState().setSyncStatus({ lastError: e instanceof Error ? e.message : 'Sync failed' });
+        useStore.getState().setSyncStatus({
+            lastError: e instanceof Error ? e.message : 'Sync failed',
+        });
         await refreshPendingCount();
     }
     finally {

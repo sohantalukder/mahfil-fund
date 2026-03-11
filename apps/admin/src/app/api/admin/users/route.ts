@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ user: data.user }, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Internal error' }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Internal error' }, { status: 500 });
   }
 }

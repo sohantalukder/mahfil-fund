@@ -7,4 +7,3 @@ export class AppMetaModel extends Model {
   @field('key') key!: string;
   @field('value') value!: string;
 }
-

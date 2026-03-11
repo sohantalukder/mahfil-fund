@@ -43,9 +43,13 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
       try {
         const api = createApiClient({
           baseUrl: appConfig.api.baseUrl,
-          getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+          getAccessToken: async () =>
+            (await supabase.auth.getSession()).data.session?.access_token ??
+            null,
         });
-        const me = await api.get<{ user: { id: string; authUserId: string; roles: UserRole[] } }>('/me');
+        const me = await api.get<{
+          user: { id: string; authUserId: string; roles: UserRole[] };
+        }>('/me');
         if (me.success) {
           const email = data.session.user.email ?? undefined;
           set({
@@ -71,9 +75,13 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
     set({ isBootstrapped: true });
   },
   login: async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
-    if (data.session?.access_token) localStore.setApiToken(data.session.access_token);
+    if (data.session?.access_token)
+      localStore.setApiToken(data.session.access_token);
     set({ isAuthenticated: true, isOfflineMode: false });
   },
   logout: () => {

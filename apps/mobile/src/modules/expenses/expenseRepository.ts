@@ -25,38 +25,43 @@ export async function createExpenseOffline(draft: ExpenseDraft) {
   const now = Date.now();
 
   await database.write(async () => {
-    await expenses.create((e: any) => {
-      e.serverId = null;
-      e.clientGeneratedId = clientGeneratedId;
-      e.eventId = draft.eventId;
-      e.title = draft.title;
-      e.category = draft.category;
-      e.amount = draft.amount;
-      e.expenseDateMs = draft.expenseDate.getTime();
-      e.syncState = 'PENDING';
-      e.updatedAtMs = now;
-    });
-
-    await mutations.create((m: any) => {
-      m.opId = opId;
-      m.entity = 'expense';
-      m.op = 'create';
-      m.payloadJson = JSON.stringify({
+    await expenses.create((e) => {
+      const rec = e as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        serverId: null,
+        clientGeneratedId,
         eventId: draft.eventId,
         title: draft.title,
         category: draft.category,
         amount: draft.amount,
-        expenseDate: draft.expenseDate.toISOString(),
-        clientGeneratedId,
+        expenseDateMs: draft.expenseDate.getTime(),
+        syncState: 'PENDING',
+        updatedAtMs: now,
       });
-      m.status = 'PENDING';
-      m.retryCount = 0;
-      m.lastAttemptAtMs = null;
-      m.error = null;
-      m.createdAtMs = now;
+    });
+
+    await mutations.create((m) => {
+      const rec = m as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        opId,
+        entity: 'expense',
+        op: 'create',
+        payloadJson: JSON.stringify({
+          eventId: draft.eventId,
+          title: draft.title,
+          category: draft.category,
+          amount: draft.amount,
+          expenseDate: draft.expenseDate.toISOString(),
+          clientGeneratedId,
+        }),
+        status: 'PENDING',
+        retryCount: 0,
+        lastAttemptAtMs: null,
+        error: null,
+        createdAtMs: now,
+      });
     });
   });
 
   return { opId, clientGeneratedId };
 }
-

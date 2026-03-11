@@ -19,7 +19,8 @@ export const createAuthSlice = (set) => ({
             try {
                 const api = createApiClient({
                     baseUrl: appConfig.api.baseUrl,
-                    getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+                    getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ??
+                        null,
                 });
                 const me = await api.get('/me');
                 if (me.success) {
@@ -50,7 +51,10 @@ export const createAuthSlice = (set) => ({
         set({ isBootstrapped: true });
     },
     login: async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
         if (error)
             throw error;
         if (data.session?.access_token)

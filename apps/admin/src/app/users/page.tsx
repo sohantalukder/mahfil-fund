@@ -62,12 +62,18 @@ export default function AdminUsersPage() {
     ]);
     setLoading(false);
     if (!usersRes.success) { setError(usersRes.error.message); return; }
-    if (meRes.success) setMe((meRes.data as any).user ?? meRes.data);
-    const list = (usersRes.data as any).users ?? usersRes.data ?? [];
+    if (meRes.success) {
+      const meData = meRes.data as { user?: { id: string; roles: string[] } } | { id: string; roles: string[] };
+      setMe((meData as { user?: { id: string; roles: string[] } }).user ?? (meData as { id: string; roles: string[] }));
+    }
+    const ud = usersRes.data as { users?: AppUser[] } | AppUser[];
+    const list: AppUser[] = Array.isArray(ud) ? ud : (ud.users ?? []);
     setUsers(list);
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    (async () => { await load(); })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function invite() {
     setInviting(true); setError(null);
@@ -344,7 +350,7 @@ export default function AdminUsersPage() {
               Edit Roles — {roleModal.fullName || roleModal.email || roleModal.id.slice(0, 8)}
             </div>
             <p style={{ fontSize: 13, color: 'var(--db-td)', marginBottom: 16 }}>
-              Select one or more roles. Changes take effect on the user's next request.
+              Select one or more roles. Changes take effect on the user&apos;s next request.
             </p>
             <div style={{ display: 'grid', gap: 10 }}>
               {ALL_ROLES.map((role) => {

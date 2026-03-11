@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node_modules/.bin/turbo typecheck:*)"
+      "Bash(node_modules/.bin/turbo typecheck:*)",
+      "Bash(./node_modules/.bin/eslint src/app/users/page.tsx)",
+      "Bash(./node_modules/.bin/eslint .)",
+      "Bash(./node_modules/.bin/eslint src/modules/donations/donationRepository.ts)",
+      "Bash(./node_modules/.bin/eslint src/services/sync/syncService.ts)",
+      "Bash(./node_modules/.bin/eslint src/services/sync/syncService.js)",
+      "Bash(./node_modules/.bin/eslint src/services/supabase/supabaseClient.ts)"
     ]
   }
 }

@@ -31,10 +31,21 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(false);
   const [eventsLoading, setEventsLoading] = useState(true);
 
+  async function loadSummary(id = eventId) {
+    if (!id) return;
+    setLoading(true); setError(null);
+    const res = await api.get<{ summary?: EventSummary } | EventSummary>(`/reports/event-summary?eventId=${id}`);
+    setLoading(false);
+    if (!res.success) { setError(res.error.message); return; }
+    const d = res.data as { summary?: EventSummary } | EventSummary;
+    setSummary((d as { summary?: EventSummary }).summary ?? (d as EventSummary));
+  }
+
   useEffect(() => {
-    api.get<{ events: Event[] }>('/events')
+    api.get<{ events?: Event[] } | Event[]>('/events')
       .then((res) => {
-        const list = res.success ? ((res.data as any).events ?? res.data ?? []) : [];
+        const d = res.success ? res.data : ([] as Event[]);
+        const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
         setEvents(list);
         const active = list.find((e: Event) => e.isActive) || list[0];
         if (active) { setEventId(active.id); loadSummary(active.id); }
@@ -42,15 +53,6 @@ export default function AdminReportsPage() {
       .catch(() => {})
       .finally(() => setEventsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function loadSummary(id = eventId) {
-    if (!id) return;
-    setLoading(true); setError(null);
-    const res = await api.get<EventSummary>(`/reports/event-summary?eventId=${id}`);
-    setLoading(false);
-    if (!res.success) { setError(res.error.message); return; }
-    setSummary((res.data as any).summary ?? res.data);
-  }
 
   const balanceColor = summary && summary.balance >= 0 ? '#059669' : '#dc2626';
 

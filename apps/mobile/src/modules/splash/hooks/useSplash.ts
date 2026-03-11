@@ -90,7 +90,6 @@ const useSplash = () => {
             if (!isMounted) return;
             completeSplash();
           });
-
       });
     };
 

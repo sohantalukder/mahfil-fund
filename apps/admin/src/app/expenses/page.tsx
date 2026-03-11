@@ -52,10 +52,21 @@ export default function AdminExpensesPage() {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
 
+  async function load(id = eventId) {
+    if (!id) return;
+    setLoading(true);
+    const res = await api.get<{ expenses?: Expense[] } | Expense[]>(`/expenses?eventId=${id}`);
+    setLoading(false);
+    if (!res.success) { toast(res.error.message, 'error'); return; }
+    const d = res.data as { expenses?: Expense[] } | Expense[];
+    setExpenses(Array.isArray(d) ? d : (d.expenses ?? []));
+  }
+
   useEffect(() => {
-    api.get<{ events: Event[] }>('/events')
+    api.get<{ events?: Event[] } | Event[]>('/events')
       .then((res) => {
-        const list = res.success ? ((res.data as any).events ?? res.data ?? []) : [];
+        const d = res.success ? res.data : ([] as Event[]);
+        const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
         setEvents(list);
         const active = list.find((e: Event) => e.isActive) || list[0];
         if (active) { setEventId(active.id); load(active.id); }
@@ -63,15 +74,6 @@ export default function AdminExpensesPage() {
       .catch(() => {})
       .finally(() => setEventsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function load(id = eventId) {
-    if (!id) return;
-    setLoading(true);
-    const res = await api.get<{ expenses: Expense[] }>(`/expenses?eventId=${id}`);
-    setLoading(false);
-    if (!res.success) { toast(res.error.message, 'error'); return; }
-    setExpenses((res.data as any).expenses ?? res.data ?? []);
-  }
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(x: Expense) {
@@ -96,7 +98,7 @@ export default function AdminExpensesPage() {
     setDeleting(true);
     const res = await api.delete(`/expenses/${deleteTarget.id}`);
     setDeleting(false);
-    if (!res.success) { toast((res as any).error?.message || 'Delete failed', 'error'); return; }
+    if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
     toast(`"${deleteTarget.title}" deleted.`, 'success');
     setDeleteTarget(null); load();
   }

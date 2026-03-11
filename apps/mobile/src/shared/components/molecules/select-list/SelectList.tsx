@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, TouchableOpacity, Animated, TextInput, Keyboard, FlatList, Pressable } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Animated,
+  TextInput,
+  Keyboard,
+  FlatList,
+  Pressable,
+} from 'react-native';
 import { useTheme } from '@/theme';
 import IconByVariant from '../../atoms/icon-by-variant/IconByVariant';
 import AnimatedLabel from '../../atoms/text-input/AnimatedLabel';
@@ -62,7 +70,9 @@ const SelectList: React.FC<SelectListProps> = ({
   const [selectedVal, setSelectedVal] = React.useState<string | undefined>('');
   const [height, setHeight] = React.useState<number>(maxHeight ?? 200);
   const [isFocused, setIsFocused] = React.useState(false);
-  const animatedValue = React.useRef(new Animated.Value(dropdown ? height : 0)).current;
+  const animatedValue = React.useRef(
+    new Animated.Value(dropdown ? height : 0)
+  ).current;
 
   // Memoized style objects to avoid inline styles
   const searchInputStyle = React.useMemo(
@@ -97,7 +107,10 @@ const SelectList: React.FC<SelectListProps> = ({
   );
 
   const containerStyle = React.useMemo(
-    () => [styles.container, { zIndex: dropdown ? SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 }],
+    () => [
+      styles.container,
+      { zIndex: dropdown ? SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 },
+    ],
     [styles.container, dropdown]
   );
 
@@ -179,8 +192,10 @@ const SelectList: React.FC<SelectListProps> = ({
     if (!defaultOption || !validateSelectItem(defaultOption)) return;
 
     // Handle both key and value, including falsy values like 0 or empty string
-    const hasValidKey = defaultOption.key !== undefined && defaultOption.key !== null;
-    const hasValidValue = defaultOption.value !== undefined && defaultOption.value !== null;
+    const hasValidKey =
+      defaultOption.key !== undefined && defaultOption.key !== null;
+    const hasValidValue =
+      defaultOption.value !== undefined && defaultOption.value !== null;
 
     if (hasValidKey) {
       setSelectedVal(defaultOption.value?.toString() ?? '');
@@ -223,7 +238,9 @@ const SelectList: React.FC<SelectListProps> = ({
     // Filter out invalid items and validate
     const validData = data.filter(validateSelectItem);
     if (validData.length !== data.length) {
-      logger.warn('SelectList: Some items in data array are invalid and were filtered out');
+      logger.warn(
+        'SelectList: Some items in data array are invalid and were filtered out'
+      );
     }
 
     const q = query.trim().toLowerCase();
@@ -265,12 +282,24 @@ const SelectList: React.FC<SelectListProps> = ({
       const value = item.value ?? '';
       const disabled = !!item.disabled;
 
-      const itemStyle = [gutters.paddingHorizontal_20, gutters.paddingVertical_10];
+      const itemStyle = [
+        gutters.paddingHorizontal_20,
+        gutters.paddingVertical_10,
+      ];
 
-      const disabledItemStyle = [...itemStyle, { backgroundColor: colors.gray1, opacity: 0.5 }];
+      const disabledItemStyle = [
+        ...itemStyle,
+        { backgroundColor: colors.gray1, opacity: 0.5 },
+      ];
 
-      const disabledTextStyle = [{ color: colors.gray4, fontFamily }, disabledTextStyles];
-      const enabledTextStyle = [{ fontFamily, color: colors.text }, dropdownTextStyles];
+      const disabledTextStyle = [
+        { color: colors.gray4, fontFamily },
+        disabledTextStyles,
+      ];
+      const enabledTextStyle = [
+        { fontFamily, color: colors.text },
+        dropdownTextStyles,
+      ];
 
       if (disabled) {
         return (
@@ -312,7 +341,8 @@ const SelectList: React.FC<SelectListProps> = ({
    * @param index - The index of the item
    * @returns Unique string key
    */
-  const keyExtractor = (item: SelectItem, index: number) => String(item?.key ?? item?.value ?? index);
+  const keyExtractor = (item: SelectItem, index: number) =>
+    String(item?.key ?? item?.value ?? index);
 
   return (
     <View style={containerStyle}>
@@ -331,7 +361,13 @@ const SelectList: React.FC<SelectListProps> = ({
       />
 
       {dropdown && search ? (
-        <View style={[styles.select, isFocused && styles.activeContainer, boxStyles]}>
+        <View
+          style={[
+            styles.select,
+            isFocused && styles.activeContainer,
+            boxStyles,
+          ]}
+        >
           <View style={[layout.row, layout.itemsCenter, layout.flex_1]}>
             <TextInput
               placeholder={searchPlaceholder}
@@ -355,7 +391,11 @@ const SelectList: React.FC<SelectListProps> = ({
         </View>
       ) : (
         <TouchableOpacity
-          style={[styles.select, isFocused && styles.activeContainer, boxStyles]}
+          style={[
+            styles.select,
+            isFocused && styles.activeContainer,
+            boxStyles,
+          ]}
           onPress={() => {
             if (!dropdown) {
               Keyboard.dismiss();
@@ -368,7 +408,9 @@ const SelectList: React.FC<SelectListProps> = ({
           accessibilityLabel="Open dropdown"
         >
           <Text style={[baseTextStyle, selectedTextColorStyle, inputStyles]}>
-            {selectedVal === '' && isFocused ? placeholder || 'Select option' : String(selectedVal)}
+            {selectedVal === '' && isFocused
+              ? placeholder || 'Select option'
+              : String(selectedVal)}
           </Text>
 
           <View style={styles.arrow}>
@@ -401,7 +443,11 @@ const SelectList: React.FC<SelectListProps> = ({
             })}
             ListEmptyComponent={
               <TouchableOpacity
-                style={[gutters.paddingHorizontal_20, gutters.paddingVertical_10, dropdownItemStyles]}
+                style={[
+                  gutters.paddingHorizontal_20,
+                  gutters.paddingVertical_10,
+                  dropdownItemStyles,
+                ]}
                 onPress={() => {
                   setSelected(undefined);
                   setSelectedVal('');
@@ -409,7 +455,9 @@ const SelectList: React.FC<SelectListProps> = ({
                   slideUp();
                 }}
               >
-                <Text style={[emptyTextStyle, dropdownTextStyles]}>{notFoundText}</Text>
+                <Text style={[emptyTextStyle, dropdownTextStyles]}>
+                  {notFoundText}
+                </Text>
               </TouchableOpacity>
             }
           />

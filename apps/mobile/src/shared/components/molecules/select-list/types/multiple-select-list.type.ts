@@ -8,4 +8,3 @@ export type MultipleSelectListProps = {
   values: string[];
   onChange: (values: string[]) => void;
 };
-

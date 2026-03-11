@@ -61,7 +61,7 @@ export class Http {
   private setupInterceptors(): void {
     // Add request interceptors
     this.axiosInstance.interceptors.request.use(
-     async (config: InternalAxiosRequestConfig) => {
+      async (config: InternalAxiosRequestConfig) => {
         // Log request
         if (__DEV__) {
           console.warn('🚀 Request:', {
@@ -72,7 +72,6 @@ export class Http {
             params: config.params,
           });
         }
-
 
         const isNetwork = await NetInfo.fetch();
         if (!isNetwork.isConnected) {
@@ -94,45 +93,44 @@ export class Http {
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
         // Log response
-       logger.warn('✅ Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            url:
-              this.axiosInstance.defaults.baseURL +
-              '/' +
-              (response.config?.url || ''),
-            headers: response.headers,
-            data: response.data,
-          });
-        
+        logger.warn('✅ Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          url:
+            this.axiosInstance.defaults.baseURL +
+            '/' +
+            (response.config?.url || ''),
+          headers: response.headers,
+          data: response.data,
+        });
+
         return response;
       },
       async (error: AxiosError) => {
         // Log error
-      
-          if (axios.isAxiosError(error)) {
-            logger.warn('❌ Error:', {
-              status: error.response?.status,
-              statusText: error.response?.statusText,
-              url:
-                this.axiosInstance.defaults.baseURL +
-                '/' +
-                (error.config?.url || ''),
-              headers: error.response?.headers,
-              data: error.response?.data,
-              message: error.message,
-            });
-          } else {
-            logger.warn('❌ Error:', error);
-          }
-        
+
+        if (axios.isAxiosError(error)) {
+          logger.warn('❌ Error:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            url:
+              this.axiosInstance.defaults.baseURL +
+              '/' +
+              (error.config?.url || ''),
+            headers: error.response?.headers,
+            data: error.response?.data,
+            message: error.message,
+          });
+        } else {
+          logger.warn('❌ Error:', error);
+        }
 
         const originalRequest = error.config as InternalAxiosRequestConfig & {
           _retryCount?: number;
         };
 
         // Handle timeout errors with retry mechanism (production only)
-          if (!__DEV__ && error.code === 'ECONNABORTED') {
+        if (!__DEV__ && error.code === 'ECONNABORTED') {
           originalRequest._retryCount = originalRequest._retryCount || 0;
           if (originalRequest._retryCount < Http.RETRY_LIMIT) {
             originalRequest._retryCount += 1;

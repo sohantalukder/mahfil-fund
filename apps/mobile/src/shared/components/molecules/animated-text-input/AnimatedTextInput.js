@@ -6,13 +6,13 @@ import { useTheme } from '@/theme';
 import { fontWeight } from '@/theme/fonts';
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { TextInput } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, interpolate } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, interpolate, } from 'react-native-reanimated';
 // Constants moved outside component to prevent recreation
 const DEFAULT_SEARCH_WIDTH = 32;
 const ANIMATED_SEARCH_WIDTH = rs('wf') - 80;
 // Animation configs - memoized to prevent recreation
 const TIMING_CONFIG = { duration: 300 };
-const AnimatedTextInput = ({ onExpandChange, onSearch, value = '' }) => {
+const AnimatedTextInput = ({ onExpandChange, onSearch, value = '', }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const { layout, colors, gutters } = useTheme();
     const textInputRef = useRef(null);

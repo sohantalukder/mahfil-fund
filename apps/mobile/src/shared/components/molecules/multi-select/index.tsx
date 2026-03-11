@@ -62,17 +62,24 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
   const styles = React.useMemo(() => multiSelectStyles({ colors }), [colors]);
 
   const [dropdown, setDropdown] = React.useState<boolean>(dropdownShown);
-  const [selectedVal, setSelectedVal] = React.useState<KeyOrValue[]>(selectedValues);
+  const [selectedVal, setSelectedVal] =
+    React.useState<KeyOrValue[]>(selectedValues);
   const [isFocused, setIsFocused] = React.useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = React.useState('');
   const [showAllBadges, setShowAllBadges] = React.useState(false);
 
-  const animatedValue = React.useRef(new Animated.Value(dropdown ? maxHeight ?? 350 : 0)).current;
+  const animatedValue = React.useRef(
+    new Animated.Value(dropdown ? (maxHeight ?? 350) : 0)
+  ).current;
 
   const currentSearchQuery = externalSearchQuery ?? internalSearchQuery;
 
   const debouncedSearchChange = React.useMemo(
-    () => debounceHandler((q: string) => onSearchChange?.(q), MULTI_SELECT_LIST_CONSTANTS.SEARCH_DEBOUNCE_MS),
+    () =>
+      debounceHandler(
+        (q: string) => onSearchChange?.(q),
+        MULTI_SELECT_LIST_CONSTANTS.SEARCH_DEBOUNCE_MS
+      ),
     [onSearchChange]
   );
 
@@ -193,10 +200,13 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
     (item: MultiSelectItem) => {
       const stored = getStoredValue(item, save);
       const isAlready = selectedVal.includes(stored);
-      const next = isAlready ? selectedVal.filter((v) => v !== stored) : [...selectedVal, stored];
+      const next = isAlready
+        ? selectedVal.filter((v) => v !== stored)
+        : [...selectedVal, stored];
       setSelectedVal(next);
       notifySelect(next);
-      if (next.length <= MULTI_SELECT_LIST_CONSTANTS.MAX_VISIBLE_BADGES) setShowAllBadges(false);
+      if (next.length <= MULTI_SELECT_LIST_CONSTANTS.MAX_VISIBLE_BADGES)
+        setShowAllBadges(false);
     },
     [selectedVal, save, notifySelect]
   );
@@ -206,7 +216,8 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
       const next = selectedVal.filter((v) => v !== stored);
       setSelectedVal(next);
       notifySelect(next);
-      if (next.length <= MULTI_SELECT_LIST_CONSTANTS.MAX_VISIBLE_BADGES) setShowAllBadges(false);
+      if (next.length <= MULTI_SELECT_LIST_CONSTANTS.MAX_VISIBLE_BADGES)
+        setShowAllBadges(false);
     },
     [selectedVal, notifySelect]
   );
@@ -215,7 +226,13 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
     if (!isLoading) return null;
     if (loadingComponent) return loadingComponent;
     return (
-      <View style={[gutters.paddingVertical_10, layout.justifyCenter, layout.itemsCenter]}>
+      <View
+        style={[
+          gutters.paddingVertical_10,
+          layout.justifyCenter,
+          layout.itemsCenter,
+        ]}
+      >
         <ActivityIndicator
           size="small"
           color={colors.primary}
@@ -232,7 +249,8 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
   ]);
 
   const keyExtractor = React.useCallback(
-    (item: MultiSelectItem, index: number) => String(item?.key ?? item?.value ?? index),
+    (item: MultiSelectItem, index: number) =>
+      String(item?.key ?? item?.value ?? index),
     []
   );
 
@@ -246,7 +264,10 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
   );
 
   const containerStyle = React.useMemo(
-    () => [styles.container, { zIndex: dropdown ? MULTI_SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 }],
+    () => [
+      styles.container,
+      { zIndex: dropdown ? MULTI_SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 },
+    ],
     [styles.container, dropdown]
   );
 
@@ -325,7 +346,13 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
       </TouchableOpacity>
 
       {dropdown && search ? (
-        <View style={[styles.select, isFocused && styles.activeContainer, boxStyles]}>
+        <View
+          style={[
+            styles.select,
+            isFocused && styles.activeContainer,
+            boxStyles,
+          ]}
+        >
           <View style={[layout.row, layout.itemsCenter, layout.flex_1]}>
             <TextInput
               placeholder={searchPlaceholder}
@@ -348,7 +375,11 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
         </View>
       ) : (
         <TouchableOpacity
-          style={[styles.select, isFocused && styles.activeContainer, boxStyles]}
+          style={[
+            styles.select,
+            isFocused && styles.activeContainer,
+            boxStyles,
+          ]}
           onPress={() => {
             if (!dropdown) {
               Keyboard.dismiss();
@@ -420,15 +451,24 @@ const MultiSelectList: React.FC<MultiSelectListProps> = ({
             keyExtractor={keyExtractor}
             renderItem={renderItem}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[gutters.paddingVertical_10, gutters.paddingTop_0]}
+            contentContainerStyle={[
+              gutters.paddingVertical_10,
+              gutters.paddingTop_0,
+            ]}
             nestedScrollEnabled
             onEndReached={handleEndReached}
-            onEndReachedThreshold={MULTI_SELECT_LIST_CONSTANTS.INFINITE_SCROLL_THRESHOLD}
+            onEndReachedThreshold={
+              MULTI_SELECT_LIST_CONSTANTS.INFINITE_SCROLL_THRESHOLD
+            }
             scrollEventThrottle={16}
             getItemLayout={getItemLayout}
             ListEmptyComponent={
               <TouchableOpacity
-                style={[gutters.paddingHorizontal_20, gutters.paddingVertical_10, dropdownItemStyles]}
+                style={[
+                  gutters.paddingHorizontal_20,
+                  gutters.paddingVertical_10,
+                  dropdownItemStyles,
+                ]}
                 onPress={() => {
                   setSelectedVal([]);
                   notifySelect([]);

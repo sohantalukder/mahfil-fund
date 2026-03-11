@@ -92,11 +92,25 @@ export default function AdminDonationsPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [search, setSearch] = useState('');
 
+  async function loadDonations(id = eventId) {
+    if (!id) return;
+    setLoading(true);
+    const res = await api.get<{ donations?: Donation[] } | Donation[]>(`/donations?eventId=${id}`);
+    setLoading(false);
+    if (!res.success) {
+      toast(res.error.message, 'error');
+      return;
+    }
+    const d = res.data as { donations?: Donation[] } | Donation[];
+    setDonations(Array.isArray(d) ? d : (d.donations ?? []));
+  }
+
   useEffect(() => {
     api
-      .get<{ events: Event[] }>('/events')
+      .get<{ events?: Event[] } | Event[]>('/events')
       .then((res) => {
-        const list = res.success ? ((res.data as any).events ?? res.data ?? []) : [];
+        const d = res.success ? res.data : ([] as Event[]);
+        const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
         setEvents(list);
         const active = list.find((e: Event) => e.isActive) || list[0];
         if (active) {
@@ -110,27 +124,16 @@ export default function AdminDonationsPage() {
 
   useEffect(() => {
     api
-      .get<{ donors: Donor[] }>('/donors')
+      .get<{ donors?: Donor[] } | Donor[]>('/donors')
       .then((res) => {
-        const list = res.success ? ((res.data as any).donors ?? res.data ?? []) : [];
+        const d = res.success ? res.data : ([] as Donor[]);
+        const list: Donor[] = Array.isArray(d) ? d : (d.donors ?? []);
         const sorted = [...list].sort((a: Donor, b: Donor) => a.fullName.localeCompare(b.fullName));
         setDonors(sorted);
       })
       .catch(() => {})
       .finally(() => setDonorsLoading(false));
   }, [api]);
-
-  async function loadDonations(id = eventId) {
-    if (!id) return;
-    setLoading(true);
-    const res = await api.get<{ donations: Donation[] }>(`/donations?eventId=${id}`);
-    setLoading(false);
-    if (!res.success) {
-      toast(res.error.message, 'error');
-      return;
-    }
-    setDonations((res.data as any).donations ?? res.data ?? []);
-  }
 
   function openCreate() {
     setForm({
@@ -201,7 +204,7 @@ export default function AdminDonationsPage() {
             toast(donorRes.error.message, 'error');
             return;
           }
-          const created = (donorRes.data as any).donor ?? donorRes.data;
+          const created = ((donorRes.data as { donor?: Donor }).donor ?? donorRes.data) as Donor;
           donorId = created.id;
           setDonors((prev) => [created as Donor, ...prev]);
         }
@@ -249,7 +252,7 @@ export default function AdminDonationsPage() {
     const res = await api.delete(`/donations/${deleteTarget.id}`);
     setDeleting(false);
     if (!res.success) {
-      toast((res as any).error?.message || 'Delete failed', 'error');
+      toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error');
       return;
     }
     toast(`Donation from ${deleteTarget.donorSnapshotName} deleted.`, 'success');

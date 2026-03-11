@@ -19,10 +19,10 @@ export default function DonationsPage() {
     ['user-donations-all'],
     async () => {
       const api = getApi();
-      const res = await api.get<any>('/donations?scope=me');
+      const res = await api.get<{ donations?: unknown[]; [key: string]: unknown }>('/donations?scope=me');
       if (!res.success) throw new Error(res.error.message);
-      const d = res.data as any;
-      return ((d.donations ?? d ?? []) as any[]).map((item) => ({
+      const d = res.data as { donations?: unknown[] } | unknown[];
+      return ((Array.isArray(d) ? d : ((d as { donations?: unknown[] }).donations ?? [])) as Record<string, unknown>[]).map((item) => ({
         id: item.id,
         amount: item.amount,
         eventName: item.eventName ?? item.eventSnapshotName,

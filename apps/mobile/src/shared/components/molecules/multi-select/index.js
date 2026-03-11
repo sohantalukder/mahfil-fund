@@ -20,7 +20,7 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
     const [isFocused, setIsFocused] = React.useState(false);
     const [internalSearchQuery, setInternalSearchQuery] = React.useState('');
     const [showAllBadges, setShowAllBadges] = React.useState(false);
-    const animatedValue = React.useRef(new Animated.Value(dropdown ? maxHeight ?? 350 : 0)).current;
+    const animatedValue = React.useRef(new Animated.Value(dropdown ? (maxHeight ?? 350) : 0)).current;
     const currentSearchQuery = externalSearchQuery ?? internalSearchQuery;
     const debouncedSearchChange = React.useMemo(() => debounceHandler((q) => onSearchChange?.(q), MULTI_SELECT_LIST_CONSTANTS.SEARCH_DEBOUNCE_MS), [onSearchChange]);
     const searchInputStyle = React.useMemo(() => ({
@@ -116,7 +116,9 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
     const handlePick = React.useCallback((item) => {
         const stored = getStoredValue(item, save);
         const isAlready = selectedVal.includes(stored);
-        const next = isAlready ? selectedVal.filter((v) => v !== stored) : [...selectedVal, stored];
+        const next = isAlready
+            ? selectedVal.filter((v) => v !== stored)
+            : [...selectedVal, stored];
         setSelectedVal(next);
         notifySelect(next);
         if (next.length <= MULTI_SELECT_LIST_CONSTANTS.MAX_VISIBLE_BADGES)
@@ -134,7 +136,11 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
             return null;
         if (loadingComponent)
             return loadingComponent;
-        return (_jsx(View, { style: [gutters.paddingVertical_10, layout.justifyCenter, layout.itemsCenter], children: _jsx(ActivityIndicator, { size: "small", color: colors.primary }) }));
+        return (_jsx(View, { style: [
+                gutters.paddingVertical_10,
+                layout.justifyCenter,
+                layout.itemsCenter,
+            ], children: _jsx(ActivityIndicator, { size: "small", color: colors.primary }) }));
     }, [
         isLoading,
         loadingComponent,
@@ -149,7 +155,10 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
         offset: MULTI_SELECT_LIST_CONSTANTS.ITEM_HEIGHT * index,
         index,
     }), []);
-    const containerStyle = React.useMemo(() => [styles.container, { zIndex: dropdown ? MULTI_SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 }], [styles.container, dropdown]);
+    const containerStyle = React.useMemo(() => [
+        styles.container,
+        { zIndex: dropdown ? MULTI_SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 },
+    ], [styles.container, dropdown]);
     const backdropStyle = React.useMemo(() => ({
         position: 'absolute',
         top: -1000,
@@ -184,7 +193,15 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
                         Keyboard.dismiss();
                         slideDown();
                     }
-                }, children: _jsx(AnimatedLabel, { label: label || placeholder || 'Select options', value: selectedVal.length > 0 ? `${selectedVal.length} selected` : '', isFocused: isFocused }) }), dropdown && search ? (_jsx(View, { style: [styles.select, isFocused && styles.activeContainer, boxStyles], children: _jsxs(View, { style: [layout.row, layout.itemsCenter, layout.flex_1], children: [_jsx(TextInput, { placeholder: searchPlaceholder, value: currentSearchQuery, onChangeText: handleSearchChange, style: [searchInputStyle, layout.flex_1, inputStyles], returnKeyType: "search", autoFocus: true, placeholderTextColor: colors.gray4 }), _jsx(TouchableOpacity, { onPress: closeAndClear, accessibilityRole: "button", accessibilityLabel: "Close", style: styles.arrow, children: !closeicon ? _jsx(IconByVariant, { path: "cancel" }) : closeicon })] }) })) : (_jsxs(TouchableOpacity, { style: [styles.select, isFocused && styles.activeContainer, boxStyles], onPress: () => {
+                }, children: _jsx(AnimatedLabel, { label: label || placeholder || 'Select options', value: selectedVal.length > 0 ? `${selectedVal.length} selected` : '', isFocused: isFocused }) }), dropdown && search ? (_jsx(View, { style: [
+                    styles.select,
+                    isFocused && styles.activeContainer,
+                    boxStyles,
+                ], children: _jsxs(View, { style: [layout.row, layout.itemsCenter, layout.flex_1], children: [_jsx(TextInput, { placeholder: searchPlaceholder, value: currentSearchQuery, onChangeText: handleSearchChange, style: [searchInputStyle, layout.flex_1, inputStyles], returnKeyType: "search", autoFocus: true, placeholderTextColor: colors.gray4 }), _jsx(TouchableOpacity, { onPress: closeAndClear, accessibilityRole: "button", accessibilityLabel: "Close", style: styles.arrow, children: !closeicon ? _jsx(IconByVariant, { path: "cancel" }) : closeicon })] }) })) : (_jsxs(TouchableOpacity, { style: [
+                    styles.select,
+                    isFocused && styles.activeContainer,
+                    boxStyles,
+                ], onPress: () => {
                     if (!dropdown) {
                         Keyboard.dismiss();
                         slideDown();
@@ -192,7 +209,14 @@ const MultiSelectList = ({ setSelected, selectedValues = [], placeholder, boxSty
                     else {
                         slideUp();
                     }
-                }, accessibilityRole: "button", accessibilityLabel: "Open dropdown", children: [_jsx(View, { style: layout.flex_1, children: selectedVal.length > 0 ? (_jsx(View, { style: gutters.marginTop_6, children: _jsx(BadgeBar, { selected: selectedVal, data: data, showAll: showAllBadges, onToggleShowAll: setShowAllBadges, onRemove: handleRemoveBadge, badgeBaseStyle: badgeBaseStyle, badgeStyles: badgeStyles, badgeTextStyles: badgeTextStyles }) })) : (_jsx(Text, { color: "disabled", style: inputStyles, children: isFocused ? placeholder || 'Select options' : '' })) }), _jsx(View, { style: styles.arrow, children: !arrowicon ? (_jsx(IconByVariant, { path: "downArrow", height: 18, width: 18 })) : (arrowicon) })] })), dropdown && (_jsxs(Animated.View, { style: [dropdownContainerStyle, dropdownStyles], children: [selectedVal.length > 0 && (_jsx(View, { style: [gutters.paddingHorizontal_20, gutters.paddingTop_16], children: _jsx(BadgeBar, { selected: selectedVal, data: data, showAll: showAllBadges, onToggleShowAll: setShowAllBadges, onRemove: handleRemoveBadge, badgeBaseStyle: badgeBaseStyle, badgeStyles: badgeStyles, badgeTextStyles: badgeTextStyles }) })), _jsx(FlatList, { data: filteredData, keyExtractor: keyExtractor, renderItem: renderItem, keyboardShouldPersistTaps: "handled", contentContainerStyle: [gutters.paddingVertical_10, gutters.paddingTop_0], nestedScrollEnabled: true, onEndReached: handleEndReached, onEndReachedThreshold: MULTI_SELECT_LIST_CONSTANTS.INFINITE_SCROLL_THRESHOLD, scrollEventThrottle: 16, getItemLayout: getItemLayout, ListEmptyComponent: _jsx(TouchableOpacity, { style: [gutters.paddingHorizontal_20, gutters.paddingVertical_10, dropdownItemStyles], onPress: () => {
+                }, accessibilityRole: "button", accessibilityLabel: "Open dropdown", children: [_jsx(View, { style: layout.flex_1, children: selectedVal.length > 0 ? (_jsx(View, { style: gutters.marginTop_6, children: _jsx(BadgeBar, { selected: selectedVal, data: data, showAll: showAllBadges, onToggleShowAll: setShowAllBadges, onRemove: handleRemoveBadge, badgeBaseStyle: badgeBaseStyle, badgeStyles: badgeStyles, badgeTextStyles: badgeTextStyles }) })) : (_jsx(Text, { color: "disabled", style: inputStyles, children: isFocused ? placeholder || 'Select options' : '' })) }), _jsx(View, { style: styles.arrow, children: !arrowicon ? (_jsx(IconByVariant, { path: "downArrow", height: 18, width: 18 })) : (arrowicon) })] })), dropdown && (_jsxs(Animated.View, { style: [dropdownContainerStyle, dropdownStyles], children: [selectedVal.length > 0 && (_jsx(View, { style: [gutters.paddingHorizontal_20, gutters.paddingTop_16], children: _jsx(BadgeBar, { selected: selectedVal, data: data, showAll: showAllBadges, onToggleShowAll: setShowAllBadges, onRemove: handleRemoveBadge, badgeBaseStyle: badgeBaseStyle, badgeStyles: badgeStyles, badgeTextStyles: badgeTextStyles }) })), _jsx(FlatList, { data: filteredData, keyExtractor: keyExtractor, renderItem: renderItem, keyboardShouldPersistTaps: "handled", contentContainerStyle: [
+                            gutters.paddingVertical_10,
+                            gutters.paddingTop_0,
+                        ], nestedScrollEnabled: true, onEndReached: handleEndReached, onEndReachedThreshold: MULTI_SELECT_LIST_CONSTANTS.INFINITE_SCROLL_THRESHOLD, scrollEventThrottle: 16, getItemLayout: getItemLayout, ListEmptyComponent: _jsx(TouchableOpacity, { style: [
+                                gutters.paddingHorizontal_20,
+                                gutters.paddingVertical_10,
+                                dropdownItemStyles,
+                            ], onPress: () => {
                                 setSelectedVal([]);
                                 notifySelect([]);
                                 closeAndClear();

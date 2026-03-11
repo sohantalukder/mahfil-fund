@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+pnpmfileChecksum: sha256-INPeqxBb9RzVZwiwqeACdHRHZQruQRLlGsPdlsRMcAM=
+
 importers:
 
   .:
@@ -93,6 +95,9 @@ importers:
       eslint-config-next:
         specifier: 16.1.6
         version: 16.1.6(@typescript-eslint/parser@8.57.0(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3)
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       postcss:
         specifier: ^8.5.1
         version: 8.5.8
@@ -154,6 +159,9 @@ importers:
       '@types/node':
         specifier: ^24.3.1
         version: 24.12.0
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       prisma:
         specifier: ^6.16.1
         version: 6.19.2(typescript@5.9.3)
@@ -380,6 +388,9 @@ importers:
       lint-staged:
         specifier: ^16.0.0
         version: 16.3.3
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       prettier:
         specifier: ^3.4.2
         version: 3.8.1
@@ -432,6 +443,9 @@ importers:
       eslint-config-next:
         specifier: 16.1.6
         version: 16.1.6(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -445,6 +459,9 @@ importers:
         specifier: ^1.12.2
         version: 1.13.6
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -455,6 +472,9 @@ importers:
         specifier: ^25.5.2
         version: 25.8.17(typescript@5.9.3)
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -465,24 +485,36 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
 
   packages/theme:
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
 
   packages/types:
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
 
   packages/utils:
     devDependencies:
+      pnpm:
+        specifier: ^10.32.0
+        version: 10.32.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

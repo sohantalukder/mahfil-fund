@@ -1,15 +1,27 @@
+/* eslint-disable react-native/no-inline-styles, react-native/no-color-literals */
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, FlatList } from 'react-native';
 import routes from '@/navigation/routes';
 import type { RootScreenProps } from '@/navigation/types';
-import { listDonationsForEvent, createDonationOffline } from './donationRepository';
+import {
+  listDonationsForEvent,
+  createDonationOffline,
+} from './donationRepository';
 import { useStore } from '@/state/store';
 
 type Props = RootScreenProps<typeof routes.donations>;
 
 export default function DonationListScreen(_props: Props) {
   const [eventId, setEventId] = useState('');
-  const [items, setItems] = useState<any[]>([]);
+  type DonationItem = {
+    id: string;
+    donorName: string;
+    amount: number;
+    paymentMethod: string;
+    donationDateMs: number;
+    syncState: string;
+  };
+  const [items, setItems] = useState<DonationItem[]>([]);
   const [amount, setAmount] = useState('');
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +30,7 @@ export default function DonationListScreen(_props: Props) {
   async function load() {
     if (!eventId) return;
     const data = await listDonationsForEvent(eventId);
-    setItems(data);
+    setItems(data as unknown as DonationItem[]);
   }
 
   useEffect(() => {
@@ -55,47 +67,96 @@ export default function DonationListScreen(_props: Props) {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Donations</Text>
-      <Text style={{ color: '#6b7280', marginBottom: 12 }}>{isOnline ? 'Online' : 'Offline'} • cached list</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
+        Donations
+      </Text>
+      <Text style={{ color: '#6b7280', marginBottom: 12 }}>
+        {isOnline ? 'Online' : 'Offline'} • cached list
+      </Text>
 
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
         <TextInput
           value={eventId}
           onChangeText={setEventId}
           placeholder="Event ID (UUID)"
-          style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10 }}
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            borderRadius: 8,
+            padding: 10,
+          }}
         />
-        <Button title="Load" onPress={load} />
+        <Button
+          title="Load"
+          onPress={load}
+        />
       </View>
 
-      <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 8 }}>Add donation (offline-first)</Text>
+      <View
+        style={{
+          padding: 12,
+          borderWidth: 1,
+          borderColor: '#e5e7eb',
+          borderRadius: 8,
+          marginBottom: 12,
+        }}
+      >
+        <Text style={{ fontWeight: '700', marginBottom: 8 }}>
+          Add donation (offline-first)
+        </Text>
         <TextInput
           value={donorName}
           onChangeText={setDonorName}
           placeholder="Donor name (local)"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, marginBottom: 8 }}
+          style={{
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            borderRadius: 8,
+            padding: 10,
+            marginBottom: 8,
+          }}
         />
         <TextInput
           value={amount}
           onChangeText={setAmount}
           placeholder="Amount"
           keyboardType="numeric"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, marginBottom: 8 }}
+          style={{
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            borderRadius: 8,
+            padding: 10,
+            marginBottom: 8,
+          }}
         />
-        {error && <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{error}</Text>}
-        <Button title="Save locally" onPress={onAdd} />
+        {error && (
+          <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{error}</Text>
+        )}
+        <Button
+          title="Save locally"
+          onPress={onAdd}
+        />
       </View>
 
       <FlatList
         data={items}
-        keyExtractor={(d) => d.id}
+        keyExtractor={(d) => String(d.id)}
         renderItem={({ item }) => (
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 }}>
+          <View
+            style={{
+              padding: 12,
+              borderWidth: 1,
+              borderColor: '#e5e7eb',
+              borderRadius: 8,
+              marginBottom: 8,
+            }}
+          >
             <Text style={{ fontWeight: '600' }}>{item.donorName}</Text>
             <Text>{item.amount} BDT</Text>
             <Text style={{ color: '#6b7280' }}>
-              {item.paymentMethod} • {new Date(item.donationDateMs).toLocaleDateString()}
+              {item.paymentMethod} •{' '}
+              {new Date(item.donationDateMs).toLocaleDateString()}
             </Text>
             <Text style={{ color: '#6b7280' }}>Sync: {item.syncState}</Text>
           </View>
@@ -104,4 +165,3 @@ export default function DonationListScreen(_props: Props) {
     </View>
   );
 }
-

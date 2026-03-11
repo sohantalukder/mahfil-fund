@@ -11,4 +11,3 @@ export const api = createApiClient({
     return data.session?.access_token ?? null;
   },
 });
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
@@ -48,7 +48,7 @@ export default function AdminEventsPage() {
     },
   });
 
-  const events = Array.isArray(eventsData) ? eventsData : (eventsData ? (eventsData as any).events ?? [] : []);
+  const events: Event[] = Array.isArray(eventsData) ? eventsData : (eventsData ? ((eventsData as { events?: Event[] }).events ?? []) : []);
 
   const filteredEvents = events.filter((ev: Event) => {
     const q = search.trim().toLowerCase();
@@ -107,7 +107,7 @@ export default function AdminEventsPage() {
     mutationFn: async (id: string) => {
       const res = await api.post(`/events/${id}/activate`, {});
       if (!res.success) {
-        throw new Error((res as any).error?.message || 'Activation failed');
+        throw new Error((res as { error?: { message?: string } }).error?.message || 'Activation failed');
       }
       return res;
     },
@@ -128,7 +128,7 @@ export default function AdminEventsPage() {
     mutationFn: async (id: string) => {
       const res = await api.delete(`/events/${id}`);
       if (!res.success) {
-        throw new Error((res as any).error?.message || 'Delete failed');
+        throw new Error((res as { error?: { message?: string } }).error?.message || 'Delete failed');
       }
       return res;
     },

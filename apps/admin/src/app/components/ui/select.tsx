@@ -3,7 +3,7 @@ import { forwardRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
-export interface NativeSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {}
+export type NativeSelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 
 export const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
   ({ className, ...props }, ref) => {

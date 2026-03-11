@@ -53,7 +53,7 @@ export default function ProfilePage() {
       const user = data.user;
       if (!user) { setLoading(false); return; }
       const name: string =
-        (user.user_metadata as any)?.full_name || user.email?.split('@')[0] || 'Friend';
+        (user.user_metadata as Record<string, string>)?.full_name || user.email?.split('@')[0] || 'Friend';
       const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
       setProfile({ name, email: user.email || '', initials, createdAt: user.created_at || '' });
       setFullName(name);
@@ -61,8 +61,8 @@ export default function ProfilePage() {
     });
 
     const api = getApi();
-    api.get<any>('/me').then((res) => {
-      if (res.success) setRoles((res.data as any)?.user?.roles ?? []);
+    api.get<{ user?: { roles?: string[] } }>('/me').then((res) => {
+      if (res.success) setRoles((res.data as { user?: { roles?: string[] } })?.user?.roles ?? []);
       setRolesLoading(false);
     }).catch(() => setRolesLoading(false));
   }, []);
@@ -252,26 +252,26 @@ export default function ProfilePage() {
                           {ROLE_DESC[role] || 'Custom role'}
                         </div>
                         <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                          {[
-                            p.read  && { label: 'Read',       c: '#22c55e' },
-                            p.write && { label: 'Write',      c: '#3b82f6' },
-                            p.del   && { label: 'Delete',     c: '#f59e0b' },
-                            p.admin && { label: 'User Admin', c: '#7c3aed' },
-                          ]
-                            .filter(Boolean)
-                            .map((perm) => (
+                          {(
+                            [
+                              p.read  && { label: 'Read',       c: '#22c55e' },
+                              p.write && { label: 'Write',      c: '#3b82f6' },
+                              p.del   && { label: 'Delete',     c: '#f59e0b' },
+                              p.admin && { label: 'User Admin', c: '#7c3aed' },
+                            ].filter(Boolean) as { label: string; c: string }[]
+                          ).map((perm) => (
                               <span
-                                key={(perm as any).label}
+                                key={perm.label}
                                 style={{
                                   fontSize: 10,
                                   padding: '2px 7px',
                                   borderRadius: 99,
-                                  background: (perm as any).c + '22',
-                                  color: (perm as any).c,
+                                  background: perm.c + '22',
+                                  color: perm.c,
                                   fontWeight: 600,
                                 }}
                               >
-                                {(perm as any).label}
+                                {perm.label}
                               </span>
                             ))}
                         </div>

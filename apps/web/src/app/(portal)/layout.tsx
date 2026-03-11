@@ -90,8 +90,8 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
 
       try {
         const api = getApi();
-        const meRes = await api.get<{ user: { roles: string[] } }>('/me');
-        const roles: string[] = meRes.success ? (meRes.data as any)?.user?.roles ?? [] : [];
+        const meRes = await api.get<{ user?: { roles?: string[] } }>('/me');
+        const roles: string[] = meRes.success ? (meRes.data as { user?: { roles?: string[] } })?.user?.roles ?? [] : [];
         setUser({ name, email: authUser.email || '', initials, roles });
       } catch {
         setUser({ name, email: authUser.email || '', initials, roles: [] });

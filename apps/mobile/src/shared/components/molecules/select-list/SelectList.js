@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
-import { View, TouchableOpacity, Animated, TextInput, Keyboard, FlatList, Pressable } from 'react-native';
+import { View, TouchableOpacity, Animated, TextInput, Keyboard, FlatList, Pressable, } from 'react-native';
 import { useTheme } from '@/theme';
 import IconByVariant from '../../atoms/icon-by-variant/IconByVariant';
 import AnimatedLabel from '../../atoms/text-input/AnimatedLabel';
@@ -63,7 +63,10 @@ searchPlaceholder = 'Search...', notFoundText = 'No data found', disabledItemSty
         shadowRadius: SELECT_LIST_CONSTANTS.SHADOW_RADIUS,
         elevation: SELECT_LIST_CONSTANTS.ELEVATION,
     }), [animatedValue, colors.background, colors.gray7, colors.text]);
-    const containerStyle = React.useMemo(() => [styles.container, { zIndex: dropdown ? SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 }], [styles.container, dropdown]);
+    const containerStyle = React.useMemo(() => [
+        styles.container,
+        { zIndex: dropdown ? SELECT_LIST_CONSTANTS.Z_INDEX + 1 : 1 },
+    ], [styles.container, dropdown]);
     const backdropStyle = React.useMemo(() => ({
         position: 'absolute',
         top: -1000,
@@ -200,10 +203,22 @@ searchPlaceholder = 'Search...', notFoundText = 'No data found', disabledItemSty
     const renderItem = React.useCallback(({ item }) => {
         const value = item.value ?? '';
         const disabled = !!item.disabled;
-        const itemStyle = [gutters.paddingHorizontal_20, gutters.paddingVertical_10];
-        const disabledItemStyle = [...itemStyle, { backgroundColor: colors.gray1, opacity: 0.5 }];
-        const disabledTextStyle = [{ color: colors.gray4, fontFamily }, disabledTextStyles];
-        const enabledTextStyle = [{ fontFamily, color: colors.text }, dropdownTextStyles];
+        const itemStyle = [
+            gutters.paddingHorizontal_20,
+            gutters.paddingVertical_10,
+        ];
+        const disabledItemStyle = [
+            ...itemStyle,
+            { backgroundColor: colors.gray1, opacity: 0.5 },
+        ];
+        const disabledTextStyle = [
+            { color: colors.gray4, fontFamily },
+            disabledTextStyles,
+        ];
+        const enabledTextStyle = [
+            { fontFamily, color: colors.text },
+            dropdownTextStyles,
+        ];
         if (disabled) {
             return (_jsx(View, { style: [disabledItemStyle, disabledItemStyles], children: _jsx(Text, { style: disabledTextStyle, children: String(value) }) }));
         }
@@ -228,7 +243,15 @@ searchPlaceholder = 'Search...', notFoundText = 'No data found', disabledItemSty
      * @returns Unique string key
      */
     const keyExtractor = (item, index) => String(item?.key ?? item?.value ?? index);
-    return (_jsxs(View, { style: containerStyle, children: [dropdown && (_jsx(Pressable, { style: backdropStyle, onPress: slideUp })), _jsx(AnimatedLabel, { label: label || placeholder || 'Select option', value: selectedVal ?? '', isFocused: selectedVal?.toString() ? true : isFocused }), dropdown && search ? (_jsx(View, { style: [styles.select, isFocused && styles.activeContainer, boxStyles], children: _jsxs(View, { style: [layout.row, layout.itemsCenter, layout.flex_1], children: [_jsx(TextInput, { placeholder: searchPlaceholder, value: query, onChangeText: setQuery, style: [searchInputStyle, layout.flex_1, inputStyles], returnKeyType: "search", autoFocus: true, placeholderTextColor: colors.gray4 }), _jsx(TouchableOpacity, { onPress: slideUp, accessibilityRole: "button", accessibilityLabel: "Close", style: styles.arrow, children: !closeicon ? _jsx(IconByVariant, { path: "cancel" }) : closeicon })] }) })) : (_jsxs(TouchableOpacity, { style: [styles.select, isFocused && styles.activeContainer, boxStyles], onPress: () => {
+    return (_jsxs(View, { style: containerStyle, children: [dropdown && (_jsx(Pressable, { style: backdropStyle, onPress: slideUp })), _jsx(AnimatedLabel, { label: label || placeholder || 'Select option', value: selectedVal ?? '', isFocused: selectedVal?.toString() ? true : isFocused }), dropdown && search ? (_jsx(View, { style: [
+                    styles.select,
+                    isFocused && styles.activeContainer,
+                    boxStyles,
+                ], children: _jsxs(View, { style: [layout.row, layout.itemsCenter, layout.flex_1], children: [_jsx(TextInput, { placeholder: searchPlaceholder, value: query, onChangeText: setQuery, style: [searchInputStyle, layout.flex_1, inputStyles], returnKeyType: "search", autoFocus: true, placeholderTextColor: colors.gray4 }), _jsx(TouchableOpacity, { onPress: slideUp, accessibilityRole: "button", accessibilityLabel: "Close", style: styles.arrow, children: !closeicon ? _jsx(IconByVariant, { path: "cancel" }) : closeicon })] }) })) : (_jsxs(TouchableOpacity, { style: [
+                    styles.select,
+                    isFocused && styles.activeContainer,
+                    boxStyles,
+                ], onPress: () => {
                     if (!dropdown) {
                         Keyboard.dismiss();
                         slideDown();
@@ -236,11 +259,17 @@ searchPlaceholder = 'Search...', notFoundText = 'No data found', disabledItemSty
                     else {
                         slideUp();
                     }
-                }, accessibilityRole: "button", accessibilityLabel: "Open dropdown", children: [_jsx(Text, { style: [baseTextStyle, selectedTextColorStyle, inputStyles], children: selectedVal === '' && isFocused ? placeholder || 'Select option' : String(selectedVal) }), _jsx(View, { style: styles.arrow, children: !arrowicon ? (_jsx(IconByVariant, { path: "downArrow", height: 18, width: 18 })) : (arrowicon) })] })), dropdown ? (_jsx(Animated.View, { style: [dropdownContainerStyle, dropdownStyles], children: _jsx(FlatList, { data: filteredData, keyExtractor: keyExtractor, renderItem: renderItem, keyboardShouldPersistTaps: "handled", contentContainerStyle: [gutters.paddingVertical_10], nestedScrollEnabled: true, getItemLayout: (_, index) => ({
+                }, accessibilityRole: "button", accessibilityLabel: "Open dropdown", children: [_jsx(Text, { style: [baseTextStyle, selectedTextColorStyle, inputStyles], children: selectedVal === '' && isFocused
+                            ? placeholder || 'Select option'
+                            : String(selectedVal) }), _jsx(View, { style: styles.arrow, children: !arrowicon ? (_jsx(IconByVariant, { path: "downArrow", height: 18, width: 18 })) : (arrowicon) })] })), dropdown ? (_jsx(Animated.View, { style: [dropdownContainerStyle, dropdownStyles], children: _jsx(FlatList, { data: filteredData, keyExtractor: keyExtractor, renderItem: renderItem, keyboardShouldPersistTaps: "handled", contentContainerStyle: [gutters.paddingVertical_10], nestedScrollEnabled: true, getItemLayout: (_, index) => ({
                         length: SELECT_LIST_CONSTANTS.ITEM_HEIGHT,
                         offset: SELECT_LIST_CONSTANTS.ITEM_HEIGHT * index,
                         index,
-                    }), ListEmptyComponent: _jsx(TouchableOpacity, { style: [gutters.paddingHorizontal_20, gutters.paddingVertical_10, dropdownItemStyles], onPress: () => {
+                    }), ListEmptyComponent: _jsx(TouchableOpacity, { style: [
+                            gutters.paddingHorizontal_20,
+                            gutters.paddingVertical_10,
+                            dropdownItemStyles,
+                        ], onPress: () => {
                             setSelected(undefined);
                             setSelectedVal('');
                             setQuery('');

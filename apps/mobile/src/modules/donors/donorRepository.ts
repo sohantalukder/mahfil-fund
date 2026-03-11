@@ -18,7 +18,10 @@ export async function listDonors(search?: string) {
   const s = search.trim();
   return donorsCollection
     .query(
-      Q.or(Q.where('full_name', Q.like(`%${s}%`)), Q.where('phone', Q.like(`%${s}%`))),
+      Q.or(
+        Q.where('full_name', Q.like(`%${s}%`)),
+        Q.where('phone', Q.like(`%${s}%`))
+      ),
       Q.sortBy('updated_at', Q.desc)
     )
     .fetch();
@@ -32,31 +35,36 @@ export async function createDonorOffline(draft: DonorDraft) {
   const now = Date.now();
 
   await database.write(async () => {
-    await donors.create((d: any) => {
-      d.serverId = null;
-      d.clientGeneratedId = clientGeneratedId;
-      d.fullName = draft.fullName;
-      d.phone = draft.phone;
-      d.donorType = draft.donorType;
-      d.preferredLanguage = draft.preferredLanguage;
-      d.tagsJson = JSON.stringify(draft.tags ?? []);
-      d.syncState = 'PENDING';
-      d.updatedAtMs = now;
+    await donors.create((d) => {
+      const rec = d as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        serverId: null,
+        clientGeneratedId,
+        fullName: draft.fullName,
+        phone: draft.phone,
+        donorType: draft.donorType,
+        preferredLanguage: draft.preferredLanguage,
+        tagsJson: JSON.stringify(draft.tags ?? []),
+        syncState: 'PENDING',
+        updatedAtMs: now,
+      });
     });
 
-    await mutations.create((m: any) => {
-      m.opId = opId;
-      m.entity = 'donor';
-      m.op = 'create';
-      m.payloadJson = JSON.stringify({ ...draft, clientGeneratedId });
-      m.status = 'PENDING';
-      m.retryCount = 0;
-      m.lastAttemptAtMs = null;
-      m.error = null;
-      m.createdAtMs = now;
+    await mutations.create((m) => {
+      const rec = m as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        opId,
+        entity: 'donor',
+        op: 'create',
+        payloadJson: JSON.stringify({ ...draft, clientGeneratedId }),
+        status: 'PENDING',
+        retryCount: 0,
+        lastAttemptAtMs: null,
+        error: null,
+        createdAtMs: now,
+      });
     });
   });
 
   return { opId, clientGeneratedId };
 }
-

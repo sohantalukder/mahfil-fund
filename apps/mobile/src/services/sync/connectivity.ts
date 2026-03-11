@@ -4,7 +4,9 @@ import { runSync } from './syncService';
 
 export function startConnectivityListener() {
   const unsub = NetInfo.addEventListener((state) => {
-    const online = Boolean(state.isConnected && state.isInternetReachable !== false);
+    const online = Boolean(
+      state.isConnected && state.isInternetReachable !== false
+    );
     const prev = useStore.getState().isOnline;
     useStore.getState().setOnline(online);
     if (!prev && online) {
@@ -13,4 +15,3 @@ export function startConnectivityListener() {
   });
   return () => unsub();
 }
-

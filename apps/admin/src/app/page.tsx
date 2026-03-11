@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getApi } from '@/lib/api';
 import { useApiQuery } from '@/lib/query';
@@ -28,7 +28,7 @@ const fmtBDT = (n: number) =>
 
 export default function AdminDashboard() {
   const api = useMemo(() => getApi(), []);
-  const [activeId, setActiveId] = useState('');
+  const [selectedId, setSelectedId] = useState('');
 
   const {
     data: eventsData,
@@ -47,13 +47,12 @@ export default function AdminDashboard() {
       }),
   );
 
-  useEffect(() => {
-    if (!activeId && eventsData?.events?.length) {
-      const list = eventsData.events;
-      const active = list.find((e) => e.isActive) || list[0];
-      if (active) setActiveId(active.id);
-    }
-  }, [activeId, eventsData]);
+  const activeId = useMemo(() => {
+    if (selectedId) return selectedId;
+    if (!eventsData?.events?.length) return '';
+    const active = eventsData.events.find((e) => e.isActive) || eventsData.events[0];
+    return active?.id ?? '';
+  }, [selectedId, eventsData]);
 
   const {
     data: summaryAndDonations,
@@ -66,28 +65,28 @@ export default function AdminDashboard() {
         return { summary: null, donations: [] };
       }
       const [sumRes, donRes] = await Promise.all([
-        client.get<any>(`/reports/event-summary?eventId=${activeId}`),
-        client.get<any>(`/donations?eventId=${activeId}&limit=5`),
+        client.get<{ summary?: EventSummary } | EventSummary>(`/reports/event-summary?eventId=${activeId}`),
+        client.get<{ donations?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/donations?eventId=${activeId}&limit=5`),
       ]);
 
       if (!sumRes.success) {
         throw new Error(sumRes.error.message);
       }
 
-      const sumData = sumRes.data;
-      const summary = (sumData.summary ?? sumData) as EventSummary;
+      const sumData = sumRes.data as { summary?: EventSummary } | EventSummary;
+      const summary = ((sumData as { summary?: EventSummary }).summary ?? sumData) as EventSummary;
 
       let donations: Donation[] = [];
       if (donRes.success) {
-        const d = donRes.data as any;
-        const raw = (d.donations ?? d ?? []) as any[];
+        const d = donRes.data as { donations?: Record<string, unknown>[] } | Record<string, unknown>[];
+        const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d.donations ?? []);
         donations = raw.map((item) => ({
-          id: item.id,
-          donorName: item.donorSnapshotName ?? item.donorName ?? 'Unknown',
-          amount: item.amount,
-          paymentMethod: item.paymentMethod,
-          donationDate: item.donationDate,
-          status: item.status,
+          id: String(item.id ?? ''),
+          donorName: String(item.donorSnapshotName ?? item.donorName ?? 'Unknown'),
+          amount: Number(item.amount ?? 0),
+          paymentMethod: String(item.paymentMethod ?? ''),
+          donationDate: String(item.donationDate ?? ''),
+          status: item.status !== undefined ? String(item.status) : undefined,
         }));
       }
 
@@ -115,17 +114,17 @@ export default function AdminDashboard() {
         return { expenses: [] };
       }
 
-      const res = await client.get<any>(`/expenses?eventId=${activeId}`);
+      const res = await client.get<{ expenses?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/expenses?eventId=${activeId}`);
       if (!res.success) {
         throw new Error(res.error.message);
       }
 
-      const d = res.data as any;
-      const raw = (d.expenses ?? d ?? []) as any[];
+      const d = res.data as { expenses?: Record<string, unknown>[] } | Record<string, unknown>[];
+      const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d.expenses ?? []);
       const expenses: ExpenseForChart[] = raw.map((item) => ({
-        id: item.id,
-        category: item.category || 'Uncategorized',
-        amount: item.amount,
+        id: String(item.id ?? ''),
+        category: String(item.category || 'Uncategorized'),
+        amount: Number(item.amount ?? 0),
       }));
 
       return { expenses };
@@ -183,7 +182,7 @@ export default function AdminDashboard() {
               className="db-input"
               style={{ minWidth: 160 }}
               value={activeId}
-              onChange={(e) => { setActiveId(e.target.value); }}
+              onChange={(e) => { setSelectedId(e.target.value); }}
             >
               {events.length === 0 && <option value="">No events found</option>}
               {events.map((ev: Event) => (

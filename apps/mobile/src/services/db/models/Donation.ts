@@ -16,4 +16,3 @@ export class DonationModel extends Model {
   @field('sync_status') syncState!: LocalSyncStatus;
   @field('updated_at') updatedAtMs!: number;
 }
-

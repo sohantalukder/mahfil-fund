@@ -4,7 +4,15 @@ import { useTheme } from '@/theme';
 import type { RootStackParamList } from './types';
 import routes from './routes';
 import { screenOptions } from './screenOptions';
-import { Donors, Home, Login, Splash, SyncCenter, Donations, Expenses } from '@/modules';
+import {
+  Donors,
+  Home,
+  Login,
+  Splash,
+  SyncCenter,
+  Donations,
+  Expenses,
+} from '@/modules';
 const Stack = createStackNavigator<RootStackParamList>();
 
 const Navigation = () => {
@@ -25,11 +33,26 @@ const Navigation = () => {
           component={Login}
           name={routes.login}
         />
-        <Stack.Screen component={Home} name={routes.home} />
-        <Stack.Screen component={Donors} name={routes.donors} />
-        <Stack.Screen component={SyncCenter} name={routes.syncCenter} />
-        <Stack.Screen component={Donations} name={routes.donations} />
-        <Stack.Screen component={Expenses} name={routes.expenses} />
+        <Stack.Screen
+          component={Home}
+          name={routes.home}
+        />
+        <Stack.Screen
+          component={Donors}
+          name={routes.donors}
+        />
+        <Stack.Screen
+          component={SyncCenter}
+          name={routes.syncCenter}
+        />
+        <Stack.Screen
+          component={Donations}
+          name={routes.donations}
+        />
+        <Stack.Screen
+          component={Expenses}
+          name={routes.expenses}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

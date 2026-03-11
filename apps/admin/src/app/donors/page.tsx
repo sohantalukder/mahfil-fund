@@ -95,7 +95,8 @@ export default function AdminDonorsPage() {
     const res = await api.get<{ donors: Donor[] }>(`/donors${query}`);
     setLoading(false);
     if (!res.success) { toast(res.error.message, 'error'); return; }
-    setDonors((res.data as any).donors ?? res.data ?? []);
+    const d = res.data as { donors?: Donor[] } | Donor[];
+    setDonors(Array.isArray(d) ? d : (d.donors ?? []));
   }
 
   useEffect(() => {
@@ -151,7 +152,7 @@ export default function AdminDonorsPage() {
     setDeleting(true);
     const res = await api.delete(`/donors/${deleteTarget.id}`);
     setDeleting(false);
-    if (!res.success) { toast((res as any).error?.message || 'Delete failed', 'error'); return; }
+    if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
     toast(`${deleteTarget.fullName} deleted.`, 'success');
     setDeleteTarget(null); load();
   }
@@ -167,7 +168,8 @@ export default function AdminDonorsPage() {
       if (!res.success) {
         toast(res.error.message, 'error');
       } else {
-        setDonations((res.data as any).donations ?? res.data ?? []);
+        const dd = res.data as { donations?: Donation[] } | Donation[];
+        setDonations(Array.isArray(dd) ? dd : (dd.donations ?? []));
       }
     } finally {
       setDonationsLoading(false);

@@ -17,12 +17,16 @@ const mmkvStorage = {
   },
 };
 
-export const supabase = createClient(appConfig.supabase.url, appConfig.supabase.anonKey, {
-  auth: {
-    storage: mmkvStorage as any,
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
-});
-
+export const supabase = createClient(
+  appConfig.supabase.url,
+  appConfig.supabase.anonKey,
+  {
+    auth: {
+      storage:
+        mmkvStorage as unknown as import('@supabase/supabase-js').SupportedStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  }
+);

@@ -5,7 +5,13 @@ import { useTheme } from '@/theme';
 import { fontWeight } from '@/theme/fonts';
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { TextInput } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, interpolate } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+  interpolate,
+} from 'react-native-reanimated';
 
 interface AnimatedSearchProps {
   onExpandChange?: (isExpanded: boolean) => void;
@@ -20,7 +26,11 @@ const ANIMATED_SEARCH_WIDTH = rs('wf') - 80;
 // Animation configs - memoized to prevent recreation
 const TIMING_CONFIG = { duration: 300 };
 
-const AnimatedTextInput: React.FC<AnimatedSearchProps> = ({ onExpandChange, onSearch, value = '' }) => {
+const AnimatedTextInput: React.FC<AnimatedSearchProps> = ({
+  onExpandChange,
+  onSearch,
+  value = '',
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { layout, colors, gutters } = useTheme();
   const textInputRef = useRef<TextInput>(null);
@@ -111,9 +121,19 @@ const AnimatedTextInput: React.FC<AnimatedSearchProps> = ({ onExpandChange, onSe
 
   // Single animated style with interpolation for better performance
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const width = interpolate(animationProgress.value, [0, 1], [DEFAULT_SEARCH_WIDTH, ANIMATED_SEARCH_WIDTH], 'clamp');
+    const width = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [DEFAULT_SEARCH_WIDTH, ANIMATED_SEARCH_WIDTH],
+      'clamp'
+    );
 
-    const scale = interpolate(animationProgress.value, [0, 0.5, 1], [1, 1.02, 1], 'clamp');
+    const scale = interpolate(
+      animationProgress.value,
+      [0, 0.5, 1],
+      [1, 1.02, 1],
+      'clamp'
+    );
 
     return {
       width,
@@ -123,7 +143,12 @@ const AnimatedTextInput: React.FC<AnimatedSearchProps> = ({ onExpandChange, onSe
 
   const animatedInputStyle = useAnimatedStyle(
     () => ({
-      opacity: interpolate(animationProgress.value, [0, 0.3, 1], [0, 0, 1], 'clamp'),
+      opacity: interpolate(
+        animationProgress.value,
+        [0, 0.3, 1],
+        [0, 0, 1],
+        'clamp'
+      ),
     }),
     []
   );

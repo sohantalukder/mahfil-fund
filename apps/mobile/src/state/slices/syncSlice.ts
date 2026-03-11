@@ -7,7 +7,11 @@ export interface SyncState {
   isSyncing: boolean;
   lastError: string | null;
   setOnline: (online: boolean) => void;
-  setSyncStatus: (s: Partial<Pick<SyncState, 'lastSyncAt' | 'pendingCount' | 'isSyncing' | 'lastError'>>) => void;
+  setSyncStatus: (
+    s: Partial<
+      Pick<SyncState, 'lastSyncAt' | 'pendingCount' | 'isSyncing' | 'lastError'>
+    >
+  ) => void;
 }
 
 export const createSyncSlice: StateCreator<SyncState> = (set) => ({
@@ -17,6 +21,5 @@ export const createSyncSlice: StateCreator<SyncState> = (set) => ({
   isSyncing: false,
   lastError: null,
   setOnline: (online) => set({ isOnline: online }),
-  setSyncStatus: (s) => set(s as any),
+  setSyncStatus: (s) => set(s as Partial<SyncState>),
 });
-

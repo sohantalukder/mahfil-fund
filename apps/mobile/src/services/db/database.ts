@@ -13,13 +13,18 @@ const adapter = new SQLiteAdapter({
   dbName: 'mahfil_fund',
   jsi: true,
   onSetUpError: (error) => {
-    // eslint-disable-next-line no-console
     console.error('WatermelonDB setup error', error);
   },
 });
 
 export const database = new Database({
   adapter,
-  modelClasses: [EventModel, DonorModel, DonationModel, ExpenseModel, OfflineMutationModel, AppMetaModel],
+  modelClasses: [
+    EventModel,
+    DonorModel,
+    DonationModel,
+    ExpenseModel,
+    OfflineMutationModel,
+    AppMetaModel,
+  ],
 });
-

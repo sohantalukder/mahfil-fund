@@ -9,5 +9,7 @@ var routes;
     routes["home"] = "HOME";
     routes["donors"] = "DONORS";
     routes["syncCenter"] = "SYNC_CENTER";
+    routes["donations"] = "DONATIONS";
+    routes["expenses"] = "EXPENSES";
 })(routes || (routes = {}));
 export default routes;

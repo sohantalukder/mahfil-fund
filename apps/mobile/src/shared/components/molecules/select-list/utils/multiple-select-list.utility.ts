@@ -10,4 +10,3 @@ export function arraysEqual(a: string[], b: string[]): boolean {
   const sb = [...b].sort();
   return sa.every((v, i) => v === sb[i]);
 }
-

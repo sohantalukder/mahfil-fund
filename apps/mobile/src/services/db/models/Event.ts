@@ -10,4 +10,3 @@ export class EventModel extends Model {
   @field('is_active') isActive!: boolean;
   @field('updated_at') updatedAtMs!: number;
 }
-

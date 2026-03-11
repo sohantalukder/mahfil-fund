@@ -26,39 +26,44 @@ export async function createDonationOffline(draft: DonationDraft) {
   const now = Date.now();
 
   await database.write(async () => {
-    await donations.create((d: any) => {
-      d.serverId = null;
-      d.clientGeneratedId = clientGeneratedId;
-      d.eventId = draft.eventId;
-      d.donorId = draft.donorLocalId;
-      d.donorName = draft.donorName;
-      d.amount = draft.amount;
-      d.paymentMethod = draft.paymentMethod;
-      d.donationDateMs = draft.donationDate.getTime();
-      d.syncState = 'PENDING';
-      d.updatedAtMs = now;
-    });
-
-    await mutations.create((m: any) => {
-      m.opId = opId;
-      m.entity = 'donation';
-      m.op = 'create';
-      m.payloadJson = JSON.stringify({
+    await donations.create((d) => {
+      const rec = d as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        serverId: null,
+        clientGeneratedId,
         eventId: draft.eventId,
         donorId: draft.donorLocalId,
+        donorName: draft.donorName,
         amount: draft.amount,
         paymentMethod: draft.paymentMethod,
-        donationDate: draft.donationDate.toISOString(),
-        clientGeneratedId,
+        donationDateMs: draft.donationDate.getTime(),
+        syncState: 'PENDING',
+        updatedAtMs: now,
       });
-      m.status = 'PENDING';
-      m.retryCount = 0;
-      m.lastAttemptAtMs = null;
-      m.error = null;
-      m.createdAtMs = now;
+    });
+
+    await mutations.create((m) => {
+      const rec = m as unknown as Record<string, unknown>;
+      Object.assign(rec, {
+        opId,
+        entity: 'donation',
+        op: 'create',
+        payloadJson: JSON.stringify({
+          eventId: draft.eventId,
+          donorId: draft.donorLocalId,
+          amount: draft.amount,
+          paymentMethod: draft.paymentMethod,
+          donationDate: draft.donationDate.toISOString(),
+          clientGeneratedId,
+        }),
+        status: 'PENDING',
+        retryCount: 0,
+        lastAttemptAtMs: null,
+        error: null,
+        createdAtMs: now,
+      });
     });
   });
 
   return { opId, clientGeneratedId };
 }
-
