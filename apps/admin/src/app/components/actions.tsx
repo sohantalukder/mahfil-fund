@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type ReactElement, useEffect, useRef, useState } from 'react';
 
 /* ── Actions dropdown ─────────────────────────────────────── */
 
 export type ActionItem = {
   label: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   onClick: () => void;
   danger?: boolean;
   disabled?: boolean;

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type {
   ControllerProps,
+  ControllerRenderProps,
   FieldPath,
   FieldValues,
   UseFormReturn,
@@ -36,7 +37,7 @@ export interface FormFieldProps<TFieldValues extends FieldValues, TName extends 
   extends Omit<ControllerProps<TFieldValues, TName>, 'render'> {
   label?: string;
   helperText?: string;
-  children: (field: ControllerProps<TFieldValues, TName>['field']) => ReactNode;
+  children: (field: ControllerRenderProps<TFieldValues, TName>) => ReactNode;
 }
 
 export function FormField<

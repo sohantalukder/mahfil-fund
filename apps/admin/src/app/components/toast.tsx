@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, type ReactElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -16,7 +16,7 @@ export function useToast() {
   return ctx;
 }
 
-const ICONS: Record<ToastType, JSX.Element> = {
+const ICONS: Record<ToastType, ReactElement> = {
   success: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="8" r="7" fill="#059669" />
