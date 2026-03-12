@@ -43,8 +43,14 @@ export const staticFontStyles = {
     },
 };
 export const fontFamily = {
-    regular: 'System',
-    medium: 'System',
-    semibold: 'System',
-    bold: 'System',
+    regular: 'Poppins-Regular',
+    medium: 'Poppins-Medium',
+    semibold: 'Poppins-SemiBold',
+    bold: 'Poppins-Bold',
+};
+export const fontFamilyBn = {
+    regular: 'HindSiliguri-Regular',
+    medium: 'HindSiliguri-Medium',
+    semibold: 'HindSiliguri-SemiBold',
+    bold: 'HindSiliguri-Bold',
 };

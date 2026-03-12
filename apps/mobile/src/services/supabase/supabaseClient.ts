@@ -17,16 +17,39 @@ const mmkvStorage = {
   },
 };
 
-export const supabase = createClient(
-  appConfig.supabase.url,
-  appConfig.supabase.anonKey,
-  {
-    auth: {
-      storage:
-        mmkvStorage as unknown as import('@supabase/supabase-js').SupportedStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-    },
-  }
-);
+const hasSupabaseConfig =
+  appConfig.supabase.url.trim().length > 0 &&
+  appConfig.supabase.anonKey.trim().length > 0;
+
+if (!hasSupabaseConfig) {
+  console.warn(
+    '[supabase] SUPABASE_URL or SUPABASE_ANON_KEY missing; auth features are disabled for this build.'
+  );
+}
+
+const disabledSupabaseClient = {
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: null }),
+    signInWithPassword: async () => ({
+      data: { user: null, session: null },
+      error: new Error('Supabase is not configured'),
+    }),
+    signOut: async () => ({ error: null }),
+  },
+};
+
+export const supabase = hasSupabaseConfig
+  ? createClient(appConfig.supabase.url, appConfig.supabase.anonKey, {
+      auth: {
+        storage:
+          mmkvStorage as unknown as import('@supabase/supabase-js').SupportedStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : (disabledSupabaseClient as typeof createClient extends (
+      ...args: unknown[]
+    ) => infer T
+      ? T
+      : never);

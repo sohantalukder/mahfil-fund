@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { Animated, Platform, Text } from 'react-native';
+import i18next from 'i18next';
 import { IconButton } from '@/shared/components/atoms';
 import { useTheme } from '@/theme';
-import { fontWeight } from '@/theme/fonts';
+import { fontFamily, fontFamilyBn, fontWeight } from '@/theme/fonts';
 // Utility function to sanitize text and prevent character encoding issues
 const sanitizeText = (text) => {
     if (!text)
@@ -63,7 +64,9 @@ const useNavigationHeader = ({ headerTitle, headerRight, title, headerTitleAlign
                     ...typographies.heading3,
                     fontWeight: fontWeight.semibold,
                     textAlign: headerTitleAlign === 'center' ? 'center' : 'left',
-                    fontFamily: 'Onest-SemiBold',
+                    fontFamily: i18next.language === 'bn-BN' || (i18next.language === null || i18next.language === void 0 ? void 0 : i18next.language.startsWith('bn'))
+                        ? fontFamilyBn.semibold
+                        : fontFamily.semibold,
                     maxWidth: '80%',
                 },
             }, sanitizedTitle);
@@ -77,7 +80,9 @@ const useNavigationHeader = ({ headerTitle, headerRight, title, headerTitleAlign
                     ...typographies.heading3,
                     fontWeight: fontWeight.semibold,
                     textAlign: headerTitleAlign === 'center' ? 'center' : 'left',
-                    fontFamily: 'Onest-SemiBold',
+                    fontFamily: i18next.language === 'bn-BN' || (i18next.language === null || i18next.language === void 0 ? void 0 : i18next.language.startsWith('bn'))
+                        ? fontFamilyBn.semibold
+                        : fontFamily.semibold,
                     maxWidth: '80%',
                 },
             }, sanitizedTitle);
@@ -98,7 +103,9 @@ const useNavigationHeader = ({ headerTitle, headerRight, title, headerTitleAlign
         headerBackTitle: '',
         headerShadowVisible: false,
         headerTitleStyle: {
-            fontFamily: 'Onest-SemiBold',
+            fontFamily: i18next.language === 'bn-BN' || (i18next.language === null || i18next.language === void 0 ? void 0 : i18next.language.startsWith('bn'))
+                ? fontFamilyBn.semibold
+                : fontFamily.semibold,
             fontWeight: fontWeight.semibold,
             fontSize: typographies.heading3.fontSize,
             color: typographies.heading3.color,

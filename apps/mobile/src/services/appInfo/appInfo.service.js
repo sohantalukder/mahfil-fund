@@ -40,10 +40,10 @@ export class AppInfoService {
                 console.error('❌ Failed to get app info:', error);
             }
             return {
-                appName: 'React Native Template',
+                appName: 'Mahfil Fund',
                 version: '1.0.0',
                 buildNumber: '1',
-                bundleId: 'com.reactnativetemplate.app',
+                bundleId: 'com.mahfilfund.app',
                 deviceModel: 'Unknown',
                 systemVersion: 'Unknown',
                 isEmulator: false,
@@ -62,7 +62,7 @@ export class AppInfoService {
             if (__DEV__) {
                 console.error('❌ Failed to get app name:', error);
             }
-            return 'React Native Template';
+            return 'Mahfil Fund';
         }
     }
     async getFormattedVersion() {
