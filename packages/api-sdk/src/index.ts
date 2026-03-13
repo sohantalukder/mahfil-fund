@@ -7,6 +7,8 @@ export interface ApiClientOptions {
   baseUrl: string;
   getAccessToken?: GetAccessToken;
   getDeviceId?: () => string | null;
+  onUnauthorizedRetry?: () => Promise<boolean> | boolean;
+  onAuthFailure?: () => Promise<void> | void;
 }
 
 export interface RequestOptions {
@@ -35,6 +37,29 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
     config.headers.set('X-Client', 'mahfil');
     return config;
   });
+
+  http.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const status = error?.response?.status;
+      const originalRequest = error?.config as (AxiosRequestConfig & { _authRetried?: boolean }) | undefined;
+      if (!originalRequest || status !== 401) throw error;
+
+      if (originalRequest._authRetried) {
+        await opts.onAuthFailure?.();
+        throw error;
+      }
+      originalRequest._authRetried = true;
+
+      const shouldRetry = await opts.onUnauthorizedRetry?.();
+      if (!shouldRetry) {
+        await opts.onAuthFailure?.();
+        throw error;
+      }
+
+      return http.request(originalRequest);
+    }
+  );
 
   async function unwrap<T>(p: Promise<{ data: ApiResponse<T> }>): Promise<ApiResponse<T>> {
     const res = await p;

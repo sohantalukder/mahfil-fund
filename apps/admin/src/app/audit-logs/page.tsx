@@ -9,7 +9,7 @@ type AuditLog = {
   action: string;
   entityType: string;
   entityId?: string;
-  actor?: { id: string; authUserId: string };
+  actor?: { id: string };
   createdAt: string;
 };
 
@@ -120,7 +120,7 @@ export default function AdminAuditLogsPage() {
                       {log.entityId ? log.entityId.slice(0, 8) + '…' : '—'}
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                      {log.actor?.authUserId?.slice(0, 8) || '—'}
+                      {log.actor?.id?.slice(0, 8) || '—'}
                     </td>
                   </tr>
                 );

@@ -30,7 +30,16 @@ const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
-  const parsed = EnvSchema.safeParse(raw);
+  const nodeEnv = raw.NODE_ENV ?? 'development';
+  const effectiveRaw: NodeJS.ProcessEnv =
+    nodeEnv !== 'production' && !raw.JWT_SECRET
+      ? {
+          ...raw,
+          JWT_SECRET: 'dev-local-jwt-secret-at-least-32-characters'
+        }
+      : raw;
+
+  const parsed = EnvSchema.safeParse(effectiveRaw);
   if (!parsed.success) {
     // eslint-disable-next-line no-console
     console.error('Invalid environment variables', parsed.error.flatten());

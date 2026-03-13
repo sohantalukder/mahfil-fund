@@ -1,69 +1,82 @@
 import localStore from '@/services/storage/localStore.service';
 import appConfig from '@/config/appConfig';
-import { supabase } from '@/services/supabase/supabaseClient';
-import { createApiClient } from '@mahfil/api-sdk';
+import { api } from '@/services/api/apiClient';
 export const createAuthSlice = (set) => ({
     isAuthenticated: false,
     user: null,
     isBootstrapped: false,
     isOfflineMode: false,
     bootstrap: async () => {
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token ?? null;
-        if (token)
-            localStore.setApiToken(token);
-        // If we have a session, we allow entering app even if currently offline.
-        // Role/profile will be refreshed when the API is reachable.
-        if (data.session?.user) {
-            set({ isAuthenticated: true, isOfflineMode: false });
-            try {
-                const api = createApiClient({
-                    baseUrl: appConfig.api.baseUrl,
-                    getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ??
-                        null,
+        const token = localStore.getApiToken();
+        if (!token) {
+            set({ isAuthenticated: false, user: null, isOfflineMode: false });
+            set({ isBootstrapped: true });
+            return;
+        }
+        try {
+            const me = await api.get('/me');
+            if (me.success) {
+                set({
+                    user: {
+                        id: me.data.user.id,
+                        email: me.data.user.email,
+                        fullName: me.data.user.fullName,
+                        roles: me.data.user.roles
+                    },
+                    isAuthenticated: true,
+                    isOfflineMode: false
                 });
-                const me = await api.get('/me');
-                if (me.success) {
-                    const email = data.session.user.email ?? undefined;
-                    set({
-                        user: {
-                            id: me.data.user.id,
-                            authUserId: me.data.user.authUserId,
-                            roles: me.data.user.roles,
-                            ...(email ? { email } : {}),
-                        },
-                        isAuthenticated: true,
-                        isOfflineMode: false,
-                    });
-                }
-                else {
-                    // API unreachable or forbidden; fall back to offline mode if we still have a session.
-                    set({ isOfflineMode: true });
-                }
             }
-            catch {
-                set({ isOfflineMode: true });
+            else {
+                localStore.clearAuthTokens();
+                set({ isAuthenticated: false, user: null, isOfflineMode: false });
             }
         }
-        else {
-            set({ isAuthenticated: false, user: null, isOfflineMode: false });
+        catch {
+            set({ isAuthenticated: true, isOfflineMode: true });
         }
         set({ isBootstrapped: true });
     },
     login: async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+        const response = await fetch(`${appConfig.api.baseUrl.replace(/\/+$/, '')}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Client': 'mahfil' },
+            body: JSON.stringify({ email, password })
         });
-        if (error)
-            throw error;
-        if (data.session?.access_token)
-            localStore.setApiToken(data.session.access_token);
-        set({ isAuthenticated: true, isOfflineMode: false });
+        const payload = await response.json();
+        if (!response.ok || !payload.success || !payload.data?.accessToken || !payload.data.refreshToken) {
+            throw new Error(payload.error?.message ?? 'Login failed');
+        }
+        localStore.setApiToken(payload.data.accessToken);
+        localStore.setRefreshToken(payload.data.refreshToken);
+        set({
+            isAuthenticated: true,
+            isOfflineMode: false,
+            user: payload.data.user
+                ? {
+                    id: payload.data.user.id,
+                    email: payload.data.user.email,
+                    fullName: payload.data.user.fullName,
+                    roles: payload.data.user.roles
+                }
+                : null
+        });
     },
     logout: () => {
-        localStore.clearApiToken();
-        supabase.auth.signOut().catch(() => undefined);
+        const refreshToken = localStore.getRefreshToken();
+        const accessToken = localStore.getApiToken();
+        if (refreshToken) {
+            fetch(`${appConfig.api.baseUrl.replace(/\/+$/, '')}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Client': 'mahfil',
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+                },
+                body: JSON.stringify({ refreshToken })
+            }).catch(() => undefined);
+        }
+        localStore.clearAuthTokens();
         set({
             isAuthenticated: false,
             user: null,

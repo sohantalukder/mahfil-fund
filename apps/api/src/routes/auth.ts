@@ -49,6 +49,13 @@ const ResetPasswordSchema = z.object({
 const RefreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
+const UpdateProfileSchema = z.object({
+  fullName: z.string().min(2).max(120)
+});
+const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(72)
+});
 
 async function issueTokenPair(app: FastifyInstance, userId: string) {
   const accessToken = await signAccessToken(userId, app.env.JWT_SECRET, app.env.JWT_EXPIRES_IN);
@@ -224,6 +231,17 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (!result) throw Errors.unauthorized('Invalid or expired refresh token');
 
+    const user = await app.prisma.user.findUnique({ where: { id: result.userId } });
+    if (!user) throw Errors.unauthorized('Invalid refresh token user');
+    if (!user.isActive) {
+      await revokeAllUserTokens(app, user.id);
+      throw Errors.forbidden('Account disabled');
+    }
+    if (!user.emailVerified) {
+      await revokeAllUserTokens(app, user.id);
+      throw Errors.forbidden('Email not verified. Please verify your email first.');
+    }
+
     const accessToken = await signAccessToken(
       result.userId,
       app.env.JWT_SECRET,
@@ -249,4 +267,48 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       );
     }
   );
+
+  app.patch('/me/profile', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
+    const body = parseWith(UpdateProfileSchema, req.body);
+
+    const updated = await app.prisma.user.update({
+      where: { id: req.currentUser!.id },
+      data: { fullName: body.fullName }
+    });
+
+    return ok(
+      {
+        user: {
+          id: updated.id,
+          email: updated.email,
+          fullName: updated.fullName,
+          createdAt: updated.createdAt
+        }
+      },
+      { serverTime: new Date().toISOString(), requestId: req.requestId }
+    );
+  });
+
+  app.patch('/me/password', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
+    const body = parseWith(ChangePasswordSchema, req.body);
+    const user = await app.prisma.user.findUnique({ where: { id: req.currentUser!.id } });
+    if (!user) throw Errors.notFound('User not found');
+
+    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+    if (!valid) throw Errors.unauthorized('Current password is incorrect');
+
+    const passwordHash = await bcrypt.hash(body.newPassword, SALT_ROUNDS);
+    await app.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash }
+    });
+
+    await revokeAllUserTokens(app, user.id);
+    const tokens = await issueTokenPair(app, user.id);
+
+    return ok(
+      { message: 'Password changed successfully', ...tokens },
+      { serverTime: new Date().toISOString(), requestId: req.requestId }
+    );
+  });
 }

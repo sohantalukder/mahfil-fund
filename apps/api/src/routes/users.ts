@@ -5,10 +5,76 @@ import { parseWith } from '../shared/validate.js';
 import { requireRoles } from '../plugins/rbac.js';
 import { Errors } from '../shared/errors.js';
 import type { UserRoleName } from '@prisma/client';
+import { revokeAllUserTokens } from '../services/token.js';
+import bcrypt from 'bcrypt';
 
 const VALID_ROLES: UserRoleName[] = ['super_admin', 'admin', 'collector', 'viewer'];
+const SALT_ROUNDS = 12;
 
 export async function registerUserRoutes(app: FastifyInstance) {
+  app.post('/users', { preHandler: [requireRoles(app, ['super_admin', 'admin'])] }, async (req) => {
+    const body = parseWith(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(8).max(72),
+        fullName: z.string().min(2).max(120).optional(),
+        roles: z.array(z.enum(['super_admin', 'admin', 'collector', 'viewer'])).min(1).optional()
+      }),
+      req.body
+    );
+
+    const email = body.email.toLowerCase();
+    const requestedRoles = Array.from(new Set((body.roles ?? ['viewer']) as UserRoleName[]));
+    if (requestedRoles.includes('super_admin') && !req.currentUser?.roles.includes('super_admin')) {
+      throw Errors.forbidden('Only super_admin can assign super_admin role');
+    }
+
+    const existing = await app.prisma.user.findUnique({ where: { email } });
+    if (existing) throw Errors.conflict('Email already registered');
+
+    const roles = await app.prisma.role.findMany({ where: { name: { in: requestedRoles } } });
+    if (roles.length !== requestedRoles.length) {
+      throw Errors.badRequest('One or more invalid role names');
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, SALT_ROUNDS);
+
+    const created = await app.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          fullName: body.fullName,
+          emailVerified: true
+        }
+      });
+
+      for (const role of roles) {
+        await tx.userRole.create({ data: { userId: user.id, roleId: role.id } });
+      }
+
+      return tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: { roles: { include: { role: true } } }
+      });
+    });
+
+    return ok(
+      {
+        user: {
+          id: created.id,
+          email: created.email,
+          fullName: created.fullName,
+          isActive: created.isActive,
+          emailVerified: created.emailVerified,
+          roles: created.roles.map((ur) => ur.role.name),
+          createdAt: created.createdAt
+        }
+      },
+      { serverTime: new Date().toISOString(), requestId: req.requestId }
+    );
+  });
+
   // List all users with their roles (admin+)
   app.get('/users', { preHandler: [requireRoles(app, ['super_admin', 'admin'])] }, async (req) => {
     const users = await app.prisma.user.findMany({
@@ -101,6 +167,10 @@ export async function registerUserRoutes(app: FastifyInstance) {
         where: { id: params.id },
         data: { isActive: body.isActive },
       });
+
+      if (!body.isActive) {
+        await revokeAllUserTokens(app, updated.id);
+      }
 
       return ok(
         { user: { id: updated.id, isActive: updated.isActive } },

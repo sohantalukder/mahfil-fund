@@ -5,6 +5,7 @@ class LocalStoreService {
   private static instance: LocalStoreService;
 
   private readonly KEY_API_TOKEN = 'apiToken';
+  private readonly KEY_REFRESH_TOKEN = 'refreshToken';
   private readonly KEY_THEME = 'theme';
   private readonly KEY_SYSTEM_LANGUAGE = 'systemLanguage';
 
@@ -30,6 +31,23 @@ class LocalStoreService {
 
   public clearApiToken(): void {
     this.store.delete(this.KEY_API_TOKEN);
+  }
+
+  public setRefreshToken(token: string): void {
+    this.store.set(this.KEY_REFRESH_TOKEN, token);
+  }
+
+  public getRefreshToken(): string | null {
+    return this.store.getString(this.KEY_REFRESH_TOKEN) ?? null;
+  }
+
+  public clearRefreshToken(): void {
+    this.store.delete(this.KEY_REFRESH_TOKEN);
+  }
+
+  public clearAuthTokens(): void {
+    this.clearApiToken();
+    this.clearRefreshToken();
   }
 
   public getTheme(): string {

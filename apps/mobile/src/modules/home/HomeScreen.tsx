@@ -164,7 +164,7 @@ export default function HomeScreen({ navigation }: Props) {
     if (!user) {
       return t('home.signedIn');
     }
-    const identifier = user.email ?? user.authUserId ?? '';
+    const identifier = user.email ?? user.id ?? '';
     return t('home.signedInAs', { identifier });
   }, [t, user]);
 

@@ -7,7 +7,6 @@ import { Button } from '../components/ui/button';
 
 type AppUser = {
   id: string;
-  authUserId: string;
   email?: string;
   fullName?: string;
   isActive: boolean;
@@ -43,7 +42,7 @@ export default function AdminUsersPage() {
 
   // Invite modal
   const [inviteModal, setInviteModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', fullName: '' });
+  const [inviteForm, setInviteForm] = useState({ email: '', password: '', fullName: '', roles: ['viewer'] as RoleName[] });
   const [inviting, setInviting] = useState(false);
 
   // Role edit modal
@@ -80,14 +79,26 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: inviteForm.email, fullName: inviteForm.fullName || null }),
+      body: JSON.stringify({
+        email: inviteForm.email,
+        password: inviteForm.password,
+        fullName: inviteForm.fullName || null,
+        roles: inviteForm.roles
+      }),
     });
     setInviting(false);
     const d = await res.json();
     if (!res.ok) { setError(d.error || 'Invite failed'); return; }
     setInviteModal(false);
-    setInviteForm({ email: '', fullName: '' });
-    alert(`Invite sent to ${inviteForm.email}. They will appear after logging in for the first time.`);
+    setInviteForm({ email: '', password: '', fullName: '', roles: ['viewer'] });
+    alert(`User created: ${inviteForm.email}`);
+  }
+
+  function toggleInviteRole(role: RoleName) {
+    setInviteForm((prev) => ({
+      ...prev,
+      roles: prev.roles.includes(role) ? prev.roles.filter((r) => r !== role) : [...prev.roles, role]
+    }));
   }
 
   function openRoleEdit(u: AppUser) {
@@ -127,7 +138,7 @@ export default function AdminUsersPage() {
       subtitle="Manage staff accounts, roles, and access control."
       actions={
         <Button type="button" onClick={() => setInviteModal(true)}>
-          + Invite User
+          + Create User
         </Button>
       }
     >
@@ -310,7 +321,7 @@ export default function AdminUsersPage() {
           <div className="db-modal animate-modal">
             <div className="db-modal-title">Invite User</div>
             <p style={{ fontSize: 13, color: 'var(--db-td)', marginBottom: 16 }}>
-              An invitation email will be sent. The user will appear in this list after they log in for the first time.
+              Create a new user account with initial roles.
             </p>
             <div className="db-field">
               <label className="db-label">Email *</label>
@@ -320,11 +331,33 @@ export default function AdminUsersPage() {
                 placeholder="user@example.com" />
             </div>
             <div className="db-field" style={{ marginTop: 12 }}>
+              <label className="db-label">Password *</label>
+              <input className="db-input" type="password"
+                value={inviteForm.password}
+                onChange={(e) => setInviteForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="Minimum 8 characters" />
+            </div>
+            <div className="db-field" style={{ marginTop: 12 }}>
               <label className="db-label">Full Name</label>
               <input className="db-input"
                 value={inviteForm.fullName}
                 onChange={(e) => setInviteForm((f) => ({ ...f, fullName: e.target.value }))}
                 placeholder="Optional" />
+            </div>
+            <div className="db-field" style={{ marginTop: 12 }}>
+              <label className="db-label">Initial Roles *</label>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {ALL_ROLES.map((role) => (
+                  <label key={role} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={inviteForm.roles.includes(role)}
+                      onChange={() => toggleInviteRole(role)}
+                    />
+                    {fmt(role)}
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="db-form-actions">
               <Button type="button" variant="outline" onClick={() => setInviteModal(false)}>
@@ -332,10 +365,10 @@ export default function AdminUsersPage() {
               </Button>
               <Button
                 type="button"
-                disabled={inviting || !inviteForm.email}
+                disabled={inviting || !inviteForm.email || inviteForm.password.length < 8 || inviteForm.roles.length === 0}
                 onClick={invite}
               >
-                {inviting ? 'Sending…' : 'Send Invite'}
+                {inviting ? 'Creating…' : 'Create User'}
               </Button>
             </div>
           </div>

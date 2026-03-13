@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PageShell } from '../components/shell';
 
 type Profile = {
@@ -20,45 +19,64 @@ export default function AdminProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
+    fetch('/api/auth/me', { method: 'GET', cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) {
+          setLoadingProfile(false);
+          return null;
+        }
+        const data = (await res.json()) as {
+          user?: { email?: string; fullName?: string | null; roles?: string[]; createdAt?: string };
+        };
+        return data.user ?? null;
+      })
+      .then((user) => {
+        if (!user) return;
+        const fullName: string = user.fullName || user.email?.split('@')[0] || 'Admin';
+        const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+        const role = user.roles?.[0] || 'admin';
+        setProfile({
+          name: fullName,
+          email: user.email || '',
+          initials,
+          role,
+          createdAt: user.createdAt || '',
+        });
+        setForm((f) => ({ ...f, fullName }));
         setLoadingProfile(false);
-        return;
-      }
-      const fullName: string = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Admin';
-      const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-      const role = data.user.user_metadata?.role || data.user.app_metadata?.role || 'admin';
-      setProfile({
-        name: fullName,
-        email: data.user.email || '',
-        initials,
-        role,
-        createdAt: data.user.created_at || '',
+      })
+      .catch(() => {
+        setLoadingProfile(false);
       });
-      setForm((f) => ({ ...f, fullName }));
-      setLoadingProfile(false);
-    });
   }, []);
 
   async function saveProfile() {
     setSaving(true); setMsg(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ data: { full_name: form.fullName } });
+    const res = await fetch('/api/auth/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fullName: form.fullName })
+    });
+    const data = (await res.json()) as { error?: string };
     setSaving(false);
-    if (error) { setMsg({ type: 'error', text: error.message }); return; }
+    if (!res.ok) { setMsg({ type: 'error', text: data.error || 'Profile update failed' }); return; }
     setProfile((p) => p ? { ...p, name: form.fullName, initials: form.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) } : p);
     setMsg({ type: 'success', text: 'Profile updated successfully.' });
   }
 
   async function changePassword() {
     if (form.newPassword !== form.confirmPassword) { setMsg({ type: 'error', text: 'Passwords do not match.' }); return; }
-    if (form.newPassword.length < 6) { setMsg({ type: 'error', text: 'Password must be at least 6 characters.' }); return; }
+    if (form.newPassword.length < 8) { setMsg({ type: 'error', text: 'Password must be at least 8 characters.' }); return; }
+    if (!form.currentPassword) { setMsg({ type: 'error', text: 'Current password is required.' }); return; }
     setSaving(true); setMsg(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ password: form.newPassword });
+    const res = await fetch('/api/auth/password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword })
+    });
+    const data = (await res.json()) as { error?: string };
     setSaving(false);
-    if (error) { setMsg({ type: 'error', text: error.message }); return; }
+    if (!res.ok) { setMsg({ type: 'error', text: data.error || 'Password change failed' }); return; }
     setForm((f) => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
     setMsg({ type: 'success', text: 'Password changed successfully.' });
   }
@@ -137,8 +155,12 @@ export default function AdminProfilePage() {
             <span className="db-table-title">Change Password</span>
           </div>
           <div className="db-field">
+            <label className="db-label">Current Password</label>
+            <input className="db-input" type="password" value={form.currentPassword} onChange={(e) => f('currentPassword', e.target.value)} placeholder="Your current password" />
+          </div>
+          <div className="db-field">
             <label className="db-label">New Password</label>
-            <input className="db-input" type="password" value={form.newPassword} onChange={(e) => f('newPassword', e.target.value)} placeholder="Min. 6 characters" />
+            <input className="db-input" type="password" value={form.newPassword} onChange={(e) => f('newPassword', e.target.value)} placeholder="Min. 8 characters" />
           </div>
           <div className="db-field" style={{ marginTop: 12 }}>
             <label className="db-label">Confirm Password</label>
@@ -146,7 +168,7 @@ export default function AdminProfilePage() {
           </div>
           <div style={{ marginTop: 12 }}>
             <button className="db-btn db-btn-primary" type="button"
-              disabled={saving || !form.newPassword || !form.confirmPassword} onClick={changePassword}>
+              disabled={saving || !form.currentPassword || !form.newPassword || !form.confirmPassword} onClick={changePassword}>
               {saving ? 'Saving…' : 'Change Password'}
             </button>
           </div>

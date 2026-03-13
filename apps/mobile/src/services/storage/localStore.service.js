@@ -2,6 +2,7 @@ import { MMKV } from 'react-native-mmkv';
 class LocalStoreService {
     constructor() {
         this.KEY_API_TOKEN = 'apiToken';
+        this.KEY_REFRESH_TOKEN = 'refreshToken';
         this.KEY_THEME = 'theme';
         this.KEY_SYSTEM_LANGUAGE = 'systemLanguage';
         this.store = new MMKV();
@@ -21,6 +22,19 @@ class LocalStoreService {
     }
     clearApiToken() {
         this.store.delete(this.KEY_API_TOKEN);
+    }
+    setRefreshToken(token) {
+        this.store.set(this.KEY_REFRESH_TOKEN, token);
+    }
+    getRefreshToken() {
+        return this.store.getString(this.KEY_REFRESH_TOKEN) ?? null;
+    }
+    clearRefreshToken() {
+        this.store.delete(this.KEY_REFRESH_TOKEN);
+    }
+    clearAuthTokens() {
+        this.clearApiToken();
+        this.clearRefreshToken();
     }
     getTheme() {
         return this.store.getString(this.KEY_THEME) ?? 'system';

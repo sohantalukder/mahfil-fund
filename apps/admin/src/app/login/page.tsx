@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -16,10 +15,17 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = (await res.json()) as { error?: string };
     setLoading(false);
-    if (signInError) { setError(signInError.message); return; }
+    if (!res.ok) {
+      setError(data.error ?? 'Sign in failed');
+      return;
+    }
     router.replace(params.get('next') || '/');
   }
 

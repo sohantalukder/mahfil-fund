@@ -7,6 +7,8 @@ import type { UserRoleName } from '@prisma/client';
 type CurrentUser = {
   id: string;
   email: string;
+  fullName?: string | null;
+  createdAt?: Date;
   roles: UserRoleName[];
   isActive: boolean;
   emailVerified: boolean;
@@ -54,6 +56,8 @@ export const authPlugin: FastifyPluginAsync = fp(async (app) => {
     const current: CurrentUser = {
       id: user.id,
       email: user.email,
+      fullName: user.fullName,
+      createdAt: user.createdAt,
       roles,
       isActive: user.isActive,
       emailVerified: user.emailVerified,

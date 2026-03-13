@@ -1,27 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { callApi, clearAuthCookies, getTokensFromCookies, setAuthCookies } from '@/lib/auth/server';
 
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+type RefreshData = { accessToken: string; refreshToken: string };
+type CreateUserData = { user: unknown };
+
+async function ensureAccessToken(): Promise<string | null> {
+  const { accessToken, refreshToken } = await getTokensFromCookies();
+  if (accessToken) return accessToken;
+  if (!refreshToken) return null;
+
+  const refreshed = await callApi<RefreshData>('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken })
+  });
+  if (!refreshed.ok) {
+    await clearAuthCookies();
+    return null;
+  }
+
+  await setAuthCookies(refreshed.data.accessToken, refreshed.data.refreshToken);
+  return refreshed.data.accessToken;
 }
 
-// POST /api/admin/users  — invite a user by email
 export async function POST(req: NextRequest) {
   try {
-    const { email, fullName } = await req.json();
-    if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    const token = await ensureAccessToken();
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const supabase = adminClient();
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName || null },
+    const { email, password, fullName, roles } = await req.json();
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    }
+
+    const created = await callApi<CreateUserData>('/users', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        email,
+        password,
+        fullName: fullName || undefined,
+        roles: Array.isArray(roles) ? roles : undefined
+      })
     });
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ user: data.user }, { status: 201 });
+    if (!created.ok) return NextResponse.json({ error: created.message }, { status: created.status });
+    return NextResponse.json(created.data, { status: 201 });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Internal error' }, { status: 500 });
   }

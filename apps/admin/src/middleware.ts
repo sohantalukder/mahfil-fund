@@ -1,36 +1,31 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { REFRESH_TOKEN_COOKIE } from '@/lib/auth/constants';
 
 const PUBLIC_PATHS = ['/login'];
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: {
-      getAll() {
-        return req.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          res.cookies.set(name, value, options);
-        }
-      }
-    }
-  });
-
   const pathname = req.nextUrl.pathname;
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return res;
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
 
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) {
+  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  const hasRefreshToken = !!req.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
+
+  if (isPublic && hasRefreshToken) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
+
+  if (!isPublic && !hasRefreshToken) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', pathname);
     return NextResponse.redirect(url);
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {

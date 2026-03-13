@@ -3,7 +3,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const NAV = [
   {
@@ -131,29 +130,33 @@ export function PageShell({
   const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
+    fetch('/api/auth/me', { method: 'GET', cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) {
+          router.replace('/login');
+          return null;
+        }
+        const data = (await res.json()) as { user?: { email?: string; fullName?: string | null } };
+        return data.user ?? null;
+      })
+      .then((authUser) => {
+        if (!authUser) return;
+        const fullName: string = authUser.fullName || authUser.email?.split('@')[0] || 'Admin';
+        const initials = fullName
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
+        setUser({ name: fullName, email: authUser.email || '', initials });
+      })
+      .catch(() => {
         router.replace('/login');
-        return;
-      }
-      const fullName: string =
-        data.user.user_metadata?.full_name ||
-        data.user.email?.split('@')[0] ||
-        'Admin';
-      const initials = fullName
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-      setUser({ name: fullName, email: data.user.email || '', initials });
-    });
+      });
   }, [router]);
 
   async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/login');
   }
 
