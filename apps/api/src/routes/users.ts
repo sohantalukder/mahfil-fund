@@ -19,11 +19,11 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
     const result = users.map((u) => ({
       id: u.id,
-      authUserId: u.authUserId,
       email: u.email,
       phone: u.phone,
       fullName: u.fullName,
       isActive: u.isActive,
+      emailVerified: u.emailVerified,
       roles: u.roles.map((ur) => ur.role.name),
       createdAt: u.createdAt,
     }));
@@ -71,7 +71,6 @@ export async function registerUserRoutes(app: FastifyInstance) {
         {
           user: {
             id: updated!.id,
-            authUserId: updated!.authUserId,
             email: updated!.email,
             isActive: updated!.isActive,
             roles: updated!.roles.map((ur) => ur.role.name),

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { ok } from '../shared/http.js';
+import { registerAuthRoutes } from './auth.js';
 import { registerEventRoutes } from './events.js';
 import { registerDonorRoutes } from './donors.js';
 import { registerDonationRoutes } from './donations.js';
@@ -29,6 +30,7 @@ export function registerRoutes(app: FastifyInstance) {
     );
   });
 
+  registerAuthRoutes(app);
   registerEventRoutes(app);
   registerDonorRoutes(app);
   registerDonationRoutes(app);

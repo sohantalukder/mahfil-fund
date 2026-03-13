@@ -52,15 +52,22 @@ enum SyncOpStatus {
   FAILED
 }
 
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  authUserId  String   @unique @db.Uuid
-  email       String?
-  phone       String?
-  fullName    String?
-  isActive    Boolean  @default(true)
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  passwordHash  String
+  phone         String?
+  fullName      String?
+  emailVerified Boolean  @default(false)
+  isActive      Boolean  @default(true)
 
   roles       UserRole[]
+  refreshTokens RefreshToken[]
 
   eventsCreated     Event[]     @relation("EventCreatedBy")
   eventsUpdated     Event[]     @relation("EventUpdatedBy")
@@ -77,7 +84,35 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([authUserId])
+  @@index([email])
+}
+
+model Otp {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String
+  code      String
+  type      OtpType
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  token     String    @unique
+  userId    String    @db.Uuid
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Role {

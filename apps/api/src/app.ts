@@ -9,6 +9,7 @@ import { prismaPlugin } from './plugins/prisma.js';
 import { requestMetadataPlugin } from './plugins/requestMetadata.js';
 import { authPlugin } from './plugins/auth.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
+import { initMailTransporter } from './services/mail.js';
 import { registerRoutes } from './routes/index.js';
 import { registerErrorHandler } from './routes/errorHandler.js';
 
@@ -37,6 +38,8 @@ export function buildApp() {
   app.register(requestMetadataPlugin);
   app.register(authPlugin);
   app.register(idempotencyPlugin);
+
+  initMailTransporter(env);
 
   registerErrorHandler(app);
   registerRoutes(app);

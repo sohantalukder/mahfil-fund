@@ -1,25 +1,19 @@
 import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { decodeJwt } from 'jose';
+import { verifyAccessToken } from '../services/token.js';
 import { Errors } from '../shared/errors.js';
 import type { UserRoleName } from '@prisma/client';
 
-type AuthContext = {
-  authUserId: string;
-  email?: string;
-  phone?: string;
-};
-
 type CurrentUser = {
   id: string;
-  authUserId: string;
+  email: string;
   roles: UserRoleName[];
   isActive: boolean;
+  emailVerified: boolean;
 };
 
 declare module 'fastify' {
   interface FastifyRequest {
-    auth?: AuthContext;
     currentUser?: CurrentUser;
   }
 
@@ -34,47 +28,38 @@ export const authPlugin: FastifyPluginAsync = fp(async (app) => {
     if (!authHeader?.startsWith('Bearer ')) throw Errors.unauthorized();
 
     const token = authHeader.slice('Bearer '.length);
-    let payload: Record<string, unknown>;
+
+    let sub: string;
     try {
-      // DEV MODE: decode Supabase JWT without signature verification to avoid local crypto/JWK issues.
-      payload = decodeJwt(token) as Record<string, unknown>;
+      const payload = await verifyAccessToken(token, app.env.JWT_SECRET);
+      sub = payload.sub;
     } catch {
-      throw Errors.unauthorized('Invalid token');
+      throw Errors.unauthorized('Invalid or expired token');
     }
 
-    const authUserId = String(payload.sub ?? '');
-    if (!authUserId) throw Errors.unauthorized('Invalid token subject');
-
-    const email = typeof payload.email === 'string' ? payload.email : undefined;
-    const phone = typeof payload.phone === 'string' ? payload.phone : undefined;
-
-    req.auth = { authUserId, email, phone };
-
-    // Ensure app-level user exists (profile + roles)
-    const user = await app.prisma.user.upsert({
-      where: { authUserId },
-      create: { authUserId, email, phone },
-      update: { email, phone }
+    const user = await app.prisma.user.findUnique({
+      where: { id: sub },
     });
+
+    if (!user) throw Errors.unauthorized('User not found');
+    if (!user.isActive) throw Errors.forbidden('Account disabled');
 
     const userRoles = await app.prisma.userRole.findMany({
       where: { userId: user.id },
-      include: { role: true }
+      include: { role: true },
     });
 
     const roles: UserRoleName[] = userRoles.map((ur) => ur.role.name);
 
     const current: CurrentUser = {
       id: user.id,
-      authUserId: user.authUserId,
+      email: user.email,
       roles,
-      isActive: user.isActive
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
     };
-
-    if (!current.isActive) throw Errors.forbidden('Account disabled');
 
     req.currentUser = current;
     return current;
   });
 });
-

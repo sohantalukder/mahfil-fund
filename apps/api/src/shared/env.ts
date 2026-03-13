@@ -4,14 +4,23 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
 
-  // Supabase
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(10),
-  // Used for verifying Supabase JWTs server-side (HS256)
-  SUPABASE_JWT_SECRET: z.string().min(10),
+  // JWT
+  JWT_SECRET: z.string().min(32),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   // Prisma
   DATABASE_URL: z.string().min(10),
+
+  // Mailtrap SMTP
+  MAILTRAP_HOST: z.string().min(1),
+  MAILTRAP_PORT: z.coerce.number().int().default(2525),
+  MAILTRAP_USER: z.string().min(1),
+  MAILTRAP_PASS: z.string().min(1),
+  MAIL_FROM: z.string().email().default('noreply@mahfilfund.com'),
+
+  // OTP
+  OTP_EXPIRY_MINUTES: z.coerce.number().int().min(1).default(10),
 
   // Network
   CORS_ORIGIN: z.string().default('*'),
@@ -29,4 +38,3 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
   }
   return parsed.data;
 }
-
