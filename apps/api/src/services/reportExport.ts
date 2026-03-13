@@ -1,11 +1,27 @@
 import ExcelJS from 'exceljs';
 import { Parser as CsvParser } from '@json2csv/plainjs';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const PdfPrinter = require('pdfmake/build/printer');
+import { createRequire } from 'node:module';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TDocumentDefinitions = any;
 import type { PrismaClient } from '@prisma/client';
 import { formatDate, formatCurrencyBDT } from '@mahfil/utils';
+
+const _require = createRequire(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const pdfmake = _require('pdfmake');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const RobotoFont = _require('pdfmake/build/fonts/Roboto.js');
+
+// Register Roboto font once at startup.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+Object.entries(RobotoFont.vfs as Record<string, { data: number[] }>).forEach(([k, v]) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  pdfmake.virtualfs.writeFileSync(k, Buffer.from(new Uint8Array(v.data)));
+});
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+pdfmake.addFonts(RobotoFont.fonts as Record<string, unknown>);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+pdfmake.setUrlAccessPolicy(() => ({ allowed: false }));
 
 export type ReportFormat = 'pdf' | 'xlsx' | 'csv';
 export type ReportType =
@@ -29,15 +45,6 @@ export interface ReportRow {
   [key: string]: string | number | undefined;
 }
 
-const fonts = {
-  Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js'
-  }
-};
-const printer = new PdfPrinter(fonts);
 
 async function fetchReportData(
   prisma: PrismaClient,
@@ -274,15 +281,7 @@ export async function generateReport(
     footer: (page: number, pages: number) => ({ text: `${communityName} — Page ${page} of ${pages}`, fontSize: 8, color: '#9CA3AF', alignment: 'center', margin: [40, 0] })
   };
 
-  const pdfDoc = printer.createPdfKitDocument(docDef);
-  const chunks: Buffer[] = [];
-
-  const buffer = await new Promise<Buffer>((resolve, reject) => {
-    pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
-  });
-
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  const buffer = Buffer.from(await pdfmake.createPdf(docDef).getBuffer() as Uint8Array);
   return { buffer, contentType: 'application/pdf', filename: `${baseFilename}.pdf` };
 }

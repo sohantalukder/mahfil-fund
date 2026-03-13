@@ -1,25 +1,29 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const PdfPrinter = require('pdfmake/build/printer');
+import { createRequire } from 'node:module';
 // pdfmake types may be incomplete; use any-cast where needed
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TDocumentDefinitions = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type StyleDictionary = any;
+
+const _require = createRequire(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const pdfmake = _require('pdfmake');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const RobotoFont = _require('pdfmake/build/fonts/Roboto.js');
+
+// Register Roboto font once at startup.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+Object.entries(RobotoFont.vfs as Record<string, { data: number[] }>).forEach(([k, v]) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  pdfmake.virtualfs.writeFileSync(k, Buffer.from(new Uint8Array(v.data)));
+});
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+pdfmake.addFonts(RobotoFont.fonts as Record<string, unknown>);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+pdfmake.setUrlAccessPolicy(() => ({ allowed: false }));
 import { amountToWordsBangla, toBanglaDigits } from '../shared/banglaUtils.js';
 import { formatDate } from '@mahfil/utils';
 
-// Font registration - using built-in Roboto as fallback (Bangla via unicode fallback)
-// In production, provide actual HindSiliguri font files at apps/api/assets/fonts/
-const fonts = {
-  Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js'
-  }
-};
-
-const printer = new PdfPrinter(fonts);
 
 const styles: StyleDictionary = {
   header: { fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 4] },
@@ -49,7 +53,7 @@ export interface InvoicePdfData {
   eventName?: string;
 }
 
-export function generateInvoicePdf(data: InvoicePdfData): Buffer {
+export async function generateInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
   const amountBn = amountToWordsBangla(data.amount);
   const amountFormatted = `৳${data.amount.toLocaleString('bn-BD')}`;
   const dateFormatted = formatDate(data.issueDate, 'bn-BD');
@@ -166,27 +170,13 @@ export function generateInvoicePdf(data: InvoicePdfData): Buffer {
     })
   };
 
-  const pdfDoc = printer.createPdfKitDocument(docDefinition);
-  const chunks: Buffer[] = [];
-
-  return new Promise<Buffer>((resolve, reject) => {
-    pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
-  }) as unknown as Buffer;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  return Buffer.from(await pdfmake.createPdf(docDefinition).getBuffer() as Uint8Array);
 }
 
 export async function generateInvoicePdfAsync(data: InvoicePdfData): Promise<Buffer> {
-  const pdfDoc = printer.createPdfKitDocument(buildDocDefinition(data));
-  const chunks: Buffer[] = [];
-
-  return new Promise<Buffer>((resolve, reject) => {
-    pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  return Buffer.from(await pdfmake.createPdf(buildDocDefinition(data)).getBuffer() as Uint8Array);
 }
 
 function buildDocDefinition(data: InvoicePdfData): TDocumentDefinitions {

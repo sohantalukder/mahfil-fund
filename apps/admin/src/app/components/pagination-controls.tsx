@@ -1,6 +1,14 @@
 'use client';
 
-import { Button } from './ui/button';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from './ui/pagination';
 
 type PaginationControlsProps = {
   page: number;
@@ -12,6 +20,24 @@ type PaginationControlsProps = {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 };
+
+function buildPageRange(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | 'ellipsis')[] = [];
+
+  if (current <= 4) {
+    pages.push(1, 2, 3, 4, 5, 'ellipsis', total);
+  } else if (current >= total - 3) {
+    pages.push(1, 'ellipsis', total - 4, total - 3, total - 2, total - 1, total);
+  } else {
+    pages.push(1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total);
+  }
+
+  return pages;
+}
 
 export function PaginationControls({
   page,
@@ -28,18 +54,11 @@ export function PaginationControls({
   const hasPrev = safePage > 1;
   const hasNext = safePage < safeTotalPages;
 
+  const pageRange = buildPageRange(safePage, safeTotalPages);
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12,
-        flexWrap: 'wrap',
-        marginTop: 14
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="flex flex-wrap items-center justify-between gap-3 mt-3.5">
+      <div className="flex items-center gap-2">
         <span className="db-page-subtitle" style={{ margin: 0 }}>
           {loading ? 'Loading…' : `${total} total`}
         </span>
@@ -58,17 +77,41 @@ export function PaginationControls({
         </select>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Button type="button" variant="outline" disabled={!hasPrev || loading} onClick={() => onPageChange(safePage - 1)}>
-          Prev
-        </Button>
-        <span className="db-page-subtitle" style={{ margin: 0, minWidth: 110, textAlign: 'center' }}>
-          Page {safePage} of {safeTotalPages}
-        </span>
-        <Button type="button" variant="outline" disabled={!hasNext || loading} onClick={() => onPageChange(safePage + 1)}>
-          Next
-        </Button>
-      </div>
+      <Pagination className="w-auto mx-0">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => onPageChange(safePage - 1)}
+              disabled={!hasPrev || loading}
+            />
+          </PaginationItem>
+
+          {pageRange.map((item, index) =>
+            item === 'ellipsis' ? (
+              <PaginationItem key={`ellipsis-${index}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={item}>
+                <PaginationLink
+                  isActive={item === safePage}
+                  disabled={loading}
+                  onClick={() => item !== safePage && onPageChange(item)}
+                >
+                  {item}
+                </PaginationLink>
+              </PaginationItem>
+            )
+          )}
+
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => onPageChange(safePage + 1)}
+              disabled={!hasNext || loading}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }

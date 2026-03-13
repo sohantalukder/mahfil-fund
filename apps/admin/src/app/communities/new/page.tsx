@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { PageShell } from '../../components/shell';
 import { useToast } from '../../components/toast';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 interface FormData {
   name: string;
@@ -15,6 +20,25 @@ interface FormData {
   thana: string;
   contactNumber: string;
   email: string;
+}
+
+function Label({ children, required, className }: { children: React.ReactNode; required?: boolean; className?: string }) {
+  return (
+    <label className={cn('text-sm font-medium text-foreground', className)}>
+      {children}
+      {required && <span className="ml-0.5 text-red-500">*</span>}
+    </label>
+  );
+}
+
+function FormField({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label required={required}>{label}</Label>
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
 }
 
 export default function NewCommunityPage() {
@@ -39,9 +63,9 @@ export default function NewCommunityPage() {
       if (!res.ok) throw new Error(json.error?.message ?? 'Failed to create');
       return json.data!;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       addToast({ type: 'success', message: 'Community created!' });
-      router.push(`/communities`);
+      router.push('/communities');
     },
     onError: (err: Error) => addToast({ type: 'error', message: err.message })
   });
@@ -61,80 +85,114 @@ export default function NewCommunityPage() {
     <PageShell title="New Community" subtitle="Create a new community tenant">
       <form
         onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }}
-        style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 20 }}
+        className="flex max-w-2xl flex-col gap-5"
       >
-        <div className="db-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Basic Information</h3>
+        {/* Basic Information */}
+        <Card className="flex flex-col gap-5">
+          <div className="border-b border-border-subtle/60 pb-3">
+            <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Core details that identify this community.</p>
+          </div>
 
-          <div className="db-form-group">
-            <label className="db-label">Community Name *</label>
-            <input
-              className="db-input"
+          <FormField label="Community Name" required>
+            <Input
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="e.g. Bhabanipur Youth Society"
               required
             />
-          </div>
+          </FormField>
 
-          <div className="db-form-group">
-            <label className="db-label">Slug *</label>
-            <input
-              className="db-input"
+          <FormField
+            label="Slug"
+            required
+            hint="Only lowercase letters, numbers, and hyphens"
+          >
+            <Input
               value={form.slug}
               onChange={(e) => handleChange('slug', e.target.value)}
               placeholder="e.g. bhabanipur-youth-society"
               pattern="[a-z0-9-]+"
               required
             />
-            <span style={{ fontSize: 11, color: '#9CA3AF' }}>Only lowercase letters, numbers, and hyphens</span>
-          </div>
+          </FormField>
 
-          <div className="db-form-group">
-            <label className="db-label">Description</label>
-            <textarea
-              className="db-textarea"
+          <FormField label="Description">
+            <Textarea
               value={form.description}
               onChange={(e) => handleChange('description', e.target.value)}
               placeholder="Brief description of this community..."
               rows={3}
             />
-          </div>
-        </div>
+          </FormField>
+        </Card>
 
-        <div className="db-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Location & Contact</h3>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="db-form-group">
-              <label className="db-label">Location</label>
-              <input className="db-input" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="Area/Village" />
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">District</label>
-              <input className="db-input" value={form.district} onChange={(e) => handleChange('district', e.target.value)} placeholder="District" />
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">Thana</label>
-              <input className="db-input" value={form.thana} onChange={(e) => handleChange('thana', e.target.value)} placeholder="Thana" />
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">Contact Number</label>
-              <input className="db-input" value={form.contactNumber} onChange={(e) => handleChange('contactNumber', e.target.value)} placeholder="01XXXXXXXXX" />
-            </div>
+        {/* Location & Contact */}
+        <Card className="flex flex-col gap-5">
+          <div className="border-b border-border-subtle/60 pb-3">
+            <h3 className="text-sm font-semibold text-foreground">Location & Contact</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Where this community is based and how to reach them.</p>
           </div>
 
-          <div className="db-form-group">
-            <label className="db-label">Email</label>
-            <input className="db-input" type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="contact@community.org" />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Location">
+              <Input
+                value={form.location}
+                onChange={(e) => handleChange('location', e.target.value)}
+                placeholder="Area/Village"
+              />
+            </FormField>
+            <FormField label="District">
+              <Input
+                value={form.district}
+                onChange={(e) => handleChange('district', e.target.value)}
+                placeholder="District"
+              />
+            </FormField>
+            <FormField label="Thana">
+              <Input
+                value={form.thana}
+                onChange={(e) => handleChange('thana', e.target.value)}
+                placeholder="Thana"
+              />
+            </FormField>
+            <FormField label="Contact Number">
+              <Input
+                value={form.contactNumber}
+                onChange={(e) => handleChange('contactNumber', e.target.value)}
+                placeholder="01XXXXXXXXX"
+              />
+            </FormField>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button type="button" className="db-btn-secondary" onClick={() => router.back()}>Cancel</button>
-          <button type="submit" className="db-btn-primary" disabled={createMutation.isPending}>
+          <FormField label="Email">
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              placeholder="contact@community.org"
+            />
+          </FormField>
+        </Card>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="default"
+            size="lg"
+            disabled={createMutation.isPending}
+          >
             {createMutation.isPending ? 'Creating...' : 'Create Community'}
-          </button>
+          </Button>
         </div>
       </form>
     </PageShell>
