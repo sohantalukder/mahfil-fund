@@ -28,7 +28,10 @@ async function main() {
         passwordHash,
         emailVerified: true,
       },
-      update: {},
+      update: {
+        passwordHash,
+        emailVerified: true,
+      },
     });
 
     const superAdminRole = await prisma.role.findUniqueOrThrow({

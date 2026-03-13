@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 import { Button } from '../components/ui/button';
+import { useToast } from '../components/toast';
 
 type AppUser = {
   id: string;
@@ -33,8 +34,38 @@ const ROLE_PERMS: Record<string, { read: boolean; write: boolean; del: boolean; 
   super_admin: { read: true,  write: true,  del: true,  admin: true  },
 };
 
+const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#ea580c', '#db2777', '#0f766e'];
+
+function prettyNameFromEmail(email?: string): string {
+  if (!email) return 'Unknown User';
+  const local = email.split('@')[0] ?? '';
+  return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim() || email;
+}
+
+function getDisplayName(user: AppUser): string {
+  const candidate = user.fullName?.trim();
+  if (candidate) return candidate;
+  return prettyNameFromEmail(user.email);
+}
+
+function getInitials(name: string): string {
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function getAvatarColor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? AVATAR_COLORS[0];
+}
+
 export default function AdminUsersPage() {
   const api = useMemo(() => getApi(), []);
+  const { toast } = useToast();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [me, setMe] = useState<{ id: string; roles: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +122,8 @@ export default function AdminUsersPage() {
     if (!res.ok) { setError(d.error || 'Invite failed'); return; }
     setInviteModal(false);
     setInviteForm({ email: '', password: '', fullName: '', roles: ['viewer'] });
-    alert(`User created: ${inviteForm.email}`);
+    toast(`User created: ${inviteForm.email}`, 'success');
+    load();
   }
 
   function toggleInviteRole(role: RoleName) {
@@ -178,20 +210,21 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((u) => {
-                const initials = ((u.fullName || u.email || 'U').split(/[\s@]/)[0]).slice(0, 2).toUpperCase();
-                const topRole = ALL_ROLES.find((r) => u.roles.includes(r)) || 'viewer';
+                const displayName = getDisplayName(u);
+                const initials = getInitials(displayName);
+                const avatarColor = getAvatarColor(u.id || u.email || displayName);
                 const isMe = u.id === me?.id;
                 return (
                   <tr key={u.id} style={{ opacity: u.isActive ? 1 : 0.55 }}>
                     <td>
                       <div className="db-donor-cell">
                         <div className="db-donor-avatar"
-                          style={{ background: ROLE_COLOR[topRole] || '#1a5c38' }}>
+                          style={{ background: avatarColor, color: '#fff' }}>
                           {initials}
                         </div>
                         <div>
                           <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>
-                            {u.fullName || '—'}
+                            {displayName}
                           </span>
                           {isMe && (
                             <span style={{ marginLeft: 6, fontSize: 11, color: '#059669' }}>● you</span>

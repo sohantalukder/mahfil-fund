@@ -79,7 +79,7 @@ export default function AdminDonationsPage() {
   const [donorsLoading, setDonorsLoading] = useState(true);
 
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState<DonationFormState>({ ...BLANK });
@@ -263,6 +263,7 @@ export default function AdminDonationsPage() {
   const totalAmount = donations.reduce((s, x) => s + x.amount, 0);
   const uniqueDonors = new Set(donations.map((d) => d.donorId)).size;
   const hasEvents = !eventsLoading && events.length > 0;
+  const isInitialLoading = (eventsLoading || loading) && donations.length === 0;
 
   const filteredDonations = donations.filter((x) => {
     const q = search.trim().toLowerCase();
@@ -368,15 +369,15 @@ export default function AdminDonationsPage() {
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Collected</div>
-          <div className="db-stat-value">{fmtBDT(totalAmount)}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : fmtBDT(totalAmount)}</div>
         </div>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Donations</div>
-          <div className="db-stat-value">{donations.length}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : donations.length}</div>
         </div>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Unique Donors</div>
-          <div className="db-stat-value">{uniqueDonors}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : uniqueDonors}</div>
         </div>
       </div>
 
@@ -384,12 +385,16 @@ export default function AdminDonationsPage() {
         <div className="db-table-header">
           <span className="db-table-title">Donations</span>
           <span className="db-stat-badge db-stat-badge-green">
-            {search.trim()
+            {isInitialLoading
+              ? 'Loading…'
+              : search.trim()
               ? `${filteredDonations.length} of ${donations.length} items`
               : `${donations.length} items`}
           </span>
         </div>
-        {!eventId ? (
+        {isInitialLoading ? (
+          <div className="db-empty">Loading donations…</div>
+        ) : !eventId ? (
           <div className="db-empty">Select an event to load donations.</div>
         ) : donations.length === 0 && !loading ? (
           <div className="db-empty">No donations found for this event.</div>

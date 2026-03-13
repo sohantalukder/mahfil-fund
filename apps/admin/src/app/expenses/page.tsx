@@ -42,7 +42,7 @@ export default function AdminExpensesPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState({ ...BLANK });
@@ -106,6 +106,7 @@ export default function AdminExpensesPage() {
   const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
   const total = expenses.reduce((s, x) => s + x.amount, 0);
   const hasEvents = !eventsLoading && events.length > 0;
+  const isInitialLoading = (eventsLoading || loading) && expenses.length === 0;
 
   const filteredExpenses = expenses.filter((x) => {
     const q = search.trim().toLowerCase();
@@ -158,15 +159,17 @@ export default function AdminExpensesPage() {
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Expenses</div>
-          <div className="db-stat-value">{fmtBDT(total)}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : fmtBDT(total)}</div>
         </div>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Number of Items</div>
-          <div className="db-stat-value">{expenses.length}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : expenses.length}</div>
         </div>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Avg per Item</div>
-          <div className="db-stat-value">{expenses.length ? fmtBDT(total / expenses.length) : '—'}</div>
+          <div className="db-stat-value">
+            {isInitialLoading ? '…' : expenses.length ? fmtBDT(total / expenses.length) : '—'}
+          </div>
         </div>
       </div>
 
@@ -174,12 +177,16 @@ export default function AdminExpensesPage() {
         <div className="db-table-header">
           <span className="db-table-title">Expenses</span>
           <span className="db-stat-badge db-stat-badge-blue">
-            {search.trim()
+            {isInitialLoading
+              ? 'Loading…'
+              : search.trim()
               ? `${filteredExpenses.length} of ${expenses.length} items`
               : `${expenses.length} items`}
           </span>
         </div>
-        {!eventId ? (
+        {isInitialLoading ? (
+          <div className="db-empty">Loading expenses…</div>
+        ) : !eventId ? (
           <div className="db-empty">Select an event to load expenses.</div>
         ) : expenses.length === 0 && !loading ? (
           <div className="db-empty">No expenses found for this event.</div>

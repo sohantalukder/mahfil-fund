@@ -4,12 +4,21 @@ import { ok } from '../shared/http.js';
 import { parseWith } from '../shared/validate.js';
 import { requireRoles } from '../plugins/rbac.js';
 import { Errors } from '../shared/errors.js';
+import { writeAuditLog } from '../shared/audit.js';
 import type { UserRoleName } from '@prisma/client';
 import { revokeAllUserTokens } from '../services/token.js';
 import bcrypt from 'bcrypt';
 
 const VALID_ROLES: UserRoleName[] = ['super_admin', 'admin', 'collector', 'viewer'];
 const SALT_ROUNDS = 12;
+
+function deriveNameFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? '';
+  return local
+    .replace(/[._-]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase()) || 'User';
+}
 
 export async function registerUserRoutes(app: FastifyInstance) {
   app.post('/users', { preHandler: [requireRoles(app, ['super_admin', 'admin'])] }, async (req) => {
@@ -24,6 +33,7 @@ export async function registerUserRoutes(app: FastifyInstance) {
     );
 
     const email = body.email.toLowerCase();
+    const fullName = body.fullName?.trim() || deriveNameFromEmail(email);
     const requestedRoles = Array.from(new Set((body.roles ?? ['viewer']) as UserRoleName[]));
     if (requestedRoles.includes('super_admin') && !req.currentUser?.roles.includes('super_admin')) {
       throw Errors.forbidden('Only super_admin can assign super_admin role');
@@ -44,7 +54,7 @@ export async function registerUserRoutes(app: FastifyInstance) {
         data: {
           email,
           passwordHash,
-          fullName: body.fullName,
+          fullName,
           emailVerified: true
         }
       });
@@ -57,6 +67,19 @@ export async function registerUserRoutes(app: FastifyInstance) {
         where: { id: user.id },
         include: { roles: { include: { role: true } } }
       });
+    });
+
+    await writeAuditLog(app, req, {
+      entityType: 'user',
+      entityId: created.id,
+      action: 'CREATE',
+      after: {
+        id: created.id,
+        email: created.email,
+        fullName: created.fullName,
+        isActive: created.isActive,
+        roles: created.roles.map((ur) => ur.role.name),
+      },
     });
 
     return ok(
@@ -110,6 +133,10 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
       const user = await app.prisma.user.findUnique({ where: { id: params.id } });
       if (!user) throw Errors.notFound('User not found');
+      const existingRoles = await app.prisma.userRole.findMany({
+        where: { userId: params.id },
+        include: { role: true },
+      });
 
       // Resolve role IDs
       const roles = await app.prisma.role.findMany({
@@ -131,6 +158,21 @@ export async function registerUserRoutes(app: FastifyInstance) {
       const updated = await app.prisma.user.findUnique({
         where: { id: params.id },
         include: { roles: { include: { role: true } } },
+      });
+
+      await writeAuditLog(app, req, {
+        entityType: 'user',
+        entityId: params.id,
+        action: 'UPDATE',
+        before: {
+          roles: existingRoles.map((ur) => ur.role.name),
+        },
+        after: {
+          roles: updated!.roles.map((ur) => ur.role.name),
+          email: updated!.email,
+          fullName: updated!.fullName,
+          isActive: updated!.isActive,
+        },
       });
 
       return ok(
@@ -166,6 +208,14 @@ export async function registerUserRoutes(app: FastifyInstance) {
       const updated = await app.prisma.user.update({
         where: { id: params.id },
         data: { isActive: body.isActive },
+      });
+
+      await writeAuditLog(app, req, {
+        entityType: 'user',
+        entityId: params.id,
+        action: 'UPDATE',
+        before: { isActive: user.isActive, email: user.email, fullName: user.fullName },
+        after: { isActive: updated.isActive, email: updated.email, fullName: updated.fullName },
       });
 
       if (!body.isActive) {

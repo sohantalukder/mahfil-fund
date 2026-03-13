@@ -22,6 +22,10 @@ const EnvSchema = z.object({
   // OTP
   OTP_EXPIRY_MINUTES: z.coerce.number().int().min(1).default(10),
 
+  // Optional seed admin credentials (used for bootstrap/migration flows)
+  SEED_ADMIN_EMAIL: z.string().email().optional(),
+  SEED_ADMIN_PASSWORD: z.string().min(8).optional(),
+
   // Network
   CORS_ORIGIN: z.string().default('*'),
   TRUST_PROXY: z.coerce.boolean().default(true)

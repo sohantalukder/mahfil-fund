@@ -15,6 +15,7 @@ import {
 } from '../services/token.js';
 
 const SALT_ROUNDS = 12;
+const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$.{53}$/;
 
 const RegisterSchema = z.object({
   email: z.string().email(),
@@ -145,7 +146,31 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const user = await app.prisma.user.findUnique({ where: { email } });
     if (!user) throw Errors.unauthorized('Invalid email or password');
 
-    const valid = await bcrypt.compare(body.password, user.passwordHash);
+    const passwordHash = user.passwordHash;
+    let valid = false;
+    const isBcryptHash = BCRYPT_HASH_REGEX.test(passwordHash);
+
+    if (isBcryptHash) {
+      valid = await bcrypt.compare(body.password, passwordHash);
+    } else {
+      const seedEmail = app.env.SEED_ADMIN_EMAIL?.toLowerCase();
+      const seedPassword = app.env.SEED_ADMIN_PASSWORD;
+      const isSeedAdmin =
+        seedEmail &&
+        seedPassword &&
+        user.email.toLowerCase() === seedEmail &&
+        body.password === seedPassword;
+
+      // Legacy fallback: accept plaintext once, then migrate immediately to bcrypt.
+      valid = body.password === passwordHash || !!isSeedAdmin;
+      if (valid) {
+        const migratedHash = await bcrypt.hash(body.password, SALT_ROUNDS);
+        await app.prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: migratedHash }
+        });
+      }
+    }
     if (!valid) throw Errors.unauthorized('Invalid email or password');
 
     if (!user.emailVerified) {

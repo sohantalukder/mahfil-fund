@@ -6,6 +6,8 @@ import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 import { Button } from '../components/ui/button';
 import { ListToolbar } from '../components/list-toolbar';
+import { useToast } from '../components/toast';
+import { ConfirmModal } from '../components/actions';
 
 type Event = {
   id: string;
@@ -22,12 +24,14 @@ const fmtBDT = (n: number) => new Intl.NumberFormat('en-BD', { style: 'currency'
 
 export default function AdminEventsPage() {
   const api = useMemo(() => getApi(), []);
+  const { toast } = useToast();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState({ ...BLANK });
   const [editId, setEditId] = useState('');
   const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState('');
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -89,8 +93,12 @@ export default function AdminEventsPage() {
       return res;
     },
     onSuccess: () => {
+      toast(modal === 'create' ? 'Event created successfully.' : 'Event updated successfully.', 'success');
       setModal(null);
       queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (err: Error) => {
+      toast(err.message, 'error');
     },
   });
 
@@ -118,6 +126,12 @@ export default function AdminEventsPage() {
       setActivating('');
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
+    onSuccess: () => {
+      toast('Event activated successfully.', 'success');
+    },
+    onError: (err: Error) => {
+      toast(err.message, 'error');
+    },
   });
 
   async function activate(id: string) {
@@ -133,12 +147,16 @@ export default function AdminEventsPage() {
       return res;
     },
     onSuccess: () => {
+      toast('Event deleted successfully.', 'success');
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      setDeleteTarget(null);
+    },
+    onError: (err: Error) => {
+      toast(err.message, 'error');
     },
   });
 
   async function remove(id: string) {
-    if (!confirm('Delete this event? All associated data may be affected.')) return;
     await deleteMutation.mutateAsync(id);
   }
 
@@ -210,7 +228,7 @@ export default function AdminEventsPage() {
                       </button>
                     )}
                     <button className="db-action-btn" type="button" onClick={() => openEdit(ev)}>Edit</button>
-                    <button className="db-action-btn db-action-btn-danger" type="button" onClick={() => remove(ev.id)}>Delete</button>
+                    <button className="db-action-btn db-action-btn-danger" type="button" onClick={() => setDeleteTarget(ev)}>Delete</button>
                   </td>
                 </tr>
               ))}
@@ -261,6 +279,17 @@ export default function AdminEventsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="This event will be archived/deleted from active operations. This action can impact related records."
+          confirmLabel="Delete Event"
+          loading={deleteMutation.isPending}
+          onConfirm={() => remove(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </PageShell>
   );

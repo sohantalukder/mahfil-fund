@@ -14,7 +14,9 @@ export type ActionItem = {
 
 export function ActionsMenu({ items }: { items: ActionItem[] }) {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -23,6 +25,34 @@ export function ActionsMenu({ items }: { items: ActionItem[] }) {
     }
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const updateDirection = () => {
+      const root = ref.current;
+      const menu = menuRef.current;
+      if (!root || !menu) return;
+
+      const rect = root.getBoundingClientRect();
+      const menuHeight = menu.offsetHeight;
+      const gap = 6;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const shouldOpenUpward = spaceBelow < menuHeight + gap && spaceAbove > spaceBelow;
+      setOpenUpward(shouldOpenUpward);
+    };
+
+    const frame = window.requestAnimationFrame(updateDirection);
+    window.addEventListener('resize', updateDirection);
+    window.addEventListener('scroll', updateDirection, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updateDirection);
+      window.removeEventListener('scroll', updateDirection, true);
+    };
   }, [open]);
 
   return (
@@ -50,16 +80,24 @@ export function ActionsMenu({ items }: { items: ActionItem[] }) {
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-          background: 'var(--db-card-bg)',
-          border: '1px solid var(--db-card-bd)',
-          borderRadius: 10,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
-          minWidth: 160, zIndex: 100,
-          overflow: 'hidden',
-          padding: '4px 0',
-        }}>
+        <div
+          ref={menuRef}
+          className="animate-dropdown"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: openUpward ? 'auto' : 'calc(100% + 6px)',
+            bottom: openUpward ? 'calc(100% + 6px)' : 'auto',
+            background: 'var(--db-card-bg)',
+            border: '1px solid var(--db-card-bd)',
+            borderRadius: 10,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
+            minWidth: 170,
+            zIndex: 120,
+            overflow: 'hidden',
+            padding: '4px 0',
+          }}
+        >
           {items.map((item, i) => (
             <button
               key={i}

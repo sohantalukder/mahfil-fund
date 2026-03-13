@@ -75,7 +75,7 @@ export default function AdminDonorsPage() {
   const searchParams = useSearchParams();
   const [donors, setDonors] = useState<Donor[]>([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState('');
   const [saving, setSaving] = useState(false);

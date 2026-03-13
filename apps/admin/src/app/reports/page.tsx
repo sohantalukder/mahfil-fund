@@ -28,7 +28,7 @@ export default function AdminReportsPage() {
   const [eventId, setEventId] = useState('');
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
 
   async function loadSummary(id = eventId) {
@@ -48,7 +48,12 @@ export default function AdminReportsPage() {
         const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
         setEvents(list);
         const active = list.find((e: Event) => e.isActive) || list[0];
-        if (active) { setEventId(active.id); loadSummary(active.id); }
+        if (active) {
+          setEventId(active.id);
+          loadSummary(active.id);
+        } else {
+          setLoading(false);
+        }
       })
       .catch(() => {})
       .finally(() => setEventsLoading(false));
