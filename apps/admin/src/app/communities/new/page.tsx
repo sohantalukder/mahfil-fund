@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { getApi } from '@/lib/api';
 import { PageShell } from '../../components/shell';
 import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
@@ -43,7 +44,7 @@ function FormField({ label, required, hint, children }: { label: string; require
 
 export default function NewCommunityPage() {
   const router = useRouter();
-  const { addToast } = useToast();
+  const { toast } = useToast();
   const [form, setForm] = useState<FormData>({
     name: '', slug: '', description: '', location: '',
     district: '', thana: '', contactNumber: '', email: ''
@@ -54,20 +55,15 @@ export default function NewCommunityPage() {
       const payload = Object.fromEntries(
         Object.entries(data).filter(([, v]) => v !== '')
       );
-      const res = await fetch('/api/communities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json() as { data?: { community: { id: string } }; error?: { message: string } };
-      if (!res.ok) throw new Error(json.error?.message ?? 'Failed to create');
-      return json.data!;
+      const json = await getApi().post<{ community: { id: string } }>('/communities', payload);
+      if (!json.success) throw new Error(json.error.message ?? 'Failed to create');
+      return json.data;
     },
     onSuccess: () => {
-      addToast({ type: 'success', message: 'Community created!' });
+      toast('Community created!', 'success');
       router.push('/communities');
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message })
+    onError: (err: Error) => toast(err.message, 'error')
   });
 
   const autoSlug = (name: string) =>

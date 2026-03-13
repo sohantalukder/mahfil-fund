@@ -24,7 +24,7 @@ export default function CommunitiesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   const { data, isLoading } = useQuery<CommunitiesResponse>({
     queryKey: ['communities', search, page],
@@ -54,10 +54,10 @@ export default function CommunitiesPage() {
       if (!res.ok) throw new Error('Failed to archive');
     },
     onSuccess: () => {
-      addToast({ type: 'success', message: 'Community archived' });
+      toast('Community archived', 'success');
       void queryClient.invalidateQueries({ queryKey: ['communities'] });
     },
-    onError: () => addToast({ type: 'error', message: 'Failed to archive community' })
+    onError: () => toast('Failed to archive community', 'error')
   });
 
   const stats = statsData?.stats;
@@ -78,7 +78,7 @@ export default function CommunitiesPage() {
           )}
           <Link
             href="/communities/new"
-            className={atLimit ? 'db-btn-secondary' : 'db-btn-primary'}
+            className={atLimit ? 'db-btn db-btn-secondary' : 'db-btn db-btn-primary'}
             style={{ opacity: atLimit ? 0.5 : 1, pointerEvents: atLimit ? 'none' : 'auto' }}
           >
             + New Community
