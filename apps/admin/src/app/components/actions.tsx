@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactElement, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /* ── Actions dropdown ─────────────────────────────────────── */
 
@@ -14,14 +15,23 @@ export type ActionItem = {
 
 export function ActionsMenu({ items }: { items: ActionItem[] }) {
   const [open, setOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const canUseDOM = typeof window !== 'undefined';
 
   useEffect(() => {
     if (!open) return;
     function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        ref.current &&
+        !ref.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     }
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
@@ -30,28 +40,32 @@ export function ActionsMenu({ items }: { items: ActionItem[] }) {
   useEffect(() => {
     if (!open) return;
 
-    const updateDirection = () => {
+    const updatePosition = () => {
       const root = ref.current;
       const menu = menuRef.current;
-      if (!root || !menu) return;
+      if (!root) return;
 
       const rect = root.getBoundingClientRect();
-      const menuHeight = menu.offsetHeight;
+      const menuHeight = menu?.offsetHeight ?? 180;
+      const menuWidth = menu?.offsetWidth ?? 170;
       const gap = 6;
       const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const shouldOpenUpward = spaceBelow < menuHeight + gap && spaceAbove > spaceBelow;
-      setOpenUpward(shouldOpenUpward);
+      const top = spaceBelow < menuHeight + gap
+        ? Math.max(gap, rect.top - menuHeight - gap)
+        : Math.min(window.innerHeight - menuHeight - gap, rect.bottom + gap);
+      const left = Math.max(gap, Math.min(window.innerWidth - menuWidth - gap, rect.right - menuWidth));
+
+      setMenuPos({ top, left });
     };
 
-    const frame = window.requestAnimationFrame(updateDirection);
-    window.addEventListener('resize', updateDirection);
-    window.addEventListener('scroll', updateDirection, true);
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
 
     return () => {
       window.cancelAnimationFrame(frame);
-      window.removeEventListener('resize', updateDirection);
-      window.removeEventListener('scroll', updateDirection, true);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
     };
   }, [open]);
 
@@ -79,21 +93,20 @@ export function ActionsMenu({ items }: { items: ActionItem[] }) {
         </svg>
       </button>
 
-      {open && (
+      {open && canUseDOM && createPortal(
         <div
           ref={menuRef}
           className="animate-dropdown"
           style={{
-            position: 'absolute',
-            right: 0,
-            top: openUpward ? 'auto' : 'calc(100% + 6px)',
-            bottom: openUpward ? 'calc(100% + 6px)' : 'auto',
+            position: 'fixed',
+            top: menuPos.top,
+            left: menuPos.left,
             background: 'var(--db-card-bg)',
             border: '1px solid var(--db-card-bd)',
             borderRadius: 10,
             boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
             minWidth: 170,
-            zIndex: 120,
+            zIndex: 2000,
             overflow: 'hidden',
             padding: '4px 0',
           }}
@@ -129,7 +142,8 @@ export function ActionsMenu({ items }: { items: ActionItem[] }) {
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
