@@ -167,7 +167,7 @@ export function PageShell({
         <div className="db-sidebar-brand">
           <div className="db-sidebar-icon">🕌</div>
           <div className="db-sidebar-brand-text">
-            <span className="db-sidebar-brand-name">Iftar Manager</span>
+            <span className="db-sidebar-brand-name">Mahfil Fund</span>
             <span className="db-sidebar-brand-role">Admin Control Panel</span>
           </div>
         </div>

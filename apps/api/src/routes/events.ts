@@ -5,6 +5,7 @@ import { parseWith } from '../shared/validate.js';
 import { requireRoles } from '../plugins/rbac.js';
 import { writeAuditLog } from '../shared/audit.js';
 import { EventCreateSchema } from '@mahfil/schemas';
+import { Errors } from '../shared/errors.js';
 
 const EventUpdateSchema = z.object({
   name: z.string().min(2).max(80).optional(),
@@ -96,6 +97,36 @@ export async function registerEventRoutes(app: FastifyInstance) {
         entityType: 'event',
         entityId: updated.id,
         action: 'UPDATE',
+        after: updated
+      });
+
+      return ok({ event: updated }, { serverTime: new Date().toISOString(), requestId: req.requestId });
+    }
+  );
+
+  app.delete(
+    '/events/:id',
+    { preHandler: [requireRoles(app, ['super_admin', 'admin'])] },
+    async (req) => {
+      const params = parseWith(z.object({ id: z.string().uuid() }), req.params);
+      const before = await app.prisma.event.findUnique({ where: { id: params.id } });
+      if (!before || before.status !== 'ACTIVE') throw Errors.notFound('Event not found');
+
+      const updated = await app.prisma.event.update({
+        where: { id: params.id },
+        data: {
+          status: 'DELETED',
+          deletedAt: new Date(),
+          isActive: false,
+          updatedByUserId: req.currentUser!.id
+        }
+      });
+
+      await writeAuditLog(app, req, {
+        entityType: 'event',
+        entityId: updated.id,
+        action: 'DELETE',
+        before,
         after: updated
       });
 

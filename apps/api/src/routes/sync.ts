@@ -29,6 +29,55 @@ const SyncPullQuerySchema = z.object({
   eventId: z.string().uuid().optional()
 });
 
+const SyncRefBaseSchema = z.object({
+  id: z.string().uuid().optional(),
+  clientGeneratedId: z.string().uuid().optional()
+});
+
+const withRequiredRef = <T extends { id?: string; clientGeneratedId?: string }>(schema: z.ZodType<T>) =>
+  schema.refine((v) => !!v.id || !!v.clientGeneratedId, {
+    message: 'id or clientGeneratedId is required'
+  });
+
+const SyncRefSchema = withRequiredRef(SyncRefBaseSchema);
+
+const DonorUpdatePayloadSchema = withRequiredRef(SyncRefBaseSchema.merge(DonorCreateSchema.partial()));
+const DonationUpdatePayloadSchema = withRequiredRef(SyncRefBaseSchema.merge(DonationCreateSchema.partial()));
+const ExpenseUpdatePayloadSchema = withRequiredRef(SyncRefBaseSchema.merge(ExpenseCreateSchema.partial()));
+
+async function findDonorByRef(
+  app: FastifyInstance,
+  ref: { id?: string; clientGeneratedId?: string }
+) {
+  if (ref.id) return app.prisma.donor.findUnique({ where: { id: ref.id } });
+  if (ref.clientGeneratedId) {
+    return app.prisma.donor.findUnique({ where: { clientGeneratedId: ref.clientGeneratedId } });
+  }
+  return null;
+}
+
+async function findDonationByRef(
+  app: FastifyInstance,
+  ref: { id?: string; clientGeneratedId?: string }
+) {
+  if (ref.id) return app.prisma.donation.findUnique({ where: { id: ref.id } });
+  if (ref.clientGeneratedId) {
+    return app.prisma.donation.findUnique({ where: { clientGeneratedId: ref.clientGeneratedId } });
+  }
+  return null;
+}
+
+async function findExpenseByRef(
+  app: FastifyInstance,
+  ref: { id?: string; clientGeneratedId?: string }
+) {
+  if (ref.id) return app.prisma.expense.findUnique({ where: { id: ref.id } });
+  if (ref.clientGeneratedId) {
+    return app.prisma.expense.findUnique({ where: { clientGeneratedId: ref.clientGeneratedId } });
+  }
+  return null;
+}
+
 export async function registerSyncRoutes(app: FastifyInstance) {
   app.post(
     '/sync/push',
@@ -84,6 +133,59 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                 results.push({ opId: op.opId, success: true, serverId: donor.id });
                 continue;
               }
+              if (op.op === 'update') {
+                const input = parseWith(DonorUpdatePayloadSchema, op.payload);
+                const existing = await findDonorByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Donor not found');
+
+                const before = existing;
+                const updated = await app.prisma.donor.update({
+                  where: { id: existing.id },
+                  data: {
+                    ...(input.fullName !== undefined ? { fullName: input.fullName } : {}),
+                    ...(input.phone !== undefined ? { phone: input.phone } : {}),
+                    ...(input.altPhone !== undefined ? { altPhone: input.altPhone ?? undefined } : {}),
+                    ...(input.address !== undefined ? { address: input.address ?? undefined } : {}),
+                    ...(input.district !== undefined ? { district: input.district ?? undefined } : {}),
+                    ...(input.thana !== undefined ? { thana: input.thana ?? undefined } : {}),
+                    ...(input.donorType !== undefined ? { donorType: input.donorType } : {}),
+                    ...(input.note !== undefined ? { note: input.note ?? undefined } : {}),
+                    ...(input.preferredLanguage !== undefined ? { preferredLanguage: input.preferredLanguage } : {}),
+                    ...(input.tags !== undefined ? { tags: input.tags ?? [] } : {}),
+                    updatedByUserId: req.currentUser!.id
+                  }
+                });
+
+                await writeAuditLog(app, req, {
+                  entityType: 'donor',
+                  entityId: updated.id,
+                  action: 'UPDATE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
+                continue;
+              }
+              if (op.op === 'delete') {
+                const input = parseWith(SyncRefSchema, op.payload);
+                const existing = await findDonorByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Donor not found');
+
+                const before = existing;
+                const updated = await app.prisma.donor.update({
+                  where: { id: existing.id },
+                  data: { status: 'DELETED', deletedAt: new Date(), updatedByUserId: req.currentUser!.id }
+                });
+                await writeAuditLog(app, req, {
+                  entityType: 'donor',
+                  entityId: updated.id,
+                  action: 'DELETE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
+                continue;
+              }
             }
 
             if (op.entity === 'donation') {
@@ -123,6 +225,64 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                 results.push({ opId: op.opId, success: true, serverId: donation.id });
                 continue;
               }
+              if (op.op === 'update') {
+                const input = parseWith(DonationUpdatePayloadSchema, op.payload);
+                const existing = await findDonationByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Donation not found');
+                const before = existing;
+
+                const donor =
+                  input.donorId !== undefined
+                    ? await app.prisma.donor.findFirst({ where: { id: input.donorId, status: 'ACTIVE' } })
+                    : null;
+                if (input.donorId !== undefined && !donor) throw new Error('Invalid donor');
+
+                const updated = await app.prisma.donation.update({
+                  where: { id: existing.id },
+                  data: {
+                    ...(input.eventId !== undefined ? { eventId: input.eventId } : {}),
+                    ...(input.donorId !== undefined ? { donorId: input.donorId } : {}),
+                    ...(input.amount !== undefined ? { amount: input.amount } : {}),
+                    ...(input.paymentMethod !== undefined ? { paymentMethod: input.paymentMethod } : {}),
+                    ...(input.donationDate !== undefined ? { donationDate: input.donationDate } : {}),
+                    ...(input.note !== undefined ? { note: input.note ?? undefined } : {}),
+                    ...(input.receiptNo !== undefined ? { receiptNo: input.receiptNo ?? undefined } : {}),
+                    ...(input.transactionId !== undefined ? { transactionId: input.transactionId ?? undefined } : {}),
+                    ...(donor ? { donorSnapshotName: donor.fullName, donorSnapshotPhone: donor.phone } : {}),
+                    updatedByUserId: req.currentUser!.id
+                  }
+                });
+
+                await writeAuditLog(app, req, {
+                  entityType: 'donation',
+                  entityId: updated.id,
+                  action: 'UPDATE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
+                continue;
+              }
+              if (op.op === 'delete') {
+                const input = parseWith(SyncRefSchema, op.payload);
+                const existing = await findDonationByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Donation not found');
+
+                const before = existing;
+                const updated = await app.prisma.donation.update({
+                  where: { id: existing.id },
+                  data: { status: 'DELETED', deletedAt: new Date(), updatedByUserId: req.currentUser!.id }
+                });
+                await writeAuditLog(app, req, {
+                  entityType: 'donation',
+                  entityId: updated.id,
+                  action: 'DELETE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
+                continue;
+              }
             }
 
             if (op.entity === 'expense') {
@@ -154,6 +314,57 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                   await writeAuditLog(app, req, { entityType: 'expense', entityId: expense.id, action: 'CREATE', after: expense });
                 }
                 results.push({ opId: op.opId, success: true, serverId: expense.id });
+                continue;
+              }
+              if (op.op === 'update') {
+                const input = parseWith(ExpenseUpdatePayloadSchema, op.payload);
+                const existing = await findExpenseByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Expense not found');
+                const before = existing;
+
+                const updated = await app.prisma.expense.update({
+                  where: { id: existing.id },
+                  data: {
+                    ...(input.eventId !== undefined ? { eventId: input.eventId } : {}),
+                    ...(input.title !== undefined ? { title: input.title } : {}),
+                    ...(input.category !== undefined ? { category: input.category } : {}),
+                    ...(input.amount !== undefined ? { amount: input.amount } : {}),
+                    ...(input.expenseDate !== undefined ? { expenseDate: input.expenseDate } : {}),
+                    ...(input.vendor !== undefined ? { vendor: input.vendor ?? undefined } : {}),
+                    ...(input.paymentMethod !== undefined ? { paymentMethod: input.paymentMethod } : {}),
+                    ...(input.note !== undefined ? { note: input.note ?? undefined } : {}),
+                    updatedByUserId: req.currentUser!.id
+                  }
+                });
+
+                await writeAuditLog(app, req, {
+                  entityType: 'expense',
+                  entityId: updated.id,
+                  action: 'UPDATE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
+                continue;
+              }
+              if (op.op === 'delete') {
+                const input = parseWith(SyncRefSchema, op.payload);
+                const existing = await findExpenseByRef(app, input);
+                if (!existing || existing.status !== 'ACTIVE') throw new Error('Expense not found');
+
+                const before = existing;
+                const updated = await app.prisma.expense.update({
+                  where: { id: existing.id },
+                  data: { status: 'DELETED', deletedAt: new Date(), updatedByUserId: req.currentUser!.id }
+                });
+                await writeAuditLog(app, req, {
+                  entityType: 'expense',
+                  entityId: updated.id,
+                  action: 'DELETE',
+                  before,
+                  after: updated
+                });
+                results.push({ opId: op.opId, success: true, serverId: updated.id });
                 continue;
               }
             }

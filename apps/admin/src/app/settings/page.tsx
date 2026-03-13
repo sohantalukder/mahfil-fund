@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '../providers';
+import { useLanguage, useTheme } from '../providers';
 import { PageShell } from '../components/shell';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminSettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
 
   return (
-    <PageShell title="Settings" subtitle="Manage appearance preferences for the admin panel.">
+    <PageShell title="Settings" subtitle="Manage appearance and language preferences for the admin panel.">
       <div style={{ maxWidth: 560, display: 'grid', gap: 24 }}>
         {/* Theme */}
         <div className="db-table-card" style={{ padding: 24 }}>
@@ -46,6 +49,35 @@ export default function AdminSettingsPage() {
             </div>
             <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>
               {saving ? 'Applying theme…' : 'Changes apply immediately.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Language */}
+        <div className="db-table-card" style={{ padding: 24 }}>
+          <div className="db-table-header" style={{ marginBottom: 16 }}>
+            <span className="db-table-title">Language</span>
+          </div>
+          <div className="db-field">
+            <label className="db-label">Display Language</label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button
+                type="button"
+                className={'db-btn' + (language === 'bn' ? ' db-btn-primary' : '')}
+                onClick={() => setLanguage('bn')}
+              >
+                বাংলা
+              </button>
+              <button
+                type="button"
+                className={'db-btn' + (language === 'en' ? ' db-btn-primary' : '')}
+                onClick={() => setLanguage('en')}
+              >
+                English
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>
+              {t('app.name')} - {t('dashboard.dashboard')}
             </p>
           </div>
         </div>

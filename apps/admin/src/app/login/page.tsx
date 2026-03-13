@@ -35,7 +35,7 @@ function LoginForm() {
         <div className="db-login-brand">
           <div className="db-login-icon">🕌</div>
           <div>
-            <div className="db-login-brand-name">Iftar Manager</div>
+            <div className="db-login-brand-name">Mahfil Fund</div>
             <div className="db-login-brand-role">Admin Control Panel</div>
           </div>
         </div>

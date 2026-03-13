@@ -6,6 +6,7 @@ import { Errors } from '../shared/errors.js';
 declare module 'fastify' {
   interface FastifyRequest {
     idempotencyKey?: string;
+    idempotencyRequestHash?: string;
   }
 }
 
@@ -14,17 +15,28 @@ function hashBody(body: unknown): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
+function normalizePath(url: string): string {
+  const [path] = url.split('?');
+  return path || '/';
+}
+
 export const idempotencyPlugin: FastifyPluginAsync = fp(async (app) => {
-  app.addHook('onRequest', async (req, reply) => {
+  app.addHook('preHandler', async (req, reply) => {
     const key = req.headers['idempotency-key'];
     if (typeof key !== 'string' || key.length < 8) return;
     if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) return;
 
     req.idempotencyKey = key;
     const requestHash = hashBody(req.body);
+    req.idempotencyRequestHash = requestHash;
 
     const existing = await app.prisma.idempotencyKey.findUnique({ where: { key } });
     if (!existing) return;
+
+    const currentPath = normalizePath(req.url);
+    if (existing.method !== req.method || existing.path !== currentPath) {
+      throw Errors.conflict('Idempotency-Key reuse across different endpoint');
+    }
 
     if (existing.requestHash && existing.requestHash !== requestHash) {
       throw Errors.conflict('Idempotency-Key reuse with different payload');
@@ -45,7 +57,7 @@ export const idempotencyPlugin: FastifyPluginAsync = fp(async (app) => {
     const ct = reply.getHeader('content-type');
     if (typeof ct === 'string' && !ct.includes('application/json')) return payload;
 
-    const requestHash = hashBody(req.body);
+    const requestHash = req.idempotencyRequestHash ?? hashBody(req.body);
     const statusCode = reply.statusCode;
 
     let responseBody: unknown = undefined;
@@ -61,7 +73,7 @@ export const idempotencyPlugin: FastifyPluginAsync = fp(async (app) => {
         key,
         userId: req.currentUser?.id,
         method: req.method,
-        path: req.url,
+        path: normalizePath(req.url),
         requestHash,
         statusCode,
         responseBody: responseBody as any,
@@ -70,7 +82,7 @@ export const idempotencyPlugin: FastifyPluginAsync = fp(async (app) => {
       update: {
         userId: req.currentUser?.id,
         method: req.method,
-        path: req.url,
+        path: normalizePath(req.url),
         requestHash,
         statusCode,
         responseBody: responseBody as any
