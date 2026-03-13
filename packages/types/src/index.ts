@@ -15,6 +15,14 @@ export type SyncStatus = 'SYNCED' | 'PENDING' | 'SYNCING' | 'FAILED';
 export interface ApiMeta {
   requestId?: string;
   serverTime: string;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface ApiErrorShape {

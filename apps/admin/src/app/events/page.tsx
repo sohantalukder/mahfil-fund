@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
@@ -8,6 +8,8 @@ import { Button } from '../components/ui/button';
 import { ListToolbar } from '../components/list-toolbar';
 import { useToast } from '../components/toast';
 import { ConfirmModal } from '../components/actions';
+import { PaginationControls } from '../components/pagination-controls';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 type Event = {
   id: string;
@@ -30,8 +32,12 @@ export default function AdminEventsPage() {
   const [editId, setEditId] = useState('');
   const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState('');
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
 
   const queryClient = useQueryClient();
 
@@ -40,28 +46,45 @@ export default function AdminEventsPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['events'],
+    queryKey: ['events', searchQuery, page, pageSize],
     queryFn: async () => {
-      const res = await api.get<{ events: Event[] }>('/events');
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize)
+      });
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      const res = await api.get<{ events: Event[]; total: number; totalPages: number; page: number }>(`/events?${params.toString()}`);
       if (!res.success) {
         throw new Error(res.error.message);
       }
-      const d = res.data as { events?: Event[] } | Event[];
-      const list = Array.isArray(d) ? d : (d.events ?? []);
-      return list;
+      const d = res.data as { events?: Event[]; total?: number; totalPages?: number } | Event[];
+      if (Array.isArray(d)) {
+        return { events: d, total: d.length, totalPages: 1 };
+      }
+      return {
+        events: d.events ?? [],
+        total: d.total ?? 0,
+        totalPages: Math.max(1, d.totalPages ?? 1)
+      };
     },
   });
 
-  const events: Event[] = Array.isArray(eventsData) ? eventsData : (eventsData ? ((eventsData as { events?: Event[] }).events ?? []) : []);
+  useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+    setPage(1);
+  }, [debouncedSearch]);
 
-  const filteredEvents = events.filter((ev: Event) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      ev.name.toLowerCase().includes(q) ||
-      String(ev.year).includes(q)
-    );
-  });
+  const events = eventsData?.events ?? [];
+  const total = eventsData?.total ?? 0;
+  const totalPages = eventsData?.totalPages ?? 1;
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(ev: Event) {
@@ -171,8 +194,12 @@ export default function AdminEventsPage() {
 
       <ListToolbar
         searchPlaceholder="Search by name or year…"
-        searchValue={search}
-        onSearchChange={setSearch}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => {
+          setSearchQuery(searchInput.trim());
+          setPage(1);
+        }}
         primaryAction={{
           label: '+ New Event',
           onClick: openCreate,
@@ -185,14 +212,12 @@ export default function AdminEventsPage() {
           <span className="db-stat-badge db-stat-badge-blue">
             {isLoading
               ? 'Loading…'
-              : search.trim()
-              ? `${filteredEvents.length} of ${events.length} total`
-              : `${events.length} total`}
+              : `${events.length} on page / ${total} total`}
           </span>
         </div>
         {isLoading ? (
           <div className="db-empty">Loading events…</div>
-        ) : filteredEvents.length === 0 ? (
+        ) : events.length === 0 ? (
           <div className="db-empty">No events found. Create your first event.</div>
         ) : (
           <table className="db-table">
@@ -208,7 +233,7 @@ export default function AdminEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredEvents.map((ev: Event) => (
+              {events.map((ev: Event) => (
                 <tr key={ev.id}>
                   <td style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>{ev.name}</td>
                   <td>{ev.year}</td>
@@ -235,6 +260,18 @@ export default function AdminEventsPage() {
             </tbody>
           </table>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          loading={isLoading}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
 
       {modal && (

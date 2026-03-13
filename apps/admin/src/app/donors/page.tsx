@@ -15,6 +15,8 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '../components/ui/table';
 import { Form, FormField } from '../components/ui/form';
 import { Skeleton } from '../components/ui/skeleton';
 import { ListToolbar } from '../components/list-toolbar';
+import { PaginationControls } from '../components/pagination-controls';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 type Donor = {
   id: string;
@@ -74,7 +76,12 @@ export default function AdminDonorsPage() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [donors, setDonors] = useState<Donor[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState('');
@@ -89,22 +96,49 @@ export default function AdminDonorsPage() {
     defaultValues: BLANK,
   });
 
-  async function load(q = search) {
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
+
+  async function load({ q = searchQuery, targetPage = page, targetPageSize = pageSize }: { q?: string; targetPage?: number; targetPageSize?: number } = {}) {
     setLoading(true);
-    const query = q ? `?search=${encodeURIComponent(q)}` : '';
+    const params = new URLSearchParams({
+      page: String(targetPage),
+      pageSize: String(targetPageSize)
+    });
+    if (q) params.set('search', q);
+    const query = `?${params.toString()}`;
     const res = await api.get<{ donors: Donor[] }>(`/donors${query}`);
     setLoading(false);
     if (!res.success) { toast(res.error.message, 'error'); return; }
-    const d = res.data as { donors?: Donor[] } | Donor[];
+    const d = res.data as { donors?: Donor[]; total?: number; totalPages?: number; page?: number } | Donor[];
     setDonors(Array.isArray(d) ? d : (d.donors ?? []));
+    if (!Array.isArray(d)) {
+      const nextTotal = d.total ?? 0;
+      const nextTotalPages = Math.max(1, d.totalPages ?? 1);
+      setTotal(nextTotal);
+      setTotalPages(nextTotalPages);
+      // If current page became invalid (e.g., after delete), jump to last valid page.
+      if ((d.page ?? targetPage) > nextTotalPages) {
+        setPage(nextTotalPages);
+      }
+    }
   }
 
   useEffect(() => {
     const initial = searchParams.get('search') ?? '';
-    setSearch(initial);
-    load(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSearchInput(initial);
+    setSearchQuery(initial);
+    setPage(1);
   }, [searchParams]);
+
+  useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, page, pageSize]);
 
   function openCreate() {
     form.reset(BLANK);
@@ -144,7 +178,7 @@ export default function AdminDonorsPage() {
     if (!res.success) { toast(res.error.message, 'error'); return; }
     toast(modal === 'create' ? 'Donor added successfully.' : 'Donor updated successfully.', 'success');
     setModal(null);
-    load();
+    void load();
   }
 
   async function confirmDelete() {
@@ -154,7 +188,8 @@ export default function AdminDonorsPage() {
     setDeleting(false);
     if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
     toast(`${deleteTarget.fullName} deleted.`, 'success');
-    setDeleteTarget(null); load();
+    setDeleteTarget(null);
+    void load();
   }
 
   const isSubmitting = form.formState.isSubmitting || saving;
@@ -185,9 +220,12 @@ export default function AdminDonorsPage() {
     >
       <ListToolbar
         searchPlaceholder="Search by name or phone…"
-        searchValue={search}
-        onSearchChange={setSearch}
-        onSearchSubmit={() => load()}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => {
+          setSearchQuery(searchInput.trim());
+          setPage(1);
+        }}
         primaryAction={{
           label: '+ Add Donor',
           onClick: openCreate,
@@ -197,7 +235,7 @@ export default function AdminDonorsPage() {
       <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">Donors</span>
-          <span className="db-stat-badge db-stat-badge-blue">{donors.length} results</span>
+          <span className="db-stat-badge db-stat-badge-blue">{total} total</span>
         </div>
         {loading && donors.length === 0 ? (
           <div className="p-4 space-y-2">
@@ -255,6 +293,18 @@ export default function AdminDonorsPage() {
             </Tbody>
           </Table>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
 
       {modal && (

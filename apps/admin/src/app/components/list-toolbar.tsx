@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 
-import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 type PrimaryAction = {
   label: string;
@@ -65,16 +65,6 @@ export function ListToolbar({
             onKeyDown={handleKeyDown}
           />
         </div>
-        {onSearchSubmit && (
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            onClick={onSearchSubmit}
-          >
-            Search
-          </Button>
-        )}
         {children}
       </div>
 

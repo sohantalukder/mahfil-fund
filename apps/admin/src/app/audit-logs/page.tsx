@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApiQuery } from '@/lib/query';
 import { PageShell } from '../components/shell';
 import { ErrorScreen } from '../components/error-screen';
+import { PaginationControls } from '../components/pagination-controls';
 
 type AuditLog = {
   id: string;
@@ -28,7 +29,8 @@ const ACTION_COLOR: Record<string, string> = {
 export default function AdminAuditLogsPage() {
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
-  const [take, setTake] = useState(50);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [nowTs, setNowTs] = useState<number | null>(null);
 
   const {
@@ -37,18 +39,18 @@ export default function AdminAuditLogsPage() {
     error,
     refetch,
   } = useApiQuery<{ logs: AuditLog[] }>(
-    ['audit-logs', entityType, action, take],
+    ['audit-logs', entityType, action, page, pageSize],
     async (client) => {
-      const params = new URLSearchParams({ take: String(take) });
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (entityType) params.set('entityType', entityType);
       if (action) params.set('action', action);
-      const res = await client.get<{ logs: AuditLog[] }>(`/audit-logs?${params}`);
+      const res = await client.get<{ logs: AuditLog[]; total?: number; totalPages?: number }>(`/audit-logs?${params}`);
       if (!res.success) {
         throw new Error(res.error.message);
       }
-      const d = res.data as { logs?: AuditLog[] } | AuditLog[];
-      const list = Array.isArray(d) ? d : (d.logs ?? []);
-      return { logs: list };
+      const d = res.data as { logs?: AuditLog[]; total?: number; totalPages?: number } | AuditLog[];
+      if (Array.isArray(d)) return { logs: d, total: d.length, totalPages: 1 };
+      return { logs: d.logs ?? [], total: d.total ?? 0, totalPages: Math.max(1, d.totalPages ?? 1) };
     },
   );
 
@@ -56,6 +58,8 @@ export default function AdminAuditLogsPage() {
     const d = data as { logs?: AuditLog[] } | undefined;
     return d?.logs ?? [];
   }, [data]);
+  const total = (data as { total?: number } | undefined)?.total ?? 0;
+  const totalPages = (data as { totalPages?: number } | undefined)?.totalPages ?? 1;
 
   useEffect(() => {
     const updateNow = () => setNowTs(Date.now());
@@ -64,8 +68,7 @@ export default function AdminAuditLogsPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  function applyFilter() { refetch(); }
-  function clear() { setEntityType(''); setAction(''); setTake(50); }
+  function clear() { setEntityType(''); setAction(''); setPage(1); setPageSize(50); }
 
   const describe = (log: AuditLog) => {
     const actionText = fmt(log.action).toLowerCase();
@@ -143,7 +146,7 @@ export default function AdminAuditLogsPage() {
 
           <div className="db-toolbar" style={{ marginBottom: 16 }}>
             <select className="db-input" style={{ maxWidth: 180 }} value={entityType}
-              onChange={(e) => setEntityType(e.target.value)}>
+              onChange={(e) => { setEntityType(e.target.value); setPage(1); }}>
               <option value="">All Entity Types</option>
               <option value="event">Event</option>
               <option value="donor">Donor</option>
@@ -152,21 +155,20 @@ export default function AdminAuditLogsPage() {
               <option value="user">User</option>
             </select>
             <select className="db-input" style={{ maxWidth: 160 }} value={action}
-              onChange={(e) => setAction(e.target.value)}>
+              onChange={(e) => { setAction(e.target.value); setPage(1); }}>
               <option value="">All Actions</option>
               <option value="CREATE">Create</option>
               <option value="UPDATE">Update</option>
               <option value="DELETE">Delete</option>
               <option value="RESTORE">Restore</option>
             </select>
-            <select className="db-input" style={{ maxWidth: 120 }} value={take}
-              onChange={(e) => setTake(Number(e.target.value))}>
+            <select className="db-input" style={{ maxWidth: 120 }} value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
               <option value={25}>Last 25</option>
               <option value={50}>Last 50</option>
               <option value={100}>Last 100</option>
               <option value={200}>Last 200</option>
             </select>
-            <button className="db-btn db-btn-primary" type="button" onClick={applyFilter}>Filter</button>
             <button className="db-btn" type="button" onClick={clear}>Clear</button>
           </div>
 
@@ -174,7 +176,7 @@ export default function AdminAuditLogsPage() {
             <div className="db-table-header">
               <span className="db-table-title">Activity Log</span>
               <span className="db-stat-badge db-stat-badge-blue">
-                {isLoading ? 'Loading…' : `${logs.length} entries`}
+                {isLoading ? 'Loading…' : `${logs.length} on page / ${total} total`}
               </span>
             </div>
             {isLoading && <div className="db-empty">Loading activity…</div>}
@@ -229,6 +231,19 @@ export default function AdminAuditLogsPage() {
                 </tbody>
               </table>
             )}
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              totalPages={totalPages}
+              loading={isLoading}
+              pageSizeOptions={[25, 50, 100, 200]}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
           </div>
         </>
       )}

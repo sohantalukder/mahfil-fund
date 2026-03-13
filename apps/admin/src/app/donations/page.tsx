@@ -7,6 +7,8 @@ import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { ListToolbar } from '../components/list-toolbar';
+import { PaginationControls } from '../components/pagination-controls';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 
@@ -80,6 +82,10 @@ export default function AdminDonationsPage() {
 
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState<DonationFormState>({ ...BLANK });
@@ -90,24 +96,41 @@ export default function AdminDonationsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  async function loadDonations(id = eventId) {
+  async function loadDonations(id = eventId, q = searchQuery, targetPage = page, targetPageSize = pageSize) {
     if (!id) return;
     setLoading(true);
-    const res = await api.get<{ donations?: Donation[] } | Donation[]>(`/donations?eventId=${id}`);
+    const params = new URLSearchParams({
+      eventId: id,
+      page: String(targetPage),
+      pageSize: String(targetPageSize)
+    });
+    if (q) params.set('search', q);
+    const res = await api.get<{ donations?: Donation[]; total?: number; totalPages?: number; page?: number } | Donation[]>(`/donations?${params.toString()}`);
     setLoading(false);
     if (!res.success) {
       toast(res.error.message, 'error');
       return;
     }
-    const d = res.data as { donations?: Donation[] } | Donation[];
+    const d = res.data as { donations?: Donation[]; total?: number; totalPages?: number; page?: number } | Donation[];
     setDonations(Array.isArray(d) ? d : (d.donations ?? []));
+    if (!Array.isArray(d)) {
+      const nextTotal = d.total ?? 0;
+      const nextTotalPages = Math.max(1, d.totalPages ?? 1);
+      setTotal(nextTotal);
+      setTotalPages(nextTotalPages);
+      if ((d.page ?? targetPage) > nextTotalPages) {
+        setPage(nextTotalPages);
+      }
+    }
   }
 
   useEffect(() => {
     api
-      .get<{ events?: Event[] } | Event[]>('/events')
+      .get<{ events?: Event[] } | Event[]>('/events?page=1&pageSize=100')
       .then((res) => {
         const d = res.success ? res.data : ([] as Event[]);
         const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
@@ -115,7 +138,6 @@ export default function AdminDonationsPage() {
         const active = list.find((e: Event) => e.isActive) || list[0];
         if (active) {
           setEventId(active.id);
-          loadDonations(active.id);
         }
       })
       .catch(() => {})
@@ -124,7 +146,7 @@ export default function AdminDonationsPage() {
 
   useEffect(() => {
     api
-      .get<{ donors?: Donor[] } | Donor[]>('/donors')
+      .get<{ donors?: Donor[] } | Donor[]>('/donors?page=1&pageSize=100')
       .then((res) => {
         const d = res.success ? res.data : ([] as Donor[]);
         const list: Donor[] = Array.isArray(d) ? d : (d.donors ?? []);
@@ -134,6 +156,17 @@ export default function AdminDonationsPage() {
       .catch(() => {})
       .finally(() => setDonorsLoading(false));
   }, [api]);
+
+  useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    void loadDonations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, searchQuery, page, pageSize]);
 
   function openCreate() {
     setForm({
@@ -208,7 +241,7 @@ export default function AdminDonationsPage() {
           donorId = created.id;
           setDonors((prev) => [created as Donor, ...prev]);
         }
-      } catch (e) {
+      } catch {
         toast('Failed to create donor for this donation.', 'error');
         return;
       }
@@ -243,7 +276,7 @@ export default function AdminDonationsPage() {
 
     toast(modal === 'create' ? 'Donation added.' : 'Donation updated.', 'success');
     setModal(null);
-    loadDonations();
+    void loadDonations();
   }
 
   async function confirmDelete() {
@@ -257,23 +290,13 @@ export default function AdminDonationsPage() {
     }
     toast(`Donation from ${deleteTarget.donorSnapshotName} deleted.`, 'success');
     setDeleteTarget(null);
-    loadDonations();
+    void loadDonations();
   }
 
   const totalAmount = donations.reduce((s, x) => s + x.amount, 0);
   const uniqueDonors = new Set(donations.map((d) => d.donorId)).size;
   const hasEvents = !eventsLoading && events.length > 0;
   const isInitialLoading = (eventsLoading || loading) && donations.length === 0;
-
-  const filteredDonations = donations.filter((x) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      x.donorSnapshotName.toLowerCase().includes(q) ||
-      x.donorSnapshotPhone.toLowerCase().includes(q) ||
-      fmt(x.paymentMethod).toLowerCase().includes(q)
-    );
-  });
 
   const filteredDonors = useMemo(() => {
     const q = donorSearch.trim().toLowerCase();
@@ -334,8 +357,12 @@ export default function AdminDonationsPage() {
     >
       <ListToolbar
         searchPlaceholder="Search by donor, phone, or method…"
-        searchValue={search}
-        onSearchChange={setSearch}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => {
+          setSearchQuery(searchInput.trim());
+          setPage(1);
+        }}
         primaryAction={
           hasEvents
             ? {
@@ -353,7 +380,7 @@ export default function AdminDonationsPage() {
           onChange={(e) => {
             const id = e.target.value;
             setEventId(id);
-            loadDonations(id);
+            setPage(1);
           }}
         >
           {eventsLoading && <option value="">Loading…</option>}
@@ -387,9 +414,7 @@ export default function AdminDonationsPage() {
           <span className="db-stat-badge db-stat-badge-green">
             {isInitialLoading
               ? 'Loading…'
-              : search.trim()
-              ? `${filteredDonations.length} of ${donations.length} items`
-              : `${donations.length} items`}
+              : `${donations.length} on page / ${total} total`}
           </span>
         </div>
         {isInitialLoading ? (
@@ -411,7 +436,7 @@ export default function AdminDonationsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredDonations.map((x) => {
+              {donations.map((x) => {
                 const initials = (x.donorSnapshotName || 'DN')
                   .split(' ')
                   .map((n: string) => n[0])
@@ -446,6 +471,18 @@ export default function AdminDonationsPage() {
             </tbody>
           </table>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
 
       {modal && (

@@ -18,28 +18,61 @@ export async function registerExpenseRoutes(app: FastifyInstance) {
         eventId: z.string().uuid(),
         from: z.coerce.date().optional(),
         to: z.coerce.date().optional(),
+        search: z.string().min(1).max(80).optional(),
         category: z.string().min(1).max(80).optional(),
-        paymentMethod: z.enum(['CASH', 'BKASH', 'NAGAD', 'BANK']).optional()
+        paymentMethod: z.enum(['CASH', 'BKASH', 'NAGAD', 'BANK']).optional(),
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(25)
       }),
       req.query
     );
 
-    const expenses = await app.prisma.expense.findMany({
-      where: {
-        status: 'ACTIVE',
-        eventId: query.eventId,
-        category: query.category,
-        paymentMethod: query.paymentMethod,
-        expenseDate: {
-          gte: query.from,
-          lte: query.to
-        }
+    const where = {
+      status: 'ACTIVE' as const,
+      eventId: query.eventId,
+      category: query.category,
+      paymentMethod: query.paymentMethod,
+      expenseDate: {
+        gte: query.from,
+        lte: query.to
       },
-      orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
-      take: 200
-    });
+      OR: query.search
+        ? [
+            { title: { contains: query.search, mode: 'insensitive' as const } },
+            { category: { contains: query.search, mode: 'insensitive' as const } },
+            { vendor: { contains: query.search, mode: 'insensitive' as const } }
+          ]
+        : undefined
+    };
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 25;
 
-    return ok({ expenses }, { serverTime: new Date().toISOString(), requestId: req.requestId });
+    const [expenses, total] = await Promise.all([
+      app.prisma.expense.findMany({
+        where,
+        orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      }),
+      app.prisma.expense.count({ where })
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    return ok(
+      { expenses, page, pageSize, total, totalPages },
+      {
+        serverTime: new Date().toISOString(),
+        requestId: req.requestId,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    );
   });
 
   app.post(

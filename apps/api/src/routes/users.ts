@@ -100,11 +100,39 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
   // List all users with their roles (admin+)
   app.get('/users', { preHandler: [requireRoles(app, ['super_admin', 'admin'])] }, async (req) => {
-    const users = await app.prisma.user.findMany({
-      include: { roles: { include: { role: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    const query = parseWith(
+      z.object({
+        search: z.string().min(1).max(80).optional(),
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(25)
+      }),
+      req.query
+    );
+
+    const searchValue = query.search?.trim().toLowerCase();
+    const statusMatch = searchValue === 'active' ? true : searchValue === 'inactive' || searchValue === 'disabled' ? false : undefined;
+    const searchConditions: Array<Record<string, unknown>> = [
+      { email: { contains: query.search, mode: 'insensitive' as const } },
+      { fullName: { contains: query.search, mode: 'insensitive' as const } },
+      { roles: { some: { role: { name: { contains: query.search, mode: 'insensitive' as const } } } } }
+    ];
+    if (typeof statusMatch === 'boolean') {
+      searchConditions.push({ isActive: statusMatch });
+    }
+    const where = query.search ? { OR: searchConditions } : undefined;
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 25;
+
+    const [users, total] = await Promise.all([
+      app.prisma.user.findMany({
+        where,
+        include: { roles: { include: { role: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      }),
+      app.prisma.user.count({ where })
+    ]);
 
     const result = users.map((u) => ({
       id: u.id,
@@ -117,7 +145,22 @@ export async function registerUserRoutes(app: FastifyInstance) {
       createdAt: u.createdAt,
     }));
 
-    return ok({ users: result }, { serverTime: new Date().toISOString(), requestId: req.requestId });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return ok(
+      { users: result, page, pageSize, total, totalPages },
+      {
+        serverTime: new Date().toISOString(),
+        requestId: req.requestId,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    );
   });
 
   // Update a user's roles (super_admin only)

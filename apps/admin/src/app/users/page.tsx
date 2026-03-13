@@ -5,6 +5,9 @@ import { getApi } from '@/lib/api';
 import { PageShell } from '../components/shell';
 import { Button } from '../components/ui/button';
 import { useToast } from '../components/toast';
+import { ListToolbar } from '../components/list-toolbar';
+import { PaginationControls } from '../components/pagination-controls';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 type AppUser = {
   id: string;
@@ -70,6 +73,13 @@ export default function AdminUsersPage() {
   const [me, setMe] = useState<{ id: string; roles: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
 
   // Invite modal
   const [inviteModal, setInviteModal] = useState(false);
@@ -86,8 +96,13 @@ export default function AdminUsersPage() {
 
   async function load() {
     setLoading(true); setError(null);
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize)
+    });
+    if (searchQuery) params.set('search', searchQuery);
     const [usersRes, meRes] = await Promise.all([
-      api.get<{ users: AppUser[] }>('/users'),
+      api.get<{ users: AppUser[]; total?: number; totalPages?: number; page?: number }>(`/users?${params.toString()}`),
       api.get<{ user: { id: string; roles: string[] } }>('/me'),
     ]);
     setLoading(false);
@@ -96,14 +111,28 @@ export default function AdminUsersPage() {
       const meData = meRes.data as { user?: { id: string; roles: string[] } } | { id: string; roles: string[] };
       setMe((meData as { user?: { id: string; roles: string[] } }).user ?? (meData as { id: string; roles: string[] }));
     }
-    const ud = usersRes.data as { users?: AppUser[] } | AppUser[];
+    const ud = usersRes.data as { users?: AppUser[]; total?: number; totalPages?: number; page?: number } | AppUser[];
     const list: AppUser[] = Array.isArray(ud) ? ud : (ud.users ?? []);
     setUsers(list);
+    if (!Array.isArray(ud)) {
+      const nextTotalPages = Math.max(1, ud.totalPages ?? 1);
+      setTotal(ud.total ?? 0);
+      setTotalPages(nextTotalPages);
+      if ((ud.page ?? page) > nextTotalPages) {
+        setPage(nextTotalPages);
+      }
+    }
   }
 
   useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
     (async () => { await load(); })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, page, pageSize]);
 
   async function invite() {
     setInviting(true); setError(null);
@@ -176,6 +205,16 @@ export default function AdminUsersPage() {
     >
       {error && <div className="db-error">{error}</div>}
 
+      <ListToolbar
+        searchPlaceholder="Search by name, email, role, or status…"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => {
+          setSearchQuery(searchInput.trim());
+          setPage(1);
+        }}
+      />
+
       {/* Stats */}
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
         {ALL_ROLES.map((role) => (
@@ -192,7 +231,7 @@ export default function AdminUsersPage() {
       <div className="db-table-card animate-card">
         <div className="db-table-header">
           <span className="db-table-title">All Users</span>
-          <span className="db-stat-badge db-stat-badge-blue">{users.length} members</span>
+          <span className="db-stat-badge db-stat-badge-blue">{users.length} on page / {total} total</span>
         </div>
         {users.length === 0 && !loading ? (
           <div className="db-empty">No users found.</div>
@@ -313,6 +352,18 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
 
       {/* Role permission reference */}

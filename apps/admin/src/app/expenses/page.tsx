@@ -7,6 +7,8 @@ import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { ListToolbar } from '../components/list-toolbar';
+import { PaginationControls } from '../components/pagination-controls';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type Expense = {
@@ -43,6 +45,10 @@ export default function AdminExpensesPage() {
   const [eventId, setEventId] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [form, setForm] = useState({ ...BLANK });
@@ -50,30 +56,58 @@ export default function AdminExpensesPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  async function load(id = eventId) {
+  async function load(id = eventId, q = searchQuery, targetPage = page, targetPageSize = pageSize) {
     if (!id) return;
     setLoading(true);
-    const res = await api.get<{ expenses?: Expense[] } | Expense[]>(`/expenses?eventId=${id}`);
+    const params = new URLSearchParams({
+      eventId: id,
+      page: String(targetPage),
+      pageSize: String(targetPageSize)
+    });
+    if (q) params.set('search', q);
+    const res = await api.get<{ expenses?: Expense[]; total?: number; totalPages?: number; page?: number } | Expense[]>(`/expenses?${params.toString()}`);
     setLoading(false);
     if (!res.success) { toast(res.error.message, 'error'); return; }
-    const d = res.data as { expenses?: Expense[] } | Expense[];
+    const d = res.data as { expenses?: Expense[]; total?: number; totalPages?: number; page?: number } | Expense[];
     setExpenses(Array.isArray(d) ? d : (d.expenses ?? []));
+    if (!Array.isArray(d)) {
+      const nextTotal = d.total ?? 0;
+      const nextTotalPages = Math.max(1, d.totalPages ?? 1);
+      setTotal(nextTotal);
+      setTotalPages(nextTotalPages);
+      if ((d.page ?? targetPage) > nextTotalPages) {
+        setPage(nextTotalPages);
+      }
+    }
   }
 
   useEffect(() => {
-    api.get<{ events?: Event[] } | Event[]>('/events')
+    api.get<{ events?: Event[] } | Event[]>('/events?page=1&pageSize=100')
       .then((res) => {
         const d = res.success ? res.data : ([] as Event[]);
         const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
         setEvents(list);
         const active = list.find((e: Event) => e.isActive) || list[0];
-        if (active) { setEventId(active.id); load(active.id); }
+        if (active) { setEventId(active.id); }
       })
       .catch(() => {})
       .finally(() => setEventsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, searchQuery, page, pageSize]);
 
   function openCreate() { setForm({ ...BLANK }); setModal('create'); }
   function openEdit(x: Expense) {
@@ -90,7 +124,8 @@ export default function AdminExpensesPage() {
     setSaving(false);
     if (!res.success) { toast(res.error.message, 'error'); return; }
     toast(modal === 'create' ? 'Expense added.' : 'Expense updated.', 'success');
-    setModal(null); load();
+    setModal(null);
+    void load();
   }
 
   async function confirmDelete() {
@@ -100,23 +135,14 @@ export default function AdminExpensesPage() {
     setDeleting(false);
     if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
     toast(`"${deleteTarget.title}" deleted.`, 'success');
-    setDeleteTarget(null); load();
+    setDeleteTarget(null);
+    void load();
   }
 
   const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
-  const total = expenses.reduce((s, x) => s + x.amount, 0);
+  const totalAmount = expenses.reduce((s, x) => s + x.amount, 0);
   const hasEvents = !eventsLoading && events.length > 0;
   const isInitialLoading = (eventsLoading || loading) && expenses.length === 0;
-
-  const filteredExpenses = expenses.filter((x) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      x.title.toLowerCase().includes(q) ||
-      x.category.toLowerCase().includes(q) ||
-      (x.vendor ?? '').toLowerCase().includes(q)
-    );
-  });
 
   return (
     <PageShell
@@ -125,8 +151,12 @@ export default function AdminExpensesPage() {
     >
       <ListToolbar
         searchPlaceholder="Search by title, category, or vendor…"
-        searchValue={search}
-        onSearchChange={setSearch}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => {
+          setSearchQuery(searchInput.trim());
+          setPage(1);
+        }}
         primaryAction={
           hasEvents
             ? {
@@ -143,7 +173,7 @@ export default function AdminExpensesPage() {
           value={eventId}
           onChange={(e) => {
             setEventId(e.target.value);
-            load(e.target.value);
+            setPage(1);
           }}
         >
           {eventsLoading && <option value="">Loading…</option>}
@@ -159,7 +189,7 @@ export default function AdminExpensesPage() {
       <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Total Expenses</div>
-          <div className="db-stat-value">{isInitialLoading ? '…' : fmtBDT(total)}</div>
+          <div className="db-stat-value">{isInitialLoading ? '…' : fmtBDT(totalAmount)}</div>
         </div>
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Number of Items</div>
@@ -168,7 +198,7 @@ export default function AdminExpensesPage() {
         <div className="db-stat-card animate-card">
           <div className="db-stat-title">Avg per Item</div>
           <div className="db-stat-value">
-            {isInitialLoading ? '…' : expenses.length ? fmtBDT(total / expenses.length) : '—'}
+            {isInitialLoading ? '…' : expenses.length ? fmtBDT(totalAmount / expenses.length) : '—'}
           </div>
         </div>
       </div>
@@ -179,9 +209,7 @@ export default function AdminExpensesPage() {
           <span className="db-stat-badge db-stat-badge-blue">
             {isInitialLoading
               ? 'Loading…'
-              : search.trim()
-              ? `${filteredExpenses.length} of ${expenses.length} items`
-              : `${expenses.length} items`}
+              : `${expenses.length} on page / ${total} total`}
           </span>
         </div>
         {isInitialLoading ? (
@@ -196,7 +224,7 @@ export default function AdminExpensesPage() {
               <tr><th>Title</th><th>Category</th><th>Method</th><th>Date</th><th style={{ textAlign: 'right' }}>Amount</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              {filteredExpenses.map((x) => (
+              {expenses.map((x) => (
                 <tr key={x.id}>
                   <td style={{ color: 'var(--db-td-em)' }}>{x.title}</td>
                   <td>{x.category}</td>
@@ -214,6 +242,18 @@ export default function AdminExpensesPage() {
             </tbody>
           </table>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
 
       {modal && (

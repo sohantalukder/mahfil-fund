@@ -14,7 +14,11 @@ const DonorUpdateSchema = DonorCreateSchema.partial().extend({
 export async function registerDonorRoutes(app: FastifyInstance) {
   app.get('/donors', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
     const query = parseWith(
-      z.object({ search: z.string().min(1).max(80).optional() }),
+      z.object({
+        search: z.string().min(1).max(80).optional(),
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(25)
+      }),
       req.query
     );
 
@@ -28,9 +32,34 @@ export async function registerDonorRoutes(app: FastifyInstance) {
           ]
         }
       : { status: 'ACTIVE' as const };
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 25;
 
-    const donors = await app.prisma.donor.findMany({ where, orderBy: [{ updatedAt: 'desc' }], take: 200 });
-    return ok({ donors }, { serverTime: new Date().toISOString(), requestId: req.requestId });
+    const [donors, total] = await Promise.all([
+      app.prisma.donor.findMany({
+        where,
+        orderBy: [{ updatedAt: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      }),
+      app.prisma.donor.count({ where })
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return ok(
+      { donors, page, pageSize, total, totalPages },
+      {
+        serverTime: new Date().toISOString(),
+        requestId: req.requestId,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    );
   });
 
   app.get('/donors/:id', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
