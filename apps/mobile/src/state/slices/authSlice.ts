@@ -40,7 +40,13 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
 
     try {
       const me = await api.get<{
-        user: { id: string; email?: string; fullName?: string; roles: UserRole[] };
+        user: {
+          id: string;
+          email?: string;
+          fullName?: string;
+          roles: UserRole[];
+          memberships?: Array<{ community: { id: string; name: string; slug: string }; role: string }>;
+        };
       }>('/me');
       if (me.success) {
         set({
@@ -53,6 +59,14 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
           isAuthenticated: true,
           isOfflineMode: false
         });
+        // Hydrate community list from memberships
+        const memberships = me.data.user.memberships ?? [];
+        const mapped = memberships.map((m) => ({ ...m.community, role: m.role }));
+        // Import store to update community slice - use dynamic to avoid circular
+        // The community slice reads activeCommunity from localStore on init already
+        // so we just need to update the communities list
+        const { useStore } = await import('@/state/store');
+        useStore.getState().setCommunities(mapped);
       } else {
         localStore.clearAuthTokens();
         set({ isAuthenticated: false, user: null, isOfflineMode: false });

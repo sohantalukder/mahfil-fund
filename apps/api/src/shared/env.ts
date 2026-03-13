@@ -26,6 +26,14 @@ const EnvSchema = z.object({
   SEED_ADMIN_EMAIL: z.string().email().optional(),
   SEED_ADMIN_PASSWORD: z.string().min(8).optional(),
 
+  // Supabase Storage
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().default('mahfil-uploads'),
+
+  // Community limits
+  ADMIN_COMMUNITY_LIMIT: z.coerce.number().int().min(1).default(10),
+
   // Network
   CORS_ORIGIN: z.string().default('*'),
   TRUST_PROXY: z.coerce.boolean().default(true)

@@ -5,3 +5,5 @@ export { default as Donors } from './donors/DonorListScreen';
 export { default as SyncCenter } from './sync/SyncCenterScreen';
 export { default as Donations } from './donations/DonationListScreen';
 export { default as Expenses } from './expenses/ExpenseListScreen';
+export { default as CommunitySelect } from './community/CommunitySelectScreen';
+export { default as JoinCommunity } from './community/JoinCommunityScreen';

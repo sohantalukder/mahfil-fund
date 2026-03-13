@@ -1,22 +1,13 @@
 import { NextResponse } from 'next/server';
-import { callApi, clearAuthCookies, getTokensFromCookies, setAuthCookies } from '@/lib/auth/server';
-
-type RefreshData = { accessToken: string; refreshToken: string };
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function POST() {
-  const { refreshToken } = await getTokensFromCookies();
-  if (!refreshToken) return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.refreshSession();
 
-  const result = await callApi<RefreshData>('/auth/refresh', {
-    method: 'POST',
-    body: JSON.stringify({ refreshToken })
-  });
-  if (!result.ok) {
-    await clearAuthCookies();
-    return NextResponse.json({ error: result.message }, { status: result.status });
+  if (error || !data.session) {
+    return NextResponse.json({ error: error?.message ?? 'Session refresh failed' }, { status: 401 });
   }
 
-  await setAuthCookies(result.data.accessToken, result.data.refreshToken);
-  return NextResponse.json({ accessToken: result.data.accessToken });
+  return NextResponse.json({ accessToken: data.session.access_token });
 }
-

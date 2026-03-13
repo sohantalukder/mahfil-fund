@@ -30,8 +30,18 @@ type LanguageContextValue = {
   setLanguage: (mode: LanguageMode) => void;
 };
 
+type CommunityInfo = { id: string; name: string; slug: string; role: string };
+
+type CommunityContextValue = {
+  activeCommunity: CommunityInfo | null;
+  communities: CommunityInfo[];
+  setActiveCommunity: (c: CommunityInfo) => void;
+  setCommunities: (c: CommunityInfo[]) => void;
+};
+
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
+const CommunityContext = createContext<CommunityContextValue | undefined>(undefined);
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
@@ -45,10 +55,18 @@ export function useLanguage() {
   return ctx;
 }
 
+export function useCommunity() {
+  const ctx = useContext(CommunityContext);
+  if (!ctx) throw new Error('useCommunity must be used within Providers');
+  return ctx;
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const i18n = ensureI18n();
   const [theme, setTheme] = useState<ThemeMode>('light');
   const [language, setLanguage] = useState<LanguageMode>('bn');
+  const [activeCommunity, setActiveCommunityState] = useState<CommunityInfo | null>(null);
+  const [communities, setCommunities] = useState<CommunityInfo[]>([]);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -64,11 +82,11 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('mf_admin_theme');
     const savedLanguage = window.localStorage.getItem('mf_admin_language');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme);
-    }
-    if (savedLanguage === 'bn' || savedLanguage === 'en') {
-      setLanguage(savedLanguage);
+    const savedCommunity = window.localStorage.getItem('mf_admin_community');
+    if (savedTheme === 'light' || savedTheme === 'dark') setTheme(savedTheme);
+    if (savedLanguage === 'bn' || savedLanguage === 'en') setLanguage(savedLanguage);
+    if (savedCommunity) {
+      try { setActiveCommunityState(JSON.parse(savedCommunity) as CommunityInfo); } catch { /* ignore */ }
     }
   }, []);
 
@@ -82,14 +100,16 @@ export function Providers({ children }: { children: ReactNode }) {
     window.localStorage.setItem('mf_admin_language', language);
   }, [i18n, language]);
 
-  const value: ThemeContextValue = useMemo(
-    () => ({ theme, setTheme }),
-    [theme],
-  );
+  const setActiveCommunity = (c: CommunityInfo) => {
+    setActiveCommunityState(c);
+    window.localStorage.setItem('mf_admin_community', JSON.stringify(c));
+  };
 
-  const languageValue: LanguageContextValue = useMemo(
-    () => ({ language, setLanguage }),
-    [language],
+  const value: ThemeContextValue = useMemo(() => ({ theme, setTheme }), [theme]);
+  const languageValue: LanguageContextValue = useMemo(() => ({ language, setLanguage }), [language]);
+  const communityValue: CommunityContextValue = useMemo(
+    () => ({ activeCommunity, communities, setActiveCommunity, setCommunities }),
+    [activeCommunity, communities]
   );
 
   return (
@@ -97,11 +117,13 @@ export function Providers({ children }: { children: ReactNode }) {
       <I18nextProvider i18n={i18n}>
         <LanguageContext.Provider value={languageValue}>
           <ThemeContext.Provider value={value}>
-            <div data-theme={theme}>
-              <ToastProvider>
-                {children}
-              </ToastProvider>
-            </div>
+            <CommunityContext.Provider value={communityValue}>
+              <div data-theme={theme}>
+                <ToastProvider>
+                  {children}
+                </ToastProvider>
+              </div>
+            </CommunityContext.Provider>
           </ThemeContext.Provider>
         </LanguageContext.Provider>
       </I18nextProvider>

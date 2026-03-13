@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -15,18 +16,17 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = (await res.json()) as { error?: string };
+
+    const supabase = createSupabaseBrowserClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
     setLoading(false);
-    if (!res.ok) {
-      setError(data.error ?? 'Sign in failed');
+    if (authError) {
+      setError(authError.message);
       return;
     }
-    router.replace(params.get('next') || '/');
+
+    router.replace(params.get('next') ?? '/');
   }
 
   return (
@@ -43,7 +43,7 @@ function LoginForm() {
         <div className="db-login-title">Welcome back</div>
         <div className="db-login-subtitle">Sign in to continue to the admin portal.</div>
 
-        <form onSubmit={onSubmit}>
+        <form onSubmit={(e) => void onSubmit(e)}>
           <div className="db-login-field">
             <label className="db-login-label" htmlFor="email">Email address</label>
             <input

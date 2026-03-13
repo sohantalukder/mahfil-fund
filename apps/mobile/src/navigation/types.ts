@@ -16,6 +16,8 @@ export type RootStackParamList = {
   [routes.syncCenter]: undefined;
   [routes.donations]: undefined;
   [routes.expenses]: undefined;
+  [routes.communitySelect]: undefined;
+  [routes.joinCommunity]: undefined;
 };
 
 export type NavigationProp = StackNavigationProp<RootStackParamList>;

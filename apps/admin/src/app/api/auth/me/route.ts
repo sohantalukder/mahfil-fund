@@ -1,46 +1,33 @@
 import { NextResponse } from 'next/server';
-import { callApi, clearAuthCookies, getTokensFromCookies, setAuthCookies } from '@/lib/auth/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { callApi } from '@/lib/auth/server';
 
 type MeData = { user: { id: string; email: string; fullName?: string | null; roles: string[] } };
-type RefreshData = { accessToken: string; refreshToken: string };
 
 export async function GET() {
-  const { accessToken, refreshToken } = await getTokensFromCookies();
-  if (!accessToken && !refreshToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createSupabaseServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  async function tryMe(token: string) {
-    return callApi<MeData>('/me', {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-  }
-
-  if (accessToken) {
-    const me = await tryMe(accessToken);
-    if (me.ok) return NextResponse.json(me.data);
-  }
-
-  if (!refreshToken) {
-    await clearAuthCookies();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const refreshed = await callApi<RefreshData>('/auth/refresh', {
-    method: 'POST',
-    body: JSON.stringify({ refreshToken })
+  // Fetch full profile (roles, memberships) from the backend using the Supabase JWT.
+  const me = await callApi<MeData>('/me', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${session.access_token}` }
   });
-  if (!refreshed.ok) {
-    await clearAuthCookies();
-    return NextResponse.json({ error: refreshed.message }, { status: 401 });
-  }
 
-  await setAuthCookies(refreshed.data.accessToken, refreshed.data.refreshToken);
-  const me = await tryMe(refreshed.data.accessToken);
-  if (!me.ok) {
-    await clearAuthCookies();
-    return NextResponse.json({ error: me.message }, { status: 401 });
-  }
+  if (me.ok) return NextResponse.json(me.data);
 
-  return NextResponse.json(me.data);
+  // Backend unreachable or returned an error — return basic Supabase user info.
+  const meta = session.user.user_metadata as Record<string, string> | undefined;
+  return NextResponse.json({
+    user: {
+      id: session.user.id,
+      email: session.user.email ?? '',
+      fullName: meta?.full_name ?? null,
+      roles: []
+    }
+  });
 }
-

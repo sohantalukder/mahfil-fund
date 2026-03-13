@@ -16,14 +16,20 @@ export async function callApi<T>(
   if (!baseUrl) return { ok: false, status: 500, message: 'Missing NEXT_PUBLIC_API_URL' };
   const normalizedBaseUrl = baseUrl.replace('://localhost', '://127.0.0.1');
 
-  const response = await fetch(`${normalizedBaseUrl.replace(/\/+$/, '')}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {})
-    },
-    cache: 'no-store'
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${normalizedBaseUrl.replace(/\/+$/, '')}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {})
+      },
+      cache: 'no-store'
+    });
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    return { ok: false, status: 503, message: `API unreachable: ${cause}` };
+  }
 
   let payload: ApiResult<T> | null = null;
   try {

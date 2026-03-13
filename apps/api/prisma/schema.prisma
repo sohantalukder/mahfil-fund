@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Platform-level enums ────────────────────────────────────────────────────
+
 enum UserRoleName {
   super_admin
   admin
@@ -57,6 +59,58 @@ enum OtpType {
   PASSWORD_RESET
 }
 
+// ─── Tenant-level enums ──────────────────────────────────────────────────────
+
+enum CommunityStatus {
+  ACTIVE
+  ARCHIVED
+  SUSPENDED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum InvitationStatus {
+  PENDING
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+enum InvoiceType {
+  DONATION_RECEIPT
+  SPONSOR_RECEIPT
+  MANUAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  CANCELLED
+}
+
+enum ErrorLevel {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ErrorSource {
+  API
+  MOBILE
+  WEB
+  ADMIN
+  SYNC
+  UPLOAD
+  EMAIL
+}
+
+// ─── Platform-level models ────────────────────────────────────────────────────
+
 model User {
   id            String   @id @default(uuid()) @db.Uuid
   email         String   @unique
@@ -66,23 +120,35 @@ model User {
   emailVerified Boolean  @default(false)
   isActive      Boolean  @default(true)
 
-  roles       UserRole[]
+  roles         UserRole[]
   refreshTokens RefreshToken[]
 
-  eventsCreated     Event[]     @relation("EventCreatedBy")
-  eventsUpdated     Event[]     @relation("EventUpdatedBy")
-  donorsCreated     Donor[]     @relation("DonorCreatedBy")
-  donorsUpdated     Donor[]     @relation("DonorUpdatedBy")
-  donationsCreated  Donation[]  @relation("DonationCreatedBy")
-  donationsUpdated  Donation[]  @relation("DonationUpdatedBy")
-  expensesCreated   Expense[]   @relation("ExpenseCreatedBy")
-  expensesUpdated   Expense[]   @relation("ExpenseUpdatedBy")
+  // Community relations
+  communitiesCreated   Community[]           @relation("CommunityCreatedBy")
+  memberships          CommunityMembership[]
+  membershipInvites    CommunityMembership[] @relation("MembershipInvitedBy")
+  invitationsCreated   CommunityInvitation[] @relation("InvitationCreatedBy")
+  invitationsUsed      CommunityInvitation[] @relation("InvitationUsedBy")
 
-  auditLogs         AuditLog[]
-  syncOperations    SyncOperation[]
+  // Entity audit relations
+  eventsCreated    Event[]     @relation("EventCreatedBy")
+  eventsUpdated    Event[]     @relation("EventUpdatedBy")
+  donorsCreated    Donor[]     @relation("DonorCreatedBy")
+  donorsUpdated    Donor[]     @relation("DonorUpdatedBy")
+  donationsCreated Donation[]  @relation("DonationCreatedBy")
+  donationsUpdated Donation[]  @relation("DonationUpdatedBy")
+  expensesCreated  Expense[]   @relation("ExpenseCreatedBy")
+  expensesUpdated  Expense[]   @relation("ExpenseUpdatedBy")
+  invoicesCreated  Invoice[]   @relation("InvoiceCreatedBy")
+  invoicesUpdated  Invoice[]   @relation("InvoiceUpdatedBy")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  auditLogs      AuditLog[]
+  syncOperations SyncOperation[]
+  errorLogs      ErrorLog[]   @relation("ErrorLogUser")
+  errorReviews   ErrorLog[]   @relation("ErrorLogReviewer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
 }
@@ -108,29 +174,29 @@ model RefreshToken {
   expiresAt DateTime
   revokedAt DateTime?
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }
 
 model Role {
-  id        String        @id @default(uuid()) @db.Uuid
-  name      UserRoleName  @unique
-  users     UserRole[]
+  id    String       @id @default(uuid()) @db.Uuid
+  name  UserRoleName @unique
+  users UserRole[]
 
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserRole {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  roleId    String   @db.Uuid
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  roleId String @db.Uuid
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -138,212 +204,417 @@ model UserRole {
   @@index([roleId])
 }
 
+// ─── Tenant / Community models ────────────────────────────────────────────────
+
+model Community {
+  id               String          @id @default(uuid()) @db.Uuid
+  name             String
+  slug             String          @unique
+  description      String?
+  logoAttachmentId String?         @db.Uuid
+  location         String?
+  district         String?
+  thana            String?
+  contactNumber    String?
+  email            String?
+  status           CommunityStatus @default(ACTIVE)
+  createdByUserId  String          @db.Uuid
+
+  createdBy      User                  @relation("CommunityCreatedBy", fields: [createdByUserId], references: [id])
+  logoAttachment Attachment?           @relation("CommunityLogo", fields: [logoAttachmentId], references: [id])
+  memberships    CommunityMembership[]
+  invitations    CommunityInvitation[]
+  events         Event[]
+  donors         Donor[]
+  donations      Donation[]
+  expenses       Expense[]
+  invoices       Invoice[]
+  attachments    Attachment[]          @relation("CommunityAttachments")
+  auditLogs      AuditLog[]
+  errorLogs      ErrorLog[]
+  syncOperations SyncOperation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([createdByUserId])
+  @@index([status])
+}
+
+model CommunityMembership {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @db.Uuid
+  communityId     String           @db.Uuid
+  role            UserRoleName
+  status          MembershipStatus @default(ACTIVE)
+  invitedByUserId String?          @db.Uuid
+  joinedAt        DateTime         @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  invitedBy User?     @relation("MembershipInvitedBy", fields: [invitedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, communityId])
+  @@index([communityId, status])
+  @@index([userId])
+}
+
+model CommunityInvitation {
+  id                   String           @id @default(uuid()) @db.Uuid
+  communityId          String           @db.Uuid
+  email                String
+  fullName             String
+  phoneNumber          String?
+  role                 UserRoleName
+  inviteCode           String           @unique
+  inviteCodeNormalized String           @unique
+  createdByUserId      String           @db.Uuid
+  sentByUserId         String?          @db.Uuid
+  status               InvitationStatus @default(PENDING)
+  expiresAt            DateTime
+  usedAt               DateTime?
+  usedByUserId         String?          @db.Uuid
+  note                 String?
+  verificationAttempts Int              @default(0)
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id])
+  usedBy    User?     @relation("InvitationUsedBy", fields: [usedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([communityId, status])
+  @@index([email])
+  @@index([inviteCodeNormalized])
+  @@index([expiresAt])
+}
+
+// ─── Domain models ────────────────────────────────────────────────────────────
+
 model Event {
-  id                String         @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?        @unique @db.Uuid
+  id                String       @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?      @unique @db.Uuid
+  communityId       String?      @db.Uuid
 
-  name              String
-  year              Int
-  startsAt          DateTime?
-  endsAt            DateTime?
-  isActive          Boolean        @default(false)
+  name     String
+  year     Int
+  startsAt DateTime?
+  endsAt   DateTime?
+  isActive Boolean   @default(false)
 
-  status            RecordStatus   @default(ACTIVE)
-  createdByUserId   String?        @db.Uuid
-  updatedByUserId   String?        @db.Uuid
-  createdMetaId     String?        @db.Uuid
+  status          RecordStatus @default(ACTIVE)
+  createdByUserId String?      @db.Uuid
+  updatedByUserId String?      @db.Uuid
+  createdMetaId   String?      @db.Uuid
 
-  createdBy         User?          @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy         User?          @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id])
-  createdMeta       RequestMetadata? @relation("EventCreatedMeta", fields: [createdMetaId], references: [id])
+  community  Community?       @relation(fields: [communityId], references: [id])
+  createdBy  User?            @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy  User?            @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta RequestMetadata? @relation("EventCreatedMeta", fields: [createdMetaId], references: [id])
 
-  donations          Donation[]
-  expenses           Expense[]
+  donations Donation[]
+  expenses  Expense[]
+  invoices  Invoice[]
 
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  deletedAt         DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  @@unique([year])
+  @@index([communityId, isActive])
+  @@index([communityId, year])
   @@index([isActive])
 }
 
 model Donor {
-  id                String       @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?      @unique @db.Uuid
+  id                String     @id @default(uuid()) @db.Uuid
+  clientGeneratedId String?    @unique @db.Uuid
+  communityId       String?    @db.Uuid
 
   fullName          String
   phone             String
   altPhone          String?
   address           String?
+  area              String?
   district          String?
   thana             String?
   donorType         DonorType
   note              String?
-  preferredLanguage Locale       @default(bn)
-  tags              String[]     @default([])
+  preferredLanguage Locale     @default(bn)
+  tags              String[]   @default([])
+  profileAttachmentId String?  @db.Uuid
 
-  status            RecordStatus @default(ACTIVE)
-  createdByUserId   String?      @db.Uuid
-  updatedByUserId   String?      @db.Uuid
-  createdMetaId     String?      @db.Uuid
+  status          RecordStatus @default(ACTIVE)
+  createdByUserId String?      @db.Uuid
+  updatedByUserId String?      @db.Uuid
+  createdMetaId   String?      @db.Uuid
 
-  createdBy         User?        @relation("DonorCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy         User?        @relation("DonorUpdatedBy", fields: [updatedByUserId], references: [id])
-  createdMeta       RequestMetadata? @relation("DonorCreatedMeta", fields: [createdMetaId], references: [id])
+  community       Community?       @relation(fields: [communityId], references: [id])
+  profileAttachment Attachment?    @relation("DonorProfile", fields: [profileAttachmentId], references: [id])
+  createdBy       User?            @relation("DonorCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy       User?            @relation("DonorUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta     RequestMetadata? @relation("DonorCreatedMeta", fields: [createdMetaId], references: [id])
 
-  donations         Donation[]
+  donations Donation[]
+  invoices  Invoice[]
 
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  deletedAt         DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
+  @@index([communityId])
   @@index([phone])
   @@index([fullName])
 }
 
 model Donation {
-  id                String        @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?       @unique @db.Uuid
+  id                String @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @unique @db.Uuid
+  communityId       String? @db.Uuid
 
-  eventId           String        @db.Uuid
-  donorId           String        @db.Uuid
+  eventId             String        @db.Uuid
+  donorId             String        @db.Uuid
+  donorSnapshotName   String
+  donorSnapshotPhone  String
+  amount              Int
+  paymentMethod       PaymentMethod
+  donationDate        DateTime
+  note                String?
+  receiptNo           String?
+  transactionId       String?
+  proofAttachmentId   String?       @db.Uuid
 
-  donorSnapshotName String
-  donorSnapshotPhone String
+  status          RecordStatus @default(ACTIVE)
+  createdByUserId String?      @db.Uuid
+  updatedByUserId String?      @db.Uuid
+  createdMetaId   String?      @db.Uuid
 
-  amount            Int
-  paymentMethod     PaymentMethod
-  donationDate      DateTime
-  note              String?
-  receiptNo         String?
-  transactionId     String?
+  community       Community?       @relation(fields: [communityId], references: [id])
+  event           Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  donor           Donor            @relation(fields: [donorId], references: [id], onDelete: Restrict)
+  proofAttachment Attachment?      @relation("DonationProof", fields: [proofAttachmentId], references: [id])
+  createdBy       User?            @relation("DonationCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy       User?            @relation("DonationUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta     RequestMetadata? @relation("DonationCreatedMeta", fields: [createdMetaId], references: [id])
 
-  status            RecordStatus  @default(ACTIVE)
-  createdByUserId   String?       @db.Uuid
-  updatedByUserId   String?       @db.Uuid
-  createdMetaId     String?       @db.Uuid
+  invoices Invoice[]
 
-  event             Event         @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  donor             Donor         @relation(fields: [donorId], references: [id], onDelete: Restrict)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  createdBy         User?         @relation("DonationCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy         User?         @relation("DonationUpdatedBy", fields: [updatedByUserId], references: [id])
-  createdMeta       RequestMetadata? @relation("DonationCreatedMeta", fields: [createdMetaId], references: [id])
-
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  deletedAt         DateTime?
-
+  @@index([communityId])
   @@index([eventId, donationDate])
   @@index([donorId, eventId])
 }
 
 model Expense {
-  id                String        @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?       @unique @db.Uuid
+  id                String @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @unique @db.Uuid
+  communityId       String? @db.Uuid
 
-  eventId           String        @db.Uuid
-  title             String
-  category          String
-  amount            Int
-  expenseDate       DateTime
-  vendor            String?
-  paymentMethod     PaymentMethod
-  note              String?
+  eventId             String        @db.Uuid
+  title               String
+  category            String
+  amount              Int
+  expenseDate         DateTime
+  vendor              String?
+  paymentMethod       PaymentMethod
+  note                String?
+  receiptAttachmentId String?       @db.Uuid
 
-  status            RecordStatus  @default(ACTIVE)
-  createdByUserId   String?       @db.Uuid
-  updatedByUserId   String?       @db.Uuid
-  createdMetaId     String?       @db.Uuid
+  status          RecordStatus @default(ACTIVE)
+  createdByUserId String?      @db.Uuid
+  updatedByUserId String?      @db.Uuid
+  createdMetaId   String?      @db.Uuid
 
-  event             Event         @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  createdBy         User?         @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy         User?         @relation("ExpenseUpdatedBy", fields: [updatedByUserId], references: [id])
+  community         Community?       @relation(fields: [communityId], references: [id])
+  event             Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  receiptAttachment Attachment?      @relation("ExpenseReceipt", fields: [receiptAttachmentId], references: [id])
+  createdBy         User?            @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?            @relation("ExpenseUpdatedBy", fields: [updatedByUserId], references: [id])
   createdMeta       RequestMetadata? @relation("ExpenseCreatedMeta", fields: [createdMetaId], references: [id])
 
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  deletedAt         DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
+  @@index([communityId])
   @@index([eventId, expenseDate])
   @@index([category])
 }
 
+model Invoice {
+  id          String @id @default(uuid()) @db.Uuid
+  communityId String @db.Uuid
+  eventId     String? @db.Uuid
+  donorId     String? @db.Uuid
+  donationId  String? @db.Uuid
+
+  invoiceNumber       String        @unique
+  invoiceType         InvoiceType
+  issueDate           DateTime
+  payerName           String
+  payerPhone          String?
+  payerAddress        String?
+  amount              Int
+  amountInWordsBangla String?
+  paymentMethod       PaymentMethod?
+  referenceNumber     String?
+  note                String?
+  status              InvoiceStatus @default(DRAFT)
+  pdfAttachmentId     String?       @db.Uuid
+  createdByUserId     String?       @db.Uuid
+  updatedByUserId     String?       @db.Uuid
+
+  community      Community  @relation(fields: [communityId], references: [id])
+  event          Event?     @relation(fields: [eventId], references: [id])
+  donor          Donor?     @relation(fields: [donorId], references: [id])
+  donation       Donation?  @relation(fields: [donationId], references: [id])
+  pdfAttachment  Attachment? @relation("InvoicePdf", fields: [pdfAttachmentId], references: [id])
+  createdBy      User?      @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy      User?      @relation("InvoiceUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([communityId])
+  @@index([invoiceNumber])
+  @@index([donationId])
+  @@index([status])
+  @@index([issueDate])
+}
+
 model Attachment {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
+  communityId String? @db.Uuid
+  entityType  String?
+  entityId    String?
   bucket      String
   objectPath  String
+  originalName String?
   mimeType    String?
   sizeBytes   Int?
-  createdByUserId String? @db.Uuid
-  createdAt   DateTime @default(now())
+  isPublic    Boolean @default(false)
+  uploadedByUserId String? @db.Uuid
+
+  community        Community?  @relation("CommunityAttachments", fields: [communityId], references: [id])
+  communityLogoFor Community[] @relation("CommunityLogo")
+  donorProfiles    Donor[]     @relation("DonorProfile")
+  donationProofs   Donation[]  @relation("DonationProof")
+  expenseReceipts  Expense[]   @relation("ExpenseReceipt")
+  invoicePdfs      Invoice[]   @relation("InvoicePdf")
+
+  createdAt DateTime @default(now())
+
+  @@index([communityId])
+  @@index([entityType, entityId])
 }
 
 model RequestMetadata {
-  id          String   @id @default(uuid()) @db.Uuid
-  ip          String?
-  userAgent   String?
-  deviceType  String?
-  client      String?
-  deviceId    String?
-  createdAt   DateTime @default(now())
+  id         String  @id @default(uuid()) @db.Uuid
+  ip         String?
+  userAgent  String?
+  deviceType String?
+  client     String?
+  deviceId   String?
+  createdAt  DateTime @default(now())
 
-  createdEvents     Event[]     @relation("EventCreatedMeta")
-  createdDonors     Donor[]     @relation("DonorCreatedMeta")
-  createdDonations  Donation[]  @relation("DonationCreatedMeta")
-  createdExpenses   Expense[]   @relation("ExpenseCreatedMeta")
-  auditLogs         AuditLog[]  @relation("AuditLogMeta")
+  createdEvents    Event[]    @relation("EventCreatedMeta")
+  createdDonors    Donor[]    @relation("DonorCreatedMeta")
+  createdDonations Donation[] @relation("DonationCreatedMeta")
+  createdExpenses  Expense[]  @relation("ExpenseCreatedMeta")
+  auditLogs        AuditLog[] @relation("AuditLogMeta")
 
   @@index([deviceId])
 }
 
 model AuditLog {
-  id            String      @id @default(uuid()) @db.Uuid
-  entityType    String
-  entityId      String      @db.Uuid
-  action        AuditAction
-  actorUserId   String?     @db.Uuid
-  actorRole     UserRoleName?
-  before        Json?
-  after         Json?
-  metaId        String?     @db.Uuid
+  id          String       @id @default(uuid()) @db.Uuid
+  communityId String?      @db.Uuid
+  entityType  String
+  entityId    String       @db.Uuid
+  action      AuditAction
+  actorUserId String?      @db.Uuid
+  actorRole   UserRoleName?
+  before      Json?
+  after       Json?
+  metaId      String?      @db.Uuid
 
-  meta          RequestMetadata? @relation("AuditLogMeta", fields: [metaId], references: [id])
-  actor         User?       @relation(fields: [actorUserId], references: [id])
+  community Community?       @relation(fields: [communityId], references: [id])
+  meta      RequestMetadata? @relation("AuditLogMeta", fields: [metaId], references: [id])
+  actor     User?            @relation(fields: [actorUserId], references: [id])
 
-  createdAt     DateTime    @default(now())
+  createdAt DateTime @default(now())
 
+  @@index([communityId])
   @@index([entityType, entityId])
   @@index([createdAt])
 }
 
+model ErrorLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  level       ErrorLevel
+  source      ErrorSource
+  communityId String?     @db.Uuid
+  userId      String?     @db.Uuid
+  requestId   String?
+  routeName   String?
+  actionName  String?
+  errorCode   String?
+  message     String
+  stackTrace  String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  reviewedBy  String?     @db.Uuid
+  reviewedAt  DateTime?
+
+  community Community? @relation(fields: [communityId], references: [id])
+  user      User?      @relation("ErrorLogUser", fields: [userId], references: [id])
+  reviewer  User?      @relation("ErrorLogReviewer", fields: [reviewedBy], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([communityId])
+  @@index([createdAt])
+  @@index([errorCode])
+}
+
 model IdempotencyKey {
-  key           String   @id
-  userId        String?  @db.Uuid
-  method        String
-  path          String
-  requestHash   String?
-  responseBody  Json?
-  statusCode    Int?
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime?
+  key          String   @id
+  userId       String?  @db.Uuid
+  method       String
+  path         String
+  requestHash  String?
+  responseBody Json?
+  statusCode   Int?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime?
 
   @@index([userId, createdAt])
 }
 
 model SyncOperation {
-  id          String      @id @default(uuid()) @db.Uuid
-  userId      String      @db.Uuid
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  communityId String?      @db.Uuid
   deviceId    String
   status      SyncOpStatus @default(PENDING)
   startedAt   DateTime     @default(now())
   finishedAt  DateTime?
   error       String?
 
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community? @relation(fields: [communityId], references: [id])
 
   @@index([userId, deviceId])
   @@index([status, startedAt])
+  @@index([communityId])
 }
-

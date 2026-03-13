@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callApi, setAuthCookies } from '@/lib/auth/server';
-
-type LoginData = {
-  accessToken: string;
-  refreshToken: string;
-  user: { id: string; email: string; fullName?: string | null; roles: string[] };
-};
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { email, password } = (await req.json()) as { email?: string; password?: string };
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const result = await callApi<LoginData>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    if (!result.ok) return NextResponse.json({ error: result.message }, { status: result.status });
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    await setAuthCookies(result.data.accessToken, result.data.refreshToken);
-    return NextResponse.json({ user: result.data.user });
-  } catch (e: unknown) {
+    if (error || !data.session) {
+      return NextResponse.json({ error: error?.message ?? 'Sign in failed' }, { status: 401 });
+    }
+
+    return NextResponse.json({
+      accessToken: data.session.access_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email ?? '',
+        fullName: (data.user.user_metadata as Record<string, string>)?.full_name ?? null,
+        roles: []
+      }
+    });
+  } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Internal error' }, { status: 500 });
   }
 }
-

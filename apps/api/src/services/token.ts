@@ -1,6 +1,41 @@
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, createRemoteJWKSet } from 'jose';
 import { randomBytes, createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+
+// Cached JWKS fetcher — one instance per Supabase URL.
+const jwkSets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function getJwkSet(supabaseUrl: string) {
+  if (!jwkSets.has(supabaseUrl)) {
+    const url = new URL('/auth/v1/.well-known/jwks.json', supabaseUrl);
+    jwkSets.set(supabaseUrl, createRemoteJWKSet(url));
+  }
+  return jwkSets.get(supabaseUrl)!;
+}
+
+export type SupabaseTokenPayload = {
+  sub: string;
+  email?: string;
+  fullName?: string;
+};
+
+export async function verifySupabaseToken(
+  token: string,
+  supabaseUrl: string
+): Promise<SupabaseTokenPayload> {
+  const jwkSet = getJwkSet(supabaseUrl);
+  const { payload } = await jwtVerify(token, jwkSet, {
+    algorithms: ['ES256', 'RS256']
+  });
+  if (typeof payload.sub !== 'string') throw new Error('Invalid token subject');
+
+  const meta = payload.user_metadata as Record<string, string> | undefined;
+  return {
+    sub: payload.sub,
+    email: typeof payload.email === 'string' ? payload.email : undefined,
+    fullName: meta?.full_name
+  };
+}
 
 function parseExpiry(expr: string): number {
   const match = expr.match(/^(\d+)\s*(s|m|h|d)$/);

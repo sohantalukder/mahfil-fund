@@ -7,6 +7,7 @@ export const api = createApiClient({
   baseUrl: appConfig.api.baseUrl,
   getDeviceId: () => DeviceInfo.getUniqueIdSync?.() ?? null,
   getAccessToken: () => localStore.getApiToken(),
+  getCommunityId: () => localStore.getActiveCommunityId(),
   onUnauthorizedRetry: async () => {
     const refreshToken = localStore.getRefreshToken();
     if (!refreshToken) return false;

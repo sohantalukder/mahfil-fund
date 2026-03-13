@@ -45,9 +45,14 @@ body {
 body {
   color: var(--foreground);
   background: radial-gradient(circle at top left, #f9fafb, var(--background));
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+/* Bangla text elements use Hind Siliguri */
+[lang="bn"], .bangla, .font-bn {
+  font-family: var(--font-hind-siliguri), 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+}
 }
 
 *,

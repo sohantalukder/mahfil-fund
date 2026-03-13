@@ -81,18 +81,20 @@ async function findExpenseByRef(
 export async function registerSyncRoutes(app: FastifyInstance) {
   app.post(
     '/sync/push',
-    { preHandler: [requireRoles(app, ['super_admin', 'admin', 'collector'])] },
+    { preHandler: async (req) => app.requireCommunity(req) },
     async (req) => {
+      if (req.memberRole === 'viewer') throw new Error('Viewers cannot sync data');
+
       const deviceId = typeof req.headers['x-device-id'] === 'string' ? req.headers['x-device-id'] : undefined;
       if (!deviceId) {
-        // For offline sync, deviceId is required to correlate operations
         throw new Error('Missing X-Device-Id');
       }
 
       const body = parseWith(SyncPushSchema, req.body);
+      const communityId = req.communityId!;
 
       const syncOp = await app.prisma.syncOperation.create({
-        data: { userId: req.currentUser!.id, deviceId, status: 'IN_PROGRESS' }
+        data: { userId: req.currentUser!.id, communityId, deviceId, status: 'IN_PROGRESS' }
       });
 
       const results: Array<{ opId: string; success: boolean; serverId?: string; error?: string }> = [];
@@ -105,13 +107,14 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                 const input = parseWith(DonorCreateSchema, op.payload);
                 const metaId = await req.getOrCreateRequestMetaId();
                 const existing = input.clientGeneratedId
-                  ? await app.prisma.donor.findUnique({ where: { clientGeneratedId: input.clientGeneratedId } })
+                  ? await app.prisma.donor.findFirst({ where: { clientGeneratedId: input.clientGeneratedId, communityId } })
                   : null;
                 const donor =
                   existing ??
                   (await app.prisma.donor.create({
                     data: {
                       clientGeneratedId: input.clientGeneratedId ?? undefined,
+                      communityId,
                       fullName: input.fullName,
                       phone: input.phone,
                       altPhone: input.altPhone ?? undefined,
@@ -193,10 +196,10 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                 const input = parseWith(DonationCreateSchema, op.payload);
                 const metaId = await req.getOrCreateRequestMetaId();
                 const existing = input.clientGeneratedId
-                  ? await app.prisma.donation.findUnique({ where: { clientGeneratedId: input.clientGeneratedId } })
+                  ? await app.prisma.donation.findFirst({ where: { clientGeneratedId: input.clientGeneratedId, communityId } })
                   : null;
 
-                const donor = await app.prisma.donor.findFirst({ where: { id: input.donorId, status: 'ACTIVE' } });
+                const donor = await app.prisma.donor.findFirst({ where: { id: input.donorId, communityId, status: 'ACTIVE' } });
                 if (!donor) throw new Error('Invalid donor');
 
                 const donation =
@@ -204,6 +207,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                   (await app.prisma.donation.create({
                     data: {
                       clientGeneratedId: input.clientGeneratedId ?? undefined,
+                      communityId,
                       eventId: input.eventId,
                       donorId: input.donorId,
                       donorSnapshotName: donor.fullName,
@@ -290,13 +294,14 @@ export async function registerSyncRoutes(app: FastifyInstance) {
                 const input = parseWith(ExpenseCreateSchema, op.payload);
                 const metaId = await req.getOrCreateRequestMetaId();
                 const existing = input.clientGeneratedId
-                  ? await app.prisma.expense.findUnique({ where: { clientGeneratedId: input.clientGeneratedId } })
+                  ? await app.prisma.expense.findFirst({ where: { clientGeneratedId: input.clientGeneratedId, communityId } })
                   : null;
                 const expense =
                   existing ??
                   (await app.prisma.expense.create({
                     data: {
                       clientGeneratedId: input.clientGeneratedId ?? undefined,
+                      communityId,
                       eventId: input.eventId,
                       title: input.title,
                       category: input.category,
@@ -391,14 +396,16 @@ export async function registerSyncRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get('/sync/pull', { preHandler: async (req) => app.requireAuth(req) }, async (req) => {
+  app.get('/sync/pull', { preHandler: async (req) => app.requireCommunity(req) }, async (req) => {
     const query = parseWith(SyncPullQuerySchema, req.query);
+    const communityId = req.communityId!;
 
     const [events, donors, donations, expenses] = await Promise.all([
-      app.prisma.event.findMany({ where: { updatedAt: { gt: query.since } }, orderBy: { updatedAt: 'asc' } }),
-      app.prisma.donor.findMany({ where: { updatedAt: { gt: query.since } }, orderBy: { updatedAt: 'asc' } }),
+      app.prisma.event.findMany({ where: { communityId, updatedAt: { gt: query.since } }, orderBy: { updatedAt: 'asc' } }),
+      app.prisma.donor.findMany({ where: { communityId, updatedAt: { gt: query.since } }, orderBy: { updatedAt: 'asc' } }),
       app.prisma.donation.findMany({
         where: {
+          communityId,
           updatedAt: { gt: query.since },
           ...(query.eventId ? { eventId: query.eventId } : {})
         },
@@ -406,6 +413,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
       }),
       app.prisma.expense.findMany({
         where: {
+          communityId,
           updatedAt: { gt: query.since },
           ...(query.eventId ? { eventId: query.eventId } : {})
         },

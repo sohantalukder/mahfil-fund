@@ -20,6 +20,7 @@ export default function HomeScreen({ navigation }: Props) {
   const pendingCount = useStore((s) => s.pendingCount);
   const lastSyncAt = useStore((s) => s.lastSyncAt);
   const user = useStore((s) => s.user);
+  const activeCommunity = useStore((s) => s.activeCommunity);
   const { colors, gutters, layout, typographies, fonts } = useTheme();
   const { t } = useTranslation();
 
@@ -233,22 +234,46 @@ export default function HomeScreen({ navigation }: Props) {
         )}
 
         <View style={gutters.marginBottom_16}>
-          <Text
-            variant="heading2"
-            weight="bold"
-            style={{ color: colors.text }}
-          >
-            {t('home.appName')}
-          </Text>
+          <View style={[layout.row, layout.justifyBetween, layout.itemsCenter]}>
+            <View style={{ flex: 1 }}>
+              <Text
+                variant="heading2"
+                weight="bold"
+                style={{ color: colors.text }}
+              >
+                {t('home.appName')}
+              </Text>
+              <Text
+                variant="body2"
+                style={{ color: colors.gray4, marginTop: 4 }}
+              >
+                {t('home.tagline')}
+              </Text>
+            </View>
+            <Button
+              text="🏘"
+              variant="outline"
+              onPress={() => navigation.navigate(routes.communitySelect)}
+              style={{ minWidth: 40, paddingHorizontal: 10 }}
+            />
+          </View>
+          {activeCommunity ? (
+            <View style={{ marginTop: 8, backgroundColor: `${colors.primary}18`, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text variant="body2" weight="bold" style={{ color: colors.primary }}>
+                📍 {activeCommunity.name}
+              </Text>
+            </View>
+          ) : (
+            <Button
+              text="Select a Community to start"
+              variant="outline"
+              onPress={() => navigation.navigate(routes.communitySelect)}
+              style={{ marginTop: 8 }}
+            />
+          )}
           <Text
             variant="body2"
-            style={{ color: colors.gray4, marginTop: 4 }}
-          >
-            {t('home.tagline')}
-          </Text>
-          <Text
-            variant="body2"
-            style={{ color: colors.gray5, marginTop: 4 }}
+            style={{ color: colors.gray5, marginTop: 6 }}
           >
             {signedInLabel}
           </Text>

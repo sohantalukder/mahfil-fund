@@ -62,6 +62,7 @@ export async function runSync() {
       }
     });
 
+    const activeCommunityId = useStore.getState().activeCommunity?.id;
     const res = await api.post<{
       results: Array<{
         opId: string;
@@ -69,7 +70,7 @@ export async function runSync() {
         serverId?: string;
         error?: string;
       }>;
-    }>('/sync/push', { operations: ops });
+    }>('/sync/push', { operations: ops }, activeCommunityId ? { communityId: activeCommunityId } : undefined);
 
     if (!res.success) throw new Error(res.error.message);
 

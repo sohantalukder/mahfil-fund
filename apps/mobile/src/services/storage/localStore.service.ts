@@ -8,6 +8,8 @@ class LocalStoreService {
   private readonly KEY_REFRESH_TOKEN = 'refreshToken';
   private readonly KEY_THEME = 'theme';
   private readonly KEY_SYSTEM_LANGUAGE = 'systemLanguage';
+  private readonly KEY_ACTIVE_COMMUNITY_ID = 'activeCommunityId';
+  private readonly KEY_ACTIVE_COMMUNITY_JSON = 'activeCommunityJson';
 
   private constructor() {
     this.store = new MMKV();
@@ -64,6 +66,34 @@ class LocalStoreService {
 
   public setSystemLanguage(language: string): void {
     this.store.set(this.KEY_SYSTEM_LANGUAGE, language);
+  }
+
+  public getActiveCommunityId(): string | null {
+    return this.store.getString(this.KEY_ACTIVE_COMMUNITY_ID) ?? null;
+  }
+
+  public setActiveCommunityId(id: string): void {
+    this.store.set(this.KEY_ACTIVE_COMMUNITY_ID, id);
+  }
+
+  public clearActiveCommunityId(): void {
+    this.store.delete(this.KEY_ACTIVE_COMMUNITY_ID);
+    this.store.delete(this.KEY_ACTIVE_COMMUNITY_JSON);
+  }
+
+  public getActiveCommunity(): { id: string; name: string; slug: string; role?: string } | null {
+    const json = this.store.getString(this.KEY_ACTIVE_COMMUNITY_JSON);
+    if (!json) return null;
+    try {
+      return JSON.parse(json) as { id: string; name: string; slug: string; role?: string };
+    } catch {
+      return null;
+    }
+  }
+
+  public setActiveCommunity(community: { id: string; name: string; slug: string; role?: string }): void {
+    this.store.set(this.KEY_ACTIVE_COMMUNITY_ID, community.id);
+    this.store.set(this.KEY_ACTIVE_COMMUNITY_JSON, JSON.stringify(community));
   }
 
   // Clear all data

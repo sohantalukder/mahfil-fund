@@ -3,12 +3,13 @@ import type { AuthState } from './slices/authSlice';
 import { createAuthSlice } from './slices/authSlice';
 import type { SyncState } from './slices/syncSlice';
 import { createSyncSlice } from './slices/syncSlice';
+import type { CommunityState } from './slices/communitySlice';
+import { createCommunitySlice } from './slices/communitySlice';
 
-// Combine all state types
-export type StoreState = AuthState & SyncState;
+export type StoreState = AuthState & SyncState & CommunityState;
 
-// Create the store with all slices
 export const useStore = create<StoreState>()((...a) => ({
   ...createAuthSlice(...a),
   ...createSyncSlice(...a),
+  ...createCommunitySlice(...a),
 }));

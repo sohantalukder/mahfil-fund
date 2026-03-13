@@ -10,6 +10,8 @@ enum routes {
   syncCenter = 'SYNC_CENTER',
   donations = 'DONATIONS',
   expenses = 'EXPENSES',
+  communitySelect = 'COMMUNITY_SELECT',
+  joinCommunity = 'JOIN_COMMUNITY',
 }
 
 export default routes;
