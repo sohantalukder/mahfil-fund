@@ -45,13 +45,13 @@
   --color-info-subtle:     #eff6ff;
 
   /* Typography */
-  --font-size-xs:    11px;
-  --font-size-sm:    12px;
-  --font-size-base:  13px;
-  --font-size-md:    14px;
-  --font-size-lg:    16px;
-  --font-size-xl:    20px;
-  --font-size-2xl:   26px;
+  --font-size-xs:    12px;
+  --font-size-sm:    14px;
+  --font-size-base:  15px;
+  --font-size-md:    16px;
+  --font-size-lg:    18px;
+  --font-size-xl:    24px;
+  --font-size-2xl:   30px;
 
   --font-weight-normal:   400;
   --font-weight-medium:   500;
@@ -88,7 +88,7 @@
 
   /* Sidebar */
   --sidebar-width: 200px;
-  --topbar-height: 52px;
+  --topbar-height: 56px;
 
   /* Toast */
   --toast-success-bg: #ecfdf5;

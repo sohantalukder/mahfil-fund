@@ -19,12 +19,23 @@ export const tenantGuardPlugin: FastifyPluginAsync = fp(async (app) => {
     // Auth must run first
     const user = await app.requireAuth(req);
 
+    const q = req.query as Record<string, string | string[] | undefined> | undefined;
+    const queryCommunity =
+      typeof q?.communityId === 'string'
+        ? q.communityId
+        : Array.isArray(q?.communityId)
+          ? q.communityId[0]
+          : undefined;
+
     const communityId =
-      (req.headers['x-community-id'] as string | undefined) ||
-      (req.params as Record<string, string>)?.communityId;
+      (req.headers['x-community-id'] as string | undefined)?.trim() ||
+      (req.params as Record<string, string>)?.communityId ||
+      queryCommunity?.trim();
 
     if (!communityId) {
-      throw Errors.badRequest('Missing community context. Provide X-Community-Id header.');
+      throw Errors.badRequest(
+        'Missing community context. Send header X-Community-Id or query ?communityId=…',
+      );
     }
 
     // super_admin can access any community without a membership check

@@ -31,7 +31,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn">
+    <html lang="bn" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function(){
+  try {
+    var t = localStorage.getItem('mf_admin_theme');
+    if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+    var l = localStorage.getItem('mf_admin_language');
+    if (l === 'bn' || l === 'en') document.documentElement.lang = l;
+  } catch (e) {}
+})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable}`}
         suppressHydrationWarning

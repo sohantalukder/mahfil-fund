@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useApiQuery } from '@/lib/query';
+import { useCommunity } from './providers';
 import { PageShell } from './components/shell';
 import { Skeleton } from './components/ui/skeleton';
 import { Button } from './components/ui/button';
@@ -38,17 +39,20 @@ const PIE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#34d399', '#10b
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   const [selectedId, setSelectedId] = useState('');
 
   const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useApiQuery<{ events: Event[] }>(
-    ['events'],
+    ['events', communityId],
     (client) =>
-      client.get<{ events: Event[] }>('/events').then((res) => {
+      client.get<{ events: Event[] }>('/events?page=1&pageSize=100').then((res) => {
         if (!res.success) throw new Error(res.error.message);
         const data = res.data as { events?: Event[] } | Event[];
         const list = Array.isArray(data) ? data : (data.events ?? []);
         return { events: list };
       }),
+    { enabled: !!communityId },
   );
 
   const activeId = useMemo(() => {
@@ -66,9 +70,11 @@ export default function AdminDashboard() {
     async (client) => {
       if (!activeId) return { summary: null, donations: [] };
       const [sumRes, donRes] = await Promise.all([
-        client.get<{ summary?: EventSummary } | EventSummary>(`/reports/event-summary?eventId=${activeId}`),
+        client.get<{ summary?: EventSummary } | EventSummary>(
+          `/reports/event-summary?eventId=${activeId}`,
+        ),
         client.get<{ donations?: Record<string, unknown>[] } | Record<string, unknown>[]>(
-          `/donations?eventId=${activeId}&limit=5`
+          `/donations?eventId=${activeId}&limit=5`,
         ),
       ]);
       if (!sumRes.success) throw new Error(sumRes.error.message);

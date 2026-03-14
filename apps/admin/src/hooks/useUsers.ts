@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/lib/query';
 import { getApi } from '@/lib/api';
+import { useCommunity } from '@/app/providers';
 import {
   listUsers,
   getMe,
@@ -17,9 +18,12 @@ import type { RoleName } from '@/constants/roles';
 export const USERS_QUERY_KEY = 'users';
 
 export function useUsers(params: UserListParams = {}) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [USERS_QUERY_KEY, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
-    (api) => listUsers(api, params)
+    [USERS_QUERY_KEY, communityId, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
+    (api) => listUsers(api, params),
+    { enabled: !!communityId }
   );
 }
 

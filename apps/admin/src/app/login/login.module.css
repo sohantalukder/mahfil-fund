@@ -42,7 +42,7 @@
 }
 
 .brandRole {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: #5a7d62;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .subtitle {
-  font-size: 13px;
+  font-size: var(--font-size-base);
   color: #5a7d62;
   margin-bottom: 28px;
 }
@@ -68,7 +68,7 @@
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: #8aad8d;
   letter-spacing: 0.02em;
@@ -80,7 +80,7 @@
   border: 1px solid #1e3226;
   background: #132318;
   color: #ddeadf;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   outline: none;
   transition: border-color 120ms;
   width: 100%;
@@ -103,7 +103,7 @@
   border: none;
   border-radius: 8px;
   color: #0b1610;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   font-weight: 700;
   cursor: pointer;
   transition: background 100ms;
@@ -125,5 +125,5 @@
   background: rgba(239, 68, 68, 0.1);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.2);
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }

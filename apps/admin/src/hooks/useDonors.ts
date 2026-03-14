@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/lib/query';
 import { getApi } from '@/lib/api';
+import { useCommunity } from '@/app/providers';
 import {
   listDonors,
   listAllDonors,
@@ -18,24 +19,32 @@ import {
 export const DONORS_QUERY_KEY = 'donors';
 
 export function useDonors(params: DonorListParams = {}) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [DONORS_QUERY_KEY, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
-    (api) => listDonors(api, params)
+    [DONORS_QUERY_KEY, communityId, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
+    (api) => listDonors(api, params),
+    { enabled: !!communityId }
   );
 }
 
 export function useAllDonors() {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [DONORS_QUERY_KEY, 'all'],
-    (api) => listAllDonors(api)
+    [DONORS_QUERY_KEY, 'all', communityId],
+    (api) => listAllDonors(api),
+    { enabled: !!communityId }
   );
 }
 
 export function useDonorDonations(donorId: string) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [DONORS_QUERY_KEY, donorId, 'donations'],
+    [DONORS_QUERY_KEY, communityId, donorId, 'donations'],
     (api) => getDonorDonations(api, donorId),
-    { enabled: !!donorId }
+    { enabled: !!communityId && !!donorId }
   );
 }
 

@@ -62,9 +62,9 @@ export async function createEvent(
   api: ApiClient,
   input: CreateEventInput
 ): Promise<AppEvent> {
-  const res = await api.post<AppEvent>('/events', input);
+  const res = await api.post<{ event: AppEvent }>('/events', input);
   if (!res.success) throw new Error(res.error.message);
-  return res.data as AppEvent;
+  return res.data.event;
 }
 
 export async function updateEvent(
@@ -72,9 +72,9 @@ export async function updateEvent(
   id: string,
   input: UpdateEventInput
 ): Promise<AppEvent> {
-  const res = await api.patch<AppEvent>(`/events/${id}`, input);
+  const res = await api.patch<{ event: AppEvent }>(`/events/${id}`, input);
   if (!res.success) throw new Error(res.error.message);
-  return res.data as AppEvent;
+  return res.data.event;
 }
 
 export async function activateEvent(api: ApiClient, id: string): Promise<void> {

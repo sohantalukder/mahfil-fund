@@ -48,7 +48,7 @@
 }
 
 .relativeTime {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   margin-top: 2px;
 }
@@ -61,6 +61,6 @@
 
 .mono {
   font-family: var(--font-mono, monospace);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }

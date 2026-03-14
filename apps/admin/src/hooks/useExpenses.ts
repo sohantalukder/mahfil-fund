@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/lib/query';
 import { getApi } from '@/lib/api';
+import { useCommunity } from '@/app/providers';
 import {
   listExpenses,
   createExpense,
@@ -16,16 +17,19 @@ import {
 export const EXPENSES_QUERY_KEY = 'expenses';
 
 export function useExpenses(params: ExpenseListParams = {}) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
     [
       EXPENSES_QUERY_KEY,
+      communityId,
       params.eventId ?? '',
       params.page ?? 1,
       params.pageSize ?? 25,
       params.search ?? '',
     ],
     (api) => listExpenses(api, params),
-    { enabled: !!params.eventId }
+    { enabled: !!communityId && !!params.eventId }
   );
 }
 

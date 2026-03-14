@@ -21,7 +21,8 @@ export function useErrorLogs(params: ErrorLogListParams = {}) {
       params.search ?? '',
       params.page ?? 1,
     ],
-    (api) => listErrorLogs(api, params)
+    (api) => listErrorLogs(api, params),
+    { enabled: !!params.communityId }
   );
 }
 

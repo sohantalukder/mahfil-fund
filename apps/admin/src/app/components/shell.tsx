@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useLanguage, useCommunity } from '../providers';
+import { getApi } from '@/lib/api';
 import styles from './shell.module.css';
 
 const shellHttp = axios.create({ baseURL: '/' });
@@ -189,18 +190,64 @@ export function PageShell({
         user?: {
           email?: string;
           fullName?: string | null;
+          roles?: string[];
           communities?: Array<{ id: string; name: string; slug: string; role: string }>;
         };
       }>('/api/auth/me')
       .then((res) => res.data.user ?? null)
-      .then((authUser) => {
+      .then(async (authUser) => {
         if (!authUser) { router.replace('/login'); return; }
         const fullName: string = authUser.fullName || authUser.email?.split('@')[0] || 'Admin';
         const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
         setUser({ name: fullName, email: authUser.email ?? '', initials });
-        if (authUser.communities?.length) {
-          setCommunities(authUser.communities);
-          if (!activeCommunity) setActiveCommunity(authUser.communities[0]);
+
+        let communities = authUser.communities ?? [];
+        // super_admin / admin often have no membership rows; /me then returns communities: [].
+        // Tenant APIs still need X-Community-Id — load from GET /communities (no tenant header).
+        const canListCommunities =
+          authUser.roles?.includes('super_admin') || authUser.roles?.includes('admin');
+        if (!communities.length && canListCommunities) {
+          try {
+            const api = getApi();
+            const res = await api.get<{
+              communities?: Array<{ id: string; name: string; slug: string }>;
+            }>('/communities?page=1&pageSize=100');
+            if (res.success && res.data?.communities?.length) {
+              const roleLabel = authUser.roles?.includes('super_admin') ? 'super_admin' : 'admin';
+              communities = res.data.communities.map((c) => ({
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                role: roleLabel,
+              }));
+            }
+          } catch {
+            /* keep empty */
+          }
+        }
+
+        if (communities.length) {
+          setCommunities(communities);
+          const savedId =
+            typeof window !== 'undefined'
+              ? (() => {
+                  try {
+                    const raw = window.localStorage.getItem('mf_admin_community');
+                    if (!raw) return null;
+                    const c = JSON.parse(raw) as { id?: string };
+                    return typeof c?.id === 'string' ? c.id : null;
+                  } catch {
+                    return null;
+                  }
+                })()
+              : null;
+          const match = savedId ? communities.find((c) => c.id === savedId) : null;
+          const chosen =
+            match ??
+            (activeCommunity && communities.some((c) => c.id === activeCommunity.id)
+              ? activeCommunity
+              : communities[0]);
+          setActiveCommunity(chosen);
         }
       })
       .catch(() => { router.replace('/login'); });

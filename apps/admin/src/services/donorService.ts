@@ -92,7 +92,7 @@ export async function getDonorDonations(
   donorId: string
 ): Promise<Donation[]> {
   const res = await api.get<{ donations?: Donation[] } | Donation[]>(
-    `/donations?donorId=${encodeURIComponent(donorId)}`
+    `/donations?donorId=${encodeURIComponent(donorId)}`,
   );
   if (!res.success) throw new Error(res.error.message);
   const d = res.data as { donations?: Donation[] } | Donation[];

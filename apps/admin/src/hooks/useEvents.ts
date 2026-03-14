@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCommunity } from '@/app/providers';
 import { useApiQuery } from '@/lib/query';
 import { getApi } from '@/lib/api';
 import {
@@ -18,16 +19,22 @@ import {
 export const EVENTS_QUERY_KEY = 'events';
 
 export function useEvents(params: EventListParams = {}) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [EVENTS_QUERY_KEY, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
-    (api) => listEvents(api, params)
+    [EVENTS_QUERY_KEY, communityId, params.page ?? 1, params.pageSize ?? 25, params.search ?? ''],
+    (api) => listEvents(api, params),
+    { enabled: !!communityId }
   );
 }
 
 export function useAllEvents() {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
-    [EVENTS_QUERY_KEY, 'all'],
-    (api) => listAllEvents(api)
+    [EVENTS_QUERY_KEY, 'all', communityId],
+    (api) => listAllEvents(api),
+    { enabled: !!communityId }
   );
 }
 

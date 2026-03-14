@@ -184,15 +184,15 @@ export function DonationFormModal({
                     >
                       <div>
                         <span className="font-medium text-foreground">{d.fullName}</span>
-                        <span className="ml-2 text-[11px] text-muted-foreground">{d.phone}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{d.phone}</span>
                       </div>
-                      {selected && <span className="text-[11px] text-primary font-semibold">✓</span>}
+                      {selected && <span className="text-xs text-primary font-semibold">✓</span>}
                     </button>
                   );
                 })}
               </div>
               {selectedDonor && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {t('admin.forms.donation.selected')} <strong>{selectedDonor.fullName}</strong> ({selectedDonor.phone})
                 </p>
               )}

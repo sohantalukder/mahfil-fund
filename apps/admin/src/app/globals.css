@@ -30,6 +30,10 @@
 
 /* ── CSS Reset ──────────────────────────────────────────────── */
 
+html {
+  font-size: 100%;
+}
+
 html,
 body {
   max-width: 100vw;
@@ -40,6 +44,8 @@ body {
   background: var(--color-bg);
   /* Bangla-first: Hind Siliguri covers Bengali + Latin; Geist as fallback for system fonts */
   font-family: var(--font-hind-siliguri), var(--font-geist-sans), 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--color-text-primary);

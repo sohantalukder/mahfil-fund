@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/lib/query';
 import { getApi } from '@/lib/api';
+import { useCommunity } from '@/app/providers';
 import {
   listDonations,
   createDonation,
@@ -16,9 +17,12 @@ import {
 export const DONATIONS_QUERY_KEY = 'donations';
 
 export function useDonations(params: DonationListParams = {}) {
+  const { activeCommunity } = useCommunity();
+  const communityId = activeCommunity?.id ?? '';
   return useApiQuery(
     [
       DONATIONS_QUERY_KEY,
+      communityId,
       params.eventId ?? '',
       params.donorId ?? '',
       params.page ?? 1,
@@ -26,7 +30,7 @@ export function useDonations(params: DonationListParams = {}) {
       params.search ?? '',
     ],
     (api) => listDonations(api, params),
-    { enabled: !!(params.eventId || params.donorId) }
+    { enabled: !!communityId && !!(params.eventId || params.donorId) }
   );
 }
 

@@ -30,7 +30,17 @@ export function buildApp() {
   app.register(helmet);
   app.register(cors, {
     origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',').map((s) => s.trim()),
-    credentials: true
+    credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Community-Id',
+      'X-Client',
+      'X-Device-Id',
+      'Idempotency-Key',
+      'Accept',
+      'Accept-Language',
+    ],
   });
   app.register(rateLimit, { max: 250, timeWindow: '1 minute' });
   app.register(sensible);
