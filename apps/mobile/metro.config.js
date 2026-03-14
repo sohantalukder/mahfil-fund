@@ -18,12 +18,8 @@ const config = {
     sourceExts: [...sourceExts, 'svg'],
     // Fix for duplicate dependency resolution
     unstable_enablePackageExports: true,
-    unstable_enableSymlinks: true,
-    // Resolve node_modules dependencies properly from app and workspace root
-    nodeModulesPaths: [
-      path.resolve(__dirname, 'node_modules'),
-      path.resolve(__dirname, '../..', 'node_modules'),
-    ],
+    // Resolve node_modules dependencies properly
+    nodeModulesPaths: [path.resolve(__dirname, 'node_modules')],
     // Block problematic nested node_modules
     blockList: [
       // Block nested @react-native packages that cause conflicts
@@ -34,8 +30,8 @@ const config = {
     babelTransformerPath: require.resolve('react-native-svg-transformer'),
     unstable_allowRequireContext: true,
   },
-  // Ensure proper watching of app and workspace root
-  watchFolders: [__dirname, path.resolve(__dirname, '../..')],
+  // Ensure proper watching of node_modules
+  watchFolders: [path.resolve(__dirname, 'node_modules')],
 };
 
 module.exports = mergeConfig(defaultConfig, config);

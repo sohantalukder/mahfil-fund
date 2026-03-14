@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import routes from '@/navigation/routes';
 import type { NavigationProp, RootStackParamList } from '@/navigation/types';
-import { useStore } from '@/state/store';
 
 /**
  * Configuration for splash screen timing and behavior
@@ -22,18 +21,20 @@ const useSplash = () => {
   const hasNavigated = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTime = useRef<number>(Date.now());
-  const bootstrap = useStore((s) => s.bootstrap);
-  const isAuthenticated = useStore((s) => s.isAuthenticated);
-  const isBootstrapped = useStore((s) => s.isBootstrapped);
 
   /**
    * Determines the initial route based on app state
    * This can be extended to check authentication, onboarding status, etc.
    */
   const getInitialRoute = useCallback((): keyof RootStackParamList => {
-    if (!isBootstrapped) return routes.splash;
-    return isAuthenticated ? routes.home : routes.login;
-  }, [isAuthenticated, isBootstrapped]);
+    // TODO: Add logic for:
+    // - Authentication check
+    // - Onboarding completion check
+    // - Deep link handling
+    // - Feature flags
+
+    return routes.example;
+  }, []);
 
   /**
    * Handles navigation to the appropriate screen
@@ -84,12 +85,15 @@ const useSplash = () => {
       requestAnimationFrame(() => {
         if (!isMounted) return;
 
-        bootstrap()
-          .catch(() => undefined)
-          .finally(() => {
-            if (!isMounted) return;
-            completeSplash();
-          });
+        // TODO: Add initialization logic here:
+        // - Load user preferences
+        // - Initialize authentication
+        // - Preload critical data
+        // - Setup crash reporting
+        // - Initialize analytics
+
+        // Complete the splash after next frame
+        completeSplash();
       });
     };
 

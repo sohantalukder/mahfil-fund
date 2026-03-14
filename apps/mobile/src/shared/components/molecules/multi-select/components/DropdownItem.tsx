@@ -35,29 +35,12 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
   const { gutters, layout, colors } = useTheme();
   const valueStr = String(item.value ?? '');
 
-  const baseRow = [
-    gutters.paddingHorizontal_20,
-    gutters.paddingVertical_10,
-    layout.row,
-    layout.itemsCenter,
-  ];
+  const baseRow = [gutters.paddingHorizontal_20, gutters.paddingVertical_10, layout.row, layout.itemsCenter];
 
   if (item.disabled) {
     return (
-      <View
-        style={[
-          ...baseRow,
-          { backgroundColor: colors.gray1, opacity: rs(0.5) },
-          disabledItemStyles,
-        ]}
-      >
-        <View
-          style={[
-            { marginRight: rs(10) },
-            checkboxContainerStyle,
-            disabledCheckBoxStyles,
-          ]}
-        >
+      <View style={[...baseRow, { backgroundColor: colors.gray1, opacity: rs(0.5) }, disabledItemStyles]}>
+        <View style={[{ marginRight: rs(10) }, checkboxContainerStyle, disabledCheckBoxStyles]}>
           <Checkbox
             checked={isSelected}
             disabled
@@ -81,13 +64,7 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`${isSelected ? 'Deselect' : 'Select'} ${valueStr}`}
     >
-      <View
-        style={[
-          { marginRight: rs(10) },
-          checkboxContainerStyle,
-          checkBoxStyles,
-        ]}
-      >
+      <View style={[{ marginRight: rs(10) }, checkboxContainerStyle, checkBoxStyles]}>
         <Checkbox
           checked={isSelected}
           onPress={() => onToggle(item)}

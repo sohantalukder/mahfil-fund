@@ -2,6 +2,7 @@ import { ToastContainer } from '@/shared/contexts/toast';
 import React from 'react';
 import { DialogContainer } from './dialog';
 import { BottomSheetContainer } from './bottom-sheet';
+import { ContextMenuContainer } from './context-menu';
 const UiComponentsWrapper: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
@@ -9,6 +10,7 @@ const UiComponentsWrapper: React.FC<React.PropsWithChildren> = ({
     <>
       <DialogContainer />
       <ToastContainer />
+      <ContextMenuContainer />
       <BottomSheetContainer />
       {children}
     </>

@@ -1,11 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { Animated, Platform, Text } from 'react-native';
-import i18next from 'i18next';
 import { IconButton } from '@/shared/components/atoms';
 import type { StackNavigationOptions } from '@react-navigation/stack';
 import { useTheme } from '@/theme';
-import { fontFamily, fontFamilyBn, fontWeight } from '@/theme/fonts';
+import { fontWeight } from '@/theme/fonts';
 
 // Utility function to sanitize text and prevent character encoding issues
 const sanitizeText = (text: string): string => {
@@ -95,11 +94,7 @@ const useNavigationHeader = ({
             ...typographies.heading3,
             fontWeight: fontWeight.semibold,
             textAlign: headerTitleAlign === 'center' ? 'center' : 'left',
-            fontFamily:
-              i18next.language === 'bn-BN' ||
-              i18next.language?.startsWith('bn')
-                ? fontFamilyBn.semibold
-                : fontFamily.semibold,
+            fontFamily: 'Onest-SemiBold',
             maxWidth: '80%',
           },
         },
@@ -117,11 +112,7 @@ const useNavigationHeader = ({
             ...typographies.heading3,
             fontWeight: fontWeight.semibold,
             textAlign: headerTitleAlign === 'center' ? 'center' : 'left',
-            fontFamily:
-              i18next.language === 'bn-BN' ||
-              i18next.language?.startsWith('bn')
-                ? fontFamilyBn.semibold
-                : fontFamily.semibold,
+            fontFamily: 'Onest-SemiBold',
             maxWidth: '80%',
           },
         },
@@ -146,10 +137,7 @@ const useNavigationHeader = ({
       headerBackTitle: '',
       headerShadowVisible: false,
       headerTitleStyle: {
-        fontFamily:
-          i18next.language === 'bn-BN' || i18next.language?.startsWith('bn')
-            ? fontFamilyBn.semibold
-            : fontFamily.semibold,
+        fontFamily: 'Onest-SemiBold',
         fontWeight: fontWeight.semibold,
         fontSize: typographies.heading3.fontSize,
         color: typographies.heading3.color,

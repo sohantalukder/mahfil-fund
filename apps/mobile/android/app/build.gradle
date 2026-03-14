@@ -81,9 +81,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.mahfilfund.app"
+    namespace "com.mahfilfund"
     defaultConfig {
-        applicationId "com.mahfilfund.app"
+        applicationId "com.mahfilfund"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

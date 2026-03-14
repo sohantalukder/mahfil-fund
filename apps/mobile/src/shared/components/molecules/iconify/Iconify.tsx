@@ -4,18 +4,17 @@ import { WebView } from 'react-native-webview';
 import { useTheme } from '@/theme';
 import { IconifyProps } from './iconfiy.props';
 
-const Iconify = forwardRef<View, IconifyProps>(
-  ({ icon, width = 20, height, color, style, ...other }, ref) => {
-    const { colors } = useTheme();
-    const iconHeight = height ?? width;
-    const iconColor = color ?? colors.primary;
+const Iconify = forwardRef<View, IconifyProps>(({ icon, width = 20, height, color, style, ...other }, ref) => {
+  const { colors } = useTheme();
+  const iconHeight = height ?? width;
+  const iconColor = color ?? colors.primary;
 
-    // Direct SVG URL approach - most reliable
-    const svgUrl = `https://api.iconify.design/${icon}.svg?color=${encodeURIComponent(
-      iconColor
-    )}&width=${width}&height=${iconHeight}`;
+  // Direct SVG URL approach - most reliable
+  const svgUrl = `https://api.iconify.design/${icon}.svg?color=${encodeURIComponent(
+    iconColor
+  )}&width=${width}&height=${iconHeight}`;
 
-    const htmlContent = `
+  const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -41,29 +40,28 @@ const Iconify = forwardRef<View, IconifyProps>(
       </html>
     `;
 
-    return (
-      <View
-        ref={ref}
-        style={[{ width, height: iconHeight }, style]}
-        {...other}
-      >
-        <WebView
-          source={{ html: htmlContent }}
-          style={{
-            width,
-            height: iconHeight,
-            backgroundColor: colors.transparent,
-          }}
-          scrollEnabled={false}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          javaScriptEnabled={false}
-          startInLoadingState={false}
-          originWhitelist={['*']}
-        />
-      </View>
-    );
-  }
-);
+  return (
+    <View
+      ref={ref}
+      style={[{ width, height: iconHeight }, style]}
+      {...other}
+    >
+      <WebView
+        source={{ html: htmlContent }}
+        style={{
+          width,
+          height: iconHeight,
+          backgroundColor: colors.transparent,
+        }}
+        scrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        javaScriptEnabled={false}
+        startInLoadingState={false}
+        originWhitelist={['*']}
+      />
+    </View>
+  );
+});
 
 export default Iconify;

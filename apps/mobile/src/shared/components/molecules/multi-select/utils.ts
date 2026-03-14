@@ -10,17 +10,12 @@ export const arraysEqual = (a: KeyOrValue[], b: KeyOrValue[]): boolean => {
 
 export const validateMultiSelectItem = (item: MultiSelectItem): boolean => {
   const hasKey = typeof item.key === 'string' || typeof item.key === 'number';
-  const hasValue =
-    typeof item.value === 'string' || typeof item.value === 'number';
+  const hasValue = typeof item.value === 'string' || typeof item.value === 'number';
   return hasKey || hasValue;
 };
 
-export const getStoredValue = (
-  item: MultiSelectItem,
-  save: 'key' | 'value'
-): KeyOrValue => (save === 'key' ? item.key : item.value) ?? '';
+export const getStoredValue = (item: MultiSelectItem, save: 'key' | 'value'): KeyOrValue =>
+  (save === 'key' ? item.key : item.value) ?? '';
 
-export const getDisplayValue = (
-  item?: MultiSelectItem,
-  fallback?: KeyOrValue
-): KeyOrValue => item?.value ?? item?.key ?? fallback ?? '';
+export const getDisplayValue = (item?: MultiSelectItem, fallback?: KeyOrValue): KeyOrValue =>
+  item?.value ?? item?.key ?? fallback ?? '';

@@ -10,14 +10,7 @@ export type RootScreenProps<
 
 export type RootStackParamList = {
   [routes.splash]: undefined;
-  [routes.login]: undefined;
-  [routes.home]: undefined;
-  [routes.donors]: undefined;
-  [routes.syncCenter]: undefined;
-  [routes.donations]: undefined;
-  [routes.expenses]: undefined;
-  [routes.communitySelect]: undefined;
-  [routes.joinCommunity]: undefined;
+  [routes.example]: undefined;
 };
 
 export type NavigationProp = StackNavigationProp<RootStackParamList>;

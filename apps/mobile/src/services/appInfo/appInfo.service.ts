@@ -64,7 +64,7 @@ export class AppInfoService {
         console.error('❌ Failed to get app info:', error);
       }
       return {
-        appName: 'Mahfil Fund',
+        appName: 'MahfilFund',
         version: '1.0.0',
         buildNumber: '1',
         bundleId: 'com.mahfilfund.app',
@@ -87,7 +87,7 @@ export class AppInfoService {
       if (__DEV__) {
         console.error('❌ Failed to get app name:', error);
       }
-      return 'Mahfil Fund';
+      return 'MahfilFund';
     }
   }
 

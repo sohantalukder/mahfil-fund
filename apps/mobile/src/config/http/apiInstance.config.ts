@@ -18,5 +18,5 @@ import { Http } from './http.config';
  *
  */
 export const apiInstances = {
-  api: new Http(appConfig.api.baseUrl),
+  businessService: new Http(appConfig.api.businessService),
 } as const;

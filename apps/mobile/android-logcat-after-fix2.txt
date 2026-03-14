@@ -1,0 +1,685 @@
+--------- beginning of system
+03-13 07:07:33.134   686   704 I ActivityManager: Force stopping com.mahfilfund appid=10223 user=0: from pid 11618
+03-13 07:07:33.136   686   704 I AppsFilter: interaction: PackageSetting{e875b08 com.mahfilfund.app/10220} -> PackageSetting{9ca299f com.mahfilfund/10223} BLOCKED
+03-13 07:07:33.136   686   704 I AppsFilter: interaction: PackageSetting{6796487 com.primenow.app/10222} -> PackageSetting{9ca299f com.mahfilfund/10223} BLOCKED
+--------- beginning of main
+03-13 07:07:33.144  1255  1255 D CarrierSvcBindHelper: onHandleForceStop: [com.mahfilfund]
+03-13 07:07:33.148  1255  1255 D CarrierSvcBindHelper: No carrier app for: 0
+03-13 07:07:33.178   686   704 W ActivityTaskManager: callingPackage for (uid=2000, pid=11623) has no WPC
+03-13 07:07:33.179   686   704 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=null display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 task null, skipping
+03-13 07:07:33.179   686   704 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=null display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473
+03-13 07:07:33.179   686   704 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@99ca54d does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+03-13 07:07:33.180   686   704 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 task null, skipping
+03-13 07:07:33.180   686   704 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473
+03-13 07:07:33.180   686   704 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=null activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 task null, skipping
+03-13 07:07:33.180   686   704 V WindowManager: TaskLaunchParamsModifier:phase=3 task=null activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@67953473 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 non-freeform-task-display-area display-area=DefaultTaskDisplayArea@67953473 skip-bounds-fullscreen
+03-13 07:07:33.182   686   704 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{5e92013 #48 type=standard A=10223:com.mahfilfund} activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity t-1} display-from-task=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 not entering desktop mode, skipping
+03-13 07:07:33.182   686   704 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{5e92013 #48 type=standard A=10223:com.mahfilfund} activity=ActivityRecord{161332994 u0 com.mahfilfund/.MainActivity t-1} display-from-task=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@67953473 inherit-from-task=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@67953473 skip-bounds-fullscreen
+03-13 07:07:33.183   545   599 I libbinder.BpBinder: onLastStrongRef automatically unlinking death recipients for descriptor: '(not cached)'
+03-13 07:07:33.186   686  2755 D CompatChangeReporter: Compat change id reported: 377864165; UID 10223; state: ENABLED
+03-13 07:07:33.186  1078  1155 V WindowManagerShell: Transition requested (#169): android.os.BinderProxy@dfcc020 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=48 effectiveUid=10223 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.mahfilfund/.MainActivity } baseActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} topActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} origActivity=null realActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} numActivities=1 lastActiveTime=43146589 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@fe7bdd9} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{5a239e com.mahfilfund.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=null capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=503 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false isLeafTask= true eligibleForLetterboxEducation= false isLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1080, 2400) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatMode=inactive0} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, requestedLocation = null, userChange = null, windowingLayerChange = null, flags = 0, debugId = 169 }
+03-13 07:07:33.186  1078  1155 D ShellSplitScreen: logExit: no-op, mLoggerSessionId is null
+03-13 07:07:33.213   686   704 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x5 cmp=com.mahfilfund/.MainActivity} with LAUNCH_SINGLE_TASK from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+03-13 07:07:33.219  1323  1323 D BaseActivity: Launcher flags updated: [state_started|state_resumed|state_deferred_resumed|state_window_focused] -[state_user_active]
+03-13 07:07:33.219  1323  1323 D BaseActivity: Launcher flags updated: [state_started|state_window_focused] -[state_resumed|state_deferred_resumed]
+03-13 07:07:33.220  1323  1323 W SplitSelectStateCtor: Missing session instanceIds
+03-13 07:07:33.221  1323  1323 D StatsLog: LAUNCHER_SPLIT_SELECTION_EXIT_INTERRUPTED
+03-13 07:07:33.222   686   787 I AppsFilter: interaction: PackageSetting{e875b08 com.mahfilfund.app/10220} -> PackageSetting{519c405 com.mahfilfund/10223} BLOCKED
+03-13 07:07:33.223   686   787 I AppsFilter: interaction: PackageSetting{6796487 com.primenow.app/10222} -> PackageSetting{519c405 com.mahfilfund/10223} BLOCKED
+03-13 07:07:33.224   686   787 V WindowManager: Defer transition id=169 for TaskFragmentTransaction=android.os.Binder@6902c5a
+03-13 07:07:33.224  1078  1155 D WindowManagerShell: setLauncherKeepClearAreaHeight: visible=false, height=495
+03-13 07:07:33.232   686   787 V WindowManager: deferTransitionReady deferReadyDepth=1 stack=com.android.server.wm.TransitionController.deferTransitionReady:1061 com.android.server.wm.TaskFragmentOrganizerController$TaskFragmentOrganizerState.dispatchTransaction:517 com.android.server.wm.TaskFragmentOrganizerController.dispatchPendingEvents:1259 com.android.server.wm.TaskFragmentOrganizerController.dispatchPendingEvents:1228 com.android.server.wm.RootWindowContainer.performSurfacePlacement:777 
+03-13 07:07:33.234  1323  1323 D RecentsView: onTaskDisplayChanged: 48, new displayId = 0
+03-13 07:07:33.238   686   715 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@99ca54d does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+03-13 07:07:33.255   686   787 V WindowManager: Continue transition id=169 for TaskFragmentTransaction=android.os.Binder@6902c5a
+03-13 07:07:33.255   686   787 V WindowManager: continueTransitionReady deferReadyDepth=0 stack=com.android.server.wm.TransitionController.continueTransitionReady:1071 com.android.server.wm.TaskFragmentOrganizerController$TaskFragmentOrganizerState.onTransactionFinished:546 com.android.server.wm.TaskFragmentOrganizerController.onTransactionHandled:740 android.window.ITaskFragmentOrganizerController$Stub.onTransact:225 android.os.Binder.execTransactInternal:1473 
+03-13 07:07:33.255  1323  1323 D BaseActivity: Launcher flags updated: [state_started] -[state_window_focused]
+03-13 07:07:33.280   472   472 D Zygote  : Forked child process 11627
+03-13 07:07:33.284   686   715 W ActivityManager: Slow operation: 69ms so far, now at startProcess: done starting proc!
+03-13 07:07:33.284   686   812 D ActivityManager: freezing 10877 com.android.vending
+03-13 07:07:33.284   686   812 D ActivityManager: Reschedule freeze for process 10877 com.android.vending (outstanding txns), timeout=2096
+03-13 07:07:33.284 10877 10877 I Finsky  : [2] Memory trim requested to level 40
+03-13 07:07:33.284 10877 10877 I Finsky  : [2] Flushing in-memory image cache
+03-13 07:07:33.286  1323  1323 D b/417220811: invalidateLoadedTasks - previous requestLoadId: -1
+03-13 07:07:33.286  1323  1323 D b/417220811: invalidateLoadedTasks - previous requestLoadId: -1
+03-13 07:07:33.290   686   723 W ActivityManager: Slow operation: 51ms so far, now at startProcess: done updating battery stats
+03-13 07:07:33.290   686   723 W ActivityManager: Slow operation: 51ms so far, now at startProcess: building log message
+03-13 07:07:33.290   686   723 I ActivityManager: Start proc 11627:com.mahfilfund/u0a223 for next-top-activity {com.mahfilfund/com.mahfilfund.MainActivity}
+03-13 07:07:33.290   686   723 W ActivityManager: Slow operation: 51ms so far, now at startProcess: starting to update pids map
+03-13 07:07:33.297 11627 11627 I Zygote  : Process 11627 created for com.mahfilfund
+03-13 07:07:33.298 11627 11627 I com.mahfilfund: Late-enabling -Xcheck:jni
+03-13 07:07:33.299 19752 19752 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.safetynet.service.START xflg=0x4 pkg=com.google.android.gms }
+03-13 07:07:33.319 11627 11627 I com.mahfilfund: Using CollectorTypeCMC GC.
+03-13 07:07:33.320  1078  2343 V WindowManagerShell: onTransitionReady(transaction=2946347594408)
+03-13 07:07:33.322  1428  1437 I adbd    : jdwp connection from 11627
+03-13 07:07:33.323   686   712 V WindowManager: Sent Transition (#169) createdAt=03-13 07:07:33.180 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=48 effectiveUid=10223 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.mahfilfund/.MainActivity } baseActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} topActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} origActivity=null realActivity=ComponentInfo{com.mahfilfund/com.mahfilfund.MainActivity} numActivities=1 lastActiveTime=43146589 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{4233f80 Task{5e92013 #48 type=standard A=10223:com.mahfilfund}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{d5b39b9 com.mahfilfund.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=null capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=503 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false isLeafTask= true eligibleForLetterboxEducation= false isLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1080, 2400) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatMode=inactive0} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, requestedLocation = null, userChange = null, windowingLayerChange = null, flags = 0, debugId = 169 }
+03-13 07:07:33.323   686   712 V WindowManager:     startWCT=WindowContainerTransaction { changes= {} hops= [] errorCallbackToken=null taskFragmentOrganizer=null }
+03-13 07:07:33.323   686   712 V WindowManager:     info={id=169 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[
+03-13 07:07:33.323   686   712 V WindowManager:         {WCT{RemoteToken{4233f80 Task{5e92013 #48 type=standard A=10223:com.mahfilfund}}} m=OPEN f=NONE leash=Surface(name=Task=48#2401)/@0xc07ecb2 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},
+03-13 07:07:33.323   686   712 V WindowManager:         {WCT{RemoteToken{4dba70a Task{73e266c #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1#44)/@0xfd2e2cb sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},
+03-13 07:07:33.323   686   712 V WindowManager:         {m=TO_BACK f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{9563342}#61)/@0x597fe45 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0}
+03-13 07:07:33.323   686   712 V WindowManager:     ]}
+03-13 07:07:33.324   686   723 W ActivityManager: Slow operation: 85ms so far, now at startProcess: done updating pids map
+03-13 07:07:33.328   686  1040 D BackgroundInstallControlService: Package event received: 0
+03-13 07:07:33.332  1323  1323 D b/417220811: invalidateLoadedTasks - previous requestLoadId: -1
+03-13 07:07:33.337  1078  1155 V ShellTaskOrganizer: Task appeared taskId=48 listener=FullscreenTaskListener
+03-13 07:07:33.337  1078  1155 V ShellTaskOrganizer: Fullscreen Task Appeared: #48
+03-13 07:07:33.337  1078  1155 V WindowManagerShell: onTransitionReady (#169) android.os.BinderProxy@dfcc020: {id=169 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[
+03-13 07:07:33.337  1078  1155 V WindowManagerShell:         {m=OPEN f=NONE leash=Surface(name=Task=48#2401)/@0x5d3527c sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},
+03-13 07:07:33.337  1078  1155 V WindowManagerShell:         {m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1#44)/@0x6041705 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},
+03-13 07:07:33.337  1078  1155 V WindowManagerShell:         {m=TO_BACK f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{9563342}#61)/@0x19f835a sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0}
+03-13 07:07:33.337  1078  1155 V WindowManagerShell:     ]}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell: Playing animation for (#169) android.os.BinderProxy@dfcc020@0
+03-13 07:07:33.339  1323  1323 D b/417220811: invalidateLoadedTasks - previous requestLoadId: -1
+03-13 07:07:33.339  1078  1155 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+03-13 07:07:33.339  1078  1155 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=169 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{m=OPEN f=NONE leash=Surface(name=Task=48#2401)/@0x5d3527c sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},{m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1#44)/@0x6041705 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},{m=TO_BACK f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{9563342}#61)/@0x19f835a sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0}]}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=undefined independent=true modes=[CLOSE,TO_BACK] flags=IN_TASK_WITH_EMBEDDED_ACTIVITY mustBeTask=false order=ANY topActivity=null launchCookie=null taskFragmentToken=android.os.BinderProxy@f0eb7a7 windowingMode=undefined isCrossDisplayMove=false}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@7634454, appThread = android.app.IApplicationThread$Stub$Proxy@10ddffd, debugName = overlayBackTransition }}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null windowingMode=undefined isCrossDisplayMove=false},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null windowingMode=undefined isCrossDisplayMove=false}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@7d5a4f2, appThread = android.app.IApplicationThread$Stub$Proxy@3652743, debugName = LauncherToDream }}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity} launchCookie=null windowingMode=undefined isCrossDisplayMove=false},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null launchCookie=null windowingMode=undefined isCrossDisplayMove=false},{NOT atype=undefined independent=true modes=[] flags=NONE mustBeTask=true order=ANY topActivity=null launchCookie=null customAnim=true windowingMode=undefined isCrossDisplayMove=false}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@4da51c0, appThread = android.app.IApplicationThread$Stub$Proxy@5d7ef9, debugName = QuickstepLaunchHome }}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell:  Delegate animation for (#169) to null
+03-13 07:07:33.339  1078  1155 V WindowManagerShell: start default transition animation, info = {id=169 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{m=OPEN f=NONE leash=Surface(name=Task=48#2401)/@0x5d3527c sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},{m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1#44)/@0x6041705 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0 taskParent=-1 winMode=1 userId=0},{m=TO_BACK f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{9563342}#61)/@0x19f835a sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) epz=Point(1080, 2400) d=0}]}
+03-13 07:07:33.339  1078  1155 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@4427b26 animAttr=0x13 type=OPEN isEntrance=false
+03-13 07:07:33.339  1078  1155 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@7383367 animAttr=0x12 type=OPEN isEntrance=true
+03-13 07:07:33.340  1078  1155 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@7f09a46
+03-13 07:07:33.347 11627 11627 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+03-13 07:07:33.354   686  1040 D BackgroundInstallControlService: Package event received: 0
+03-13 07:07:33.531 11627 11627 D nativeloader: Configuring clns-9 for other apk /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/lib/arm64:/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.mahfilfund
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment: Currently set values for:
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment: com.mahfilfund is not listed in per-application setting
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment: ANGLE allowlist from config: com.dreamgames.royalmatch com.dts.freefiremax com.dxx.firenow com.gramgames.mergedragons com.ludo.king com.mojang.minecraftpe com.my.defense com.nintendo.zaka com.os.airforce com.playrix.fishdomdd.gplay io.teslatech.callbreak jp.konami.prospia net.peakgames.toonblast
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment: No special selections for ANGLE, returning default driver choice
+03-13 07:07:33.535 11627 11627 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+03-13 07:07:33.544 11627 11627 W SoLoader: Initializing SoLoader: 0
+03-13 07:07:33.544 11627 11627 W SoLoader: Recording new base apk path: /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk
+03-13 07:07:33.544 11627 11627 W SoLoader: Previously recorded 0 base apk paths.
+03-13 07:07:33.545 11627 11627 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+03-13 07:07:33.545 11627 11627 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+03-13 07:07:33.545 11627 11627 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a]]
+03-13 07:07:33.572 11627 11627 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/lib/arm64 flags = 0]]
+03-13 07:07:33.572 11627 11627 I SoLoader: init finish: 4 SO sources prepared
+03-13 07:07:33.572 11627 11627 W SoLoader: SoLoader initialized: 8
+03-13 07:07:33.613 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libc++_shared.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.633 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libjsi.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.648  1078  1155 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#169) android.os.BinderProxy@dfcc020@0
+03-13 07:07:33.650   686   712 V WindowManager: Finish Transition (#169): created at 03-13 07:07:33.180 collect-started=0.036ms request-sent=5.167ms started=34.21ms ready=83.087ms sent=124.277ms commit=38.877ms finished=470.536ms
+03-13 07:07:33.651  1078  1155 V WindowManagerShell: Track 0 became idle
+03-13 07:07:33.651  1078  1155 V WindowManagerShell: All active transition animations finished
+03-13 07:07:33.651  1323  1323 D VRI[NexusLauncherActivity]: visibilityChanged oldVisibility=true newVisibility=false
+03-13 07:07:33.655  1078  1315 D WallpaperService: onVisibilityChanged(false): com.android.systemui.wallpapers.ImageWallpaper$CanvasEngine@fc995a3
+03-13 07:07:33.657 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libfbjni.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.660  1323  1323 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=7}
+03-13 07:07:33.661  1078  1155 D Bubbles : onLocusVisibilityChanged=Overview|DISABLED visible=false taskId=1
+03-13 07:07:33.667 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libreactnative.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Entering merged library JNI_OnLoad.
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x79ee67b948
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x79ee8912a4
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x79ee89cf10
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x79ee905eac
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x79eeaf695c
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x79eeb44114
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x79eeb54a9c
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x79eeb8b250
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x79eeca2a24
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x79eecbba74
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x79eeccb4f8
+03-13 07:07:33.667 11627 11627 D jni_lib_merge: About to register 11 actual methods.
+03-13 07:07:33.711 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libreact_codegen_rnscreens.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Entering merged library JNI_OnLoad.
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x79ee67b948
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x79ee8912a4
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x79ee89cf10
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x79ee905eac
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x79eeaf695c
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x79eeb44114
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x79eeb54a9c
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x79eeb8b250
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x79eeca2a24
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x79eecbba74
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x79eeccb4f8
+03-13 07:07:33.711 11627 11627 D jni_lib_merge: About to register 11 actual methods.
+03-13 07:07:33.730 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libreact_codegen_rnsvg.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Entering merged library JNI_OnLoad.
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x79ee67b948
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x79ee8912a4
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x79ee89cf10
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x79ee905eac
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x79eeaf695c
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x79eeb44114
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x79eeb54a9c
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x79eeb8b250
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x79eeca2a24
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x79eecbba74
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x79eeccb4f8
+03-13 07:07:33.731 11627 11627 D jni_lib_merge: About to register 11 actual methods.
+03-13 07:07:33.749 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libreact_codegen_safeareacontext.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.768 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libreact-native-mmkv.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.771 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libappmodules.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.772   686  1040 D BackgroundInstallControlService: Package event received: 0
+03-13 07:07:33.772   686  1040 D BackgroundInstallControlService: Package event received: 0
+03-13 07:07:33.777 11627 11640 I DisplayManager: Choreographer implicitly registered for the refresh rate.
+03-13 07:07:33.785 11627 11627 D DesktopExperienceFlags: Toggle override initialized to: false
+03-13 07:07:33.788 11627 11627 D AppCompatDelegate: Checking for metadata for AppLocalesMetadataHolderService : Service not found
+03-13 07:07:33.789 11627 11627 E ashmem  : Pinning is deprecated since Android Q. Please use trim or other methods.
+03-13 07:07:33.829 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libhermes.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.829 11627 11640 I GFXSTREAM: [eglDisplay.cpp(297)] Opening libGLESv1_CM_emulation.so
+03-13 07:07:33.829 11627 11640 I GFXSTREAM: [eglDisplay.cpp(297)] Opening libGLESv2_emulation.so
+03-13 07:07:33.832 11627 11627 D nativeloader: Load /data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk!/lib/arm64-v8a/libhermestooling.so using class loader ns clns-9 (caller=/data/app/~~qZvRQbp3z15tfEHG75vbNg==/com.mahfilfund-PemhBvHWHGGu54n0SekHHw==/base.apk): ok
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: Entering merged library JNI_OnLoad.
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: Preparing 4 pre-merged libs (including stub)
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: Preparing to register libhermes_executor_so.  onload_func: 0x79e82f09d4
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: Preparing to register libhermesinstancejni_so.  onload_func: 0x79e832578c
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: Preparing to register libjsijniprofiler_so.  onload_func: 0x79e8327788
+03-13 07:07:33.832 11627 11627 D jni_lib_merge: About to register 3 actual methods.
+03-13 07:07:33.840 11627 11640 W HWUI    : Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+03-13 07:07:33.843 11627 11640 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+03-13 07:07:33.857 11627 11627 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+03-13 07:07:33.857 11627 11627 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+03-13 07:07:33.857 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+03-13 07:07:33.858 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+03-13 07:07:33.858 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+03-13 07:07:33.858 11627 11646 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning()
+03-13 07:07:33.858 11627 11627 D CompatChangeReporter: Compat change id reported: 377864165; UID 10223; state: ENABLED
+03-13 07:07:33.858 11627 11627 D DesktopModeFlags: Toggle override initialized to: OVERRIDE_UNSET
+03-13 07:07:33.863 11627 11627 I com.mahfilfund: hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=36) using reflection: allowed
+03-13 07:07:33.867 11627 11627 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+03-13 07:07:33.871 11627 11627 W HWUI    : Unknown dataspace 0
+03-13 07:07:33.873 11627 11627 D InsetsController: Setting requestedVisibleTypes to 498 (was 503)
+03-13 07:07:33.878 11627 11627 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@4639516
+03-13 07:07:33.878   686  1063 D CoreBackPreview: Window{a3ac12 u0 com.mahfilfund/com.mahfilfund.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1e40899, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+03-13 07:07:33.878 11627 11627 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@ad75e97
+03-13 07:07:33.878   686  1063 D CoreBackPreview: Window{a3ac12 u0 com.mahfilfund/com.mahfilfund.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@80c775e, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+03-13 07:07:33.878 11627 11627 D VRI[MainActivity]: WindowInsets changed: 1080x2400 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+03-13 07:07:33.883 11627 11627 D VRI[MainActivity]: WindowInsets changed: statusBars:null 
+03-13 07:07:33.901  1323  1323 D BaseActivity: Launcher flags updated: [] -[state_started]
+03-13 07:07:33.901  1323  1323 D BaseDepthController: setSurface:
+03-13 07:07:33.901  1323  1323 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+03-13 07:07:33.901  1323  1323 D BaseDepthController: 	mBaseSurface: null
+03-13 07:07:33.901  1323  1323 D BaseDepthController: mSurface is null and mCurrentBlur is: 0
+03-13 07:07:33.901  1323  1323 D LauncherStateManager: StateManager.goToState: fromState: Normal, toState: Normal, partial trace:
+03-13 07:07:33.901  1323  1323 D LauncherStateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 7101499b44b219b757f6885b35ae099b24fc769225595efcaaacae5b0f94500b:6)
+03-13 07:07:33.901  1323  1323 D LauncherStateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 7101499b44b219b757f6885b35ae099b24fc769225595efcaaacae5b0f94500b:2)
+03-13 07:07:33.901  1323  1323 D LauncherStateManager: 	at com.android.launcher3.statemanager.StatefulActivity.onStop(go/retraceme 7101499b44b219b757f6885b35ae099b24fc769225595efcaaacae5b0f94500b:32)
+03-13 07:07:33.902   686   712 I ActivityTaskManager: Displayed com.mahfilfund/.MainActivity for user 0: +720ms
+03-13 07:07:33.904  1323  1323 D LauncherStateManager: StateManager.onRepeatStateSetAborted: state: Normal
+03-13 07:07:33.904  1323  1323 D ActivityContext: hideKeyboard
+03-13 07:07:33.904  1323  1323 D ActivityContext: isImeShown: false
+03-13 07:07:33.904  1323  1323 D StatsLog: LAUNCHER_ONSTOP
+03-13 07:07:33.906  1323  1323 D StatsLog: LAUNCHER_GOOGLE_SEARCH_RESTORE_LIST_SIZE_AFTER_ACTIVITY_RESTART
+03-13 07:07:33.918   686  1040 D BackgroundInstallControlService: Package event received: 0
+03-13 07:07:33.932 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.onWindowFocusChange(ReactHostImpl.java:790)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactDelegate.onWindowFocusChanged(ReactDelegate.java:199)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactActivityDelegate.onWindowFocusChanged(ReactActivityDelegate.java:216)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactActivity.onWindowFocusChanged(ReactActivity.java:158)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at androidx.appcompat.view.WindowCallbackWrapper.onWindowFocusChanged(WindowCallbackWrapper.java:124)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.android.internal.policy.DecorView.onWindowFocusChanged(DecorView.java:1797)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.View.dispatchWindowFocusChanged(View.java:17124)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewGroup.dispatchWindowFocusChanged(ViewGroup.java:1529)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.dispatchFocusEvent(ViewRootImpl.java:4962)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.handleWindowFocusChanged(ViewRootImpl.java:4866)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged(Unknown Source:0)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl(ViewRootImpl.java:7118)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessage(ViewRootImpl.java:7026)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:132)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:33.932 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:33.937   686   830 I ImeTracker: com.mahfilfund:2272196f: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+03-13 07:07:33.940 11627 11627 D InsetsController: hide(ime())
+03-13 07:07:33.941 11627 11627 I ImeTracker: com.mahfilfund:2272196f: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+03-13 07:07:33.946  6892  6892 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2057 
+03-13 07:07:33.948   686   787 I ImeTracker: system_server:97bf2245: onRequestHide at ORIGIN_SERVER reason IME_REQUESTED_CHANGED_LISTENER fromUser false
+03-13 07:07:33.948  6892  6892 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+03-13 07:07:33.949   686   715 I ImeTracker: system_server:97bf2245: onCancelled at PHASE_SERVER_SHOULD_HIDE
+03-13 07:07:33.949  6892  6892 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1318 onStartInput(EditorInfo{EditorInfo{packageName=com.mahfilfund, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+03-13 07:07:33.950  1323  1331 W System  : A resource failed to call release. 
+03-13 07:07:33.950  1323  1331 W System  : A resource failed to call release. 
+03-13 07:07:33.950  1323  1331 W System  : A resource failed to call release. 
+03-13 07:07:33.950  6892  6892 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+03-13 07:07:33.950   686   787 W PackageConfigPersister: App-specific configuration not found for packageName: com.mahfilfund and userId: 0
+03-13 07:07:33.956 11627 11657 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning(): Async result = true
+03-13 07:07:33.957 11627 11646 W unknown:BridgelessReact: ReactHost{0}.loadJSBundleFromMetro()
+03-13 07:07:33.977 11627 11627 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): android.widget.PopupWindow$PopupDecorView$$ExternalSyntheticLambda1@bb107c
+03-13 07:07:33.978 11627 11627 I HWUI    : Using FreeType backend (prop=Auto)
+03-13 07:07:33.978   686   787 D CoreBackPreview: Window{8ab4a09 u0 PopupWindow:5984f50}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@858de2f, mPriority=0, mIsAnimationCallback=false, mOverrideBehavior=0}
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: Could not parse DebugServerException from: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: org.json.JSONException: No value for filename
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at org.json.JSONObject.get(JSONObject.java:398)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at org.json.JSONObject.getString(JSONObject.java:559)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.common.DebugServerException$Companion.parse(DebugServerException.kt:89)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.kt:263)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processBundleResult(BundleDownloader.kt:35)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$processMultipartResponse$completed$1.onChunkComplete(BundleDownloader.kt:196)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.emitChunk(MultipartStreamReader.kt:141)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.readAllParts(MultipartStreamReader.kt:99)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processMultipartResponse(BundleDownloader.kt:178)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processMultipartResponse(BundleDownloader.kt:35)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$downloadBundleFromURL$1.onResponse(BundleDownloader.kt:128)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.039 11627 11657 W unknown:ReactNative: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: Unable to download JS bundle
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: Body:
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.kt:276)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processBundleResult(BundleDownloader.kt:35)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$processMultipartResponse$completed$1.onChunkComplete(BundleDownloader.kt:196)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.emitChunk(MultipartStreamReader.kt:141)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.readAllParts(MultipartStreamReader.kt:99)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processMultipartResponse(BundleDownloader.kt:178)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processMultipartResponse(BundleDownloader.kt:35)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$downloadBundleFromURL$1.onResponse(BundleDownloader.kt:128)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.039 11627 11657 E unknown:ReactNative: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.039 11627 11627 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): null
+03-13 07:07:34.039   686   787 D CoreBackPreview: Window{8ab4a09 u0 PopupWindow:5984f50}: Setting back callback null
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: Exception in native call
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: Body:
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.kt:276)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processBundleResult(BundleDownloader.kt:35)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$processMultipartResponse$completed$1.onChunkComplete(BundleDownloader.kt:196)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.emitChunk(MultipartStreamReader.kt:141)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.readAllParts(MultipartStreamReader.kt:99)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processMultipartResponse(BundleDownloader.kt:178)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processMultipartResponse(BundleDownloader.kt:35)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$downloadBundleFromURL$1.onResponse(BundleDownloader.kt:128)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.048 11627 11627 E unknown:ReactNative: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: Body:
+03-13 07:07:34.053 11627 11646 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: Exception in native call
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: Body:
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.kt:276)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processBundleResult(BundleDownloader.kt:35)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$processMultipartResponse$completed$1.onChunkComplete(BundleDownloader.kt:196)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.emitChunk(MultipartStreamReader.kt:141)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.MultipartStreamReader.readAllParts(MultipartStreamReader.kt:99)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.processMultipartResponse(BundleDownloader.kt:178)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader.access$processMultipartResponse(BundleDownloader.kt:35)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at com.facebook.react.devsupport.BundleDownloader$downloadBundleFromURL$1.onResponse(BundleDownloader.kt:128)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.055 11627 11646 E unknown:ReactNative: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask()
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: Body:
+03-13 07:07:34.056 11627 11646 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: Body:
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.getOrCreateDestroyTask(ReactHostImpl.java:1644)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$destroy$7(ReactHostImpl.java:614)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$uso21_D6dCZdcf-JomVD56kdG4c(Unknown Source:0)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda32.call(D8$$SyntheticClass:0)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.call$lambda$2(Task.kt:315)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$MFqd_-X5KhHmu0hvNE2Bec_4mJM(Unknown Source:0)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: Caused by: com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: Body:
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.kt:276)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader.access$processBundleResult(BundleDownloader.kt:35)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader$processMultipartResponse$completed$1.onChunkComplete(BundleDownloader.kt:196)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.MultipartStreamReader.emitChunk(MultipartStreamReader.kt:141)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.MultipartStreamReader.readAllParts(MultipartStreamReader.kt:99)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader.processMultipartResponse(BundleDownloader.kt:178)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader.access$processMultipartResponse(BundleDownloader.kt:35)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at com.facebook.react.devsupport.BundleDownloader$downloadBundleFromURL$1.onResponse(BundleDownloader.kt:128)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+03-13 07:07:34.057 11627 11646 E unknown:ReactHost: 	... 3 more
+03-13 07:07:34.062 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting createReactInstance task ref
+03-13 07:07:34.064 11627 11627 D InsetsController: Setting requestedVisibleTypes to 498 (was 503)
+03-13 07:07:34.066 11627 11627 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): android.app.Dialog$$ExternalSyntheticLambda2@d641058
+03-13 07:07:34.066   686   787 D CoreBackPreview: Window{d2df6e6 u0 com.mahfilfund/com.mahfilfund.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2646c40, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Starting React Native destruction
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task faulted. Stage: 1: Starting destroy. Fault reason: The development server returned response error code: 500
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: Body:
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: Body:
+03-13 07:07:34.103 11627 11627 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task faulted. Stage: 1: Starting destroy. Fault reason: The development server returned response error code: 500
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: Body:
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: Body:
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$createReactInstanceUnwrapper$28(ReactHostImpl.java:1425)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$BY09Bnwe10ChgecLPJ7U0yC5l0I(Unknown Source:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda18.unwrap(D8$$SyntheticClass:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$35(ReactHostImpl.java:1661)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$pNNT77t3fXQqz8JpxUSTcSQQc40(Unknown Source:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda25.then(D8$$SyntheticClass:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Handler.handleCallback(Handler.java:1070)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): DevSupportManager cleanup
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): ReactContext is null. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: Body:
+03-13 07:07:34.104 11627 11627 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): ReactContext is null. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: Body:
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$35(ReactHostImpl.java:1684)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$pNNT77t3fXQqz8JpxUSTcSQQc40(Unknown Source:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda25.then(D8$$SyntheticClass:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Handler.handleCallback(Handler.java:1070)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:34.104 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:34.105 11627 11627 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Move ReactHost to onHostDestroy()
+03-13 07:07:34.112   686  1128 I ImeTracker: system_server:20175d3c: onRequestHide at ORIGIN_SERVER reason IME_REQUESTED_CHANGED_LISTENER fromUser false
+03-13 07:07:34.113 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(onWindowFocusChange(hasFocus = "false")): Tried to access onWindowFocusChange while context is not ready
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(onWindowFocusChange(hasFocus = "false")): Tried to access onWindowFocusChange while context is not ready
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.onWindowFocusChange(ReactHostImpl.java:790)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactDelegate.onWindowFocusChanged(ReactDelegate.java:199)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactActivityDelegate.onWindowFocusChanged(ReactActivityDelegate.java:216)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.facebook.react.ReactActivity.onWindowFocusChanged(ReactActivity.java:158)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at androidx.appcompat.view.WindowCallbackWrapper.onWindowFocusChanged(WindowCallbackWrapper.java:124)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.android.internal.policy.DecorView.onWindowFocusChanged(DecorView.java:1797)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.View.dispatchWindowFocusChanged(View.java:17124)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewGroup.dispatchWindowFocusChanged(ViewGroup.java:1529)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.dispatchFocusEvent(ViewRootImpl.java:4962)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.handleWindowFocusChanged(ViewRootImpl.java:4866)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged(Unknown Source:0)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl(ViewRootImpl.java:7118)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessage(ViewRootImpl.java:7026)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:132)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:34.113 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:34.113   686   715 I ImeTracker: system_server:20175d3c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 2: Stopping surfaces. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: Body:
+03-13 07:07:34.114 11627 11646 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 2: Stopping surfaces. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: Body:
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$createReactInstanceUnwrapper$28(ReactHostImpl.java:1444)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$BY09Bnwe10ChgecLPJ7U0yC5l0I(Unknown Source:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda18.unwrap(D8$$SyntheticClass:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$36(ReactHostImpl.java:1697)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$UfZOPRDG9_ON2oxhs86dYy8IVGo(Unknown Source:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda26.then(D8$$SyntheticClass:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.115 11627 11646 E unknown:ReactHost: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.116 11627 11646 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Skipping surface shutdown: ReactInstance null
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Skipping surface shutdown: ReactInstance null
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$36(ReactHostImpl.java:1699)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$UfZOPRDG9_ON2oxhs86dYy8IVGo(Unknown Source:0)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda26.then(D8$$SyntheticClass:0)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.116 11627 11646 E unknown:ReactHost: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 3: Destroying ReactContext. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: Body:
+03-13 07:07:34.116 11627 11627 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 3: Destroying ReactContext. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: Body:
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$createReactInstanceUnwrapper$28(ReactHostImpl.java:1444)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$BY09Bnwe10ChgecLPJ7U0yC5l0I(Unknown Source:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda18.unwrap(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$37(ReactHostImpl.java:1714)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$k9qcZN8i39sK7FdJc91jWs8PNl4(Unknown Source:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda27.then(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Handler.handleCallback(Handler.java:1070)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): ReactContext is null. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: 
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: Body:
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): ReactContext is null. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: Body:
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$37(ReactHostImpl.java:1721)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$k9qcZN8i39sK7FdJc91jWs8PNl4(Unknown Source:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda27.then(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Handler.handleCallback(Handler.java:1070)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:333)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:263)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:367)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:9282)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
+03-13 07:07:34.117 11627 11627 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+03-13 07:07:34.117 11627 11627 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying MemoryPressureRouter
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 4: Destroying ReactInstance. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: 
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: Body:
+03-13 07:07:34.117 11627 11646 W unknown:BridgelessReact: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Destroy: ReactInstance task returned null. Stage: 4: Destroying ReactInstance. Destroy reason: handleHostException(message = "The development server returned response error code: 500
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: URL: http://10.0.2.2:8081/index.bundle?platform=android&dev=true&lazy=true&minify=false&app=com.mahfilfund&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: Body:
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: {"type":"InternalError","errors":[],"message":"Metro has encountered an error: Got unexpected undefined: /Users/sohantalukder/Development/Practices/MahfilFund/node_modules/nullthrows/nullthrows.js (7:15)\n\n\u001b[0m \u001b[90m  5 |\u001b[39m     \u001b[36mreturn\u001b[39m x\u001b[33m;\u001b[39m\n \u001b[90m  6 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m   \u001b[36mvar\u001b[39m error \u001b[33m=\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(message \u001b[33m!==\u001b[39m undefined \u001b[33m?\u001b[39m message \u001b[33m:\u001b[39m \u001b[32m'Got unexpected '\u001b[39m \u001b[33m+\u001b[39m x)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m   error\u001b[33m.\u001b[39mframesToPop \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m \u001b[90m// Skip nullthrows's own stack frame.\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 10 |\u001b[39m }\u001b[0m"}")
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$createReactInstanceUnwrapper$28(ReactHostImpl.java:1444)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$BY09Bnwe10ChgecLPJ7U0yC5l0I(Unknown Source:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda18.unwrap(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$38(ReactHostImpl.java:1748)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$1xUiTWpQbmYMZrNbVqMQIilDJbk(Unknown Source:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda28.then(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.117 11627 11646 E unknown:ReactHost: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.118 11627 11658 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.mahfilfund
+03-13 07:07:34.118 11627 11646 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): Skipping ReactInstance.destroy(): ReactInstance null
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: Unhandled SoftException
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): Skipping ReactInstance.destroy(): ReactInstance null
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1038)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.java:1031)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.lambda$getOrCreateDestroyTask$38(ReactHostImpl.java:1751)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$1xUiTWpQbmYMZrNbVqMQIilDJbk(Unknown Source:0)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda28.then(D8$$SyntheticClass:0)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:390)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Unknown Source:0)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+03-13 07:07:34.118 11627 11646 E unknown:ReactHost: 	at java.lang.Thread.run(Thread.java:1563)
+03-13 07:07:34.118 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting start task ref
+03-13 07:07:34.118 11627 11646 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting destroy task ref
+03-13 07:07:34.131   686   830 I ImeTracker: com.mahfilfund:19137dd1: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+03-13 07:07:34.132 11627 11627 D InsetsController: hide(ime())
+03-13 07:07:34.132  6892  6892 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2057 
+03-13 07:07:34.132   686   787 I ImeTracker: system_server:ae088c8f: onRequestHide at ORIGIN_SERVER reason IME_REQUESTED_CHANGED_LISTENER fromUser false
+03-13 07:07:34.132  6892  6892 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+03-13 07:07:34.133   686   715 I ImeTracker: system_server:ae088c8f: onCancelled at PHASE_SERVER_SHOULD_HIDE
+03-13 07:07:34.133  6892  6892 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1318 onStartInput(EditorInfo{EditorInfo{packageName=com.mahfilfund, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+03-13 07:07:34.134 11627 11627 I ImeTracker: com.mahfilfund:19137dd1: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+03-13 07:07:34.134  6892  6892 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+03-13 07:07:34.134   686   787 W PackageConfigPersister: App-specific configuration not found for packageName: com.mahfilfund and userId: 0
+03-13 07:07:34.362 11627 11631 I com.mahfilfund: Compiler allocated 5145KB to compile void android.view.ViewRootImpl.performTraversals()
+03-13 07:07:34.371  6766  6809 I FontLog : (REDACTED) Received query %s, URI %s
+03-13 07:07:34.371  6766  6809 I FontLog : (REDACTED) Query [%s] resolved to %s
+03-13 07:07:34.373  6766  6809 I FontLog : (REDACTED) Fetch %s end status %s
+03-13 07:07:34.379  6766  6809 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+03-13 07:07:34.381  6766  6809 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+03-13 07:07:34.980   686   981 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+03-13 07:07:35.392   686   812 D ActivityManager: freezing 10877 com.android.vending
+03-13 07:07:35.392   686   991 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+03-13 07:07:35.395   686   991 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+03-13 07:07:35.395   686   991 D InetDiagMessage: Destroyed live tcp sockets for uids={10145} in 4ms
+03-13 07:07:36.212  1255  1320 D SatelliteController: iisInCarrierRoamingNbIotNtn: satellite is disabled
+03-13 07:07:36.212  1255  1320 D SatelliteController: getCarrierRoamingNtnConnectType: Falling back to global carrier config connect type: 0
+03-13 07:07:36.691   686  3227 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+03-13 07:07:37.987   686   981 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+03-13 07:07:39.738 11627 11670 D ProfileInstaller: Installing profile for com.mahfilfund
+03-13 07:07:40.993   686   981 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+03-13 07:07:42.074 11671 11671 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: package
+03-13 07:07:42.098   847  5278 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+03-13 07:07:42.098   847   857 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_AdsDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.099   847  5278 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_CronetDynamite_installtime.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+03-13 07:07:42.100   847   857 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_DynamiteLoader_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.101   847  5278 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_DynamiteModulesA_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.101   847   857 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_DynamiteModulesC_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.102   847  5278 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_GoogleCertificates_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.102   847   857 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_MapsDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.103   847  5278 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_MeasurementDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.104   847   857 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~BvPz18wvkCs6mLjE9QceAA==/com.google.android.gms-asv9xVa0mhrusDeL_LWLig==/oat/arm64/split_all_locale_splits.odex) is kOatUpToDate with filter 'speed' executable 'false'
+03-13 07:07:42.104   847  5278 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000009/dl-VisionOcr.optional_260931100000.apk has no usable artifacts
+03-13 07:07:42.105   847   857 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000d/dl-MlkitOcrCommon.optional_260931100400.apk has no usable artifacts
+03-13 07:07:42.105   847  5278 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000001/CronetDynamite.apk has no usable artifacts
+03-13 07:07:42.105   847  5278 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.google.android.gms/app_dg_cache/DE47351470B874CD27E2358FA315B85F3554F2AB/oat/arm64/the.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+03-13 07:07:42.105   847   857 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000002/DynamiteLoader.apk has no usable artifacts
+03-13 07:07:42.105   847   857 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000005/GoogleCertificates.apk has no usable artifacts
+03-13 07:07:42.106   847   857 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000a/dl-MlkitBarcodeUi.optional_260931100400.apk has no usable artifacts
+03-13 07:07:42.106   847  5278 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000f/dl-Appsearch.optional_260931100400.apk has no usable artifacts
+03-13 07:07:42.107   847   857 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000b/dl-TfliteDynamiteDynamite.integ_252130102100400.apk has no usable artifacts
+03-13 07:07:42.107   847  5278 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000007/MeasurementDynamite.apk has no usable artifacts

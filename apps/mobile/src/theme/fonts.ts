@@ -55,18 +55,3 @@ export const staticFontStyles = {
     textTransform: 'uppercase',
   },
 } as const satisfies Record<string, TextStyle>;
-
-export const fontFamily = {
-  regular: 'Poppins-Regular',
-  medium: 'Poppins-Medium',
-  semibold: 'Poppins-SemiBold',
-  bold: 'Poppins-Bold',
-} as const;
-
-export const fontFamilyBn = {
-  regular: 'HindSiliguri-Regular',
-  medium: 'HindSiliguri-Medium',
-  semibold: 'HindSiliguri-SemiBold',
-  bold: 'HindSiliguri-Bold',
-} as const;
-

@@ -14,10 +14,8 @@ import {
   ContextMenuSection,
 } from '@/types/contextMenuTypes';
 
-interface ContextMenuTriggerProps extends Omit<
-  PressableProps,
-  'onPress' | 'onLongPress'
-> {
+interface ContextMenuTriggerProps
+  extends Omit<PressableProps, 'onPress' | 'onLongPress'> {
   children: ReactNode;
   menuConfig?: ContextMenuConfig;
   items?: ContextMenuItem[];

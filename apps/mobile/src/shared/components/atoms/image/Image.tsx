@@ -1,10 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { ViewStyle, StyleProp, DimensionValue } from 'react-native';
 import { StyleSheet, View } from 'react-native';
-import FastImage, {
-  type ImageStyle as FastImageStyle,
-  type ResizeMode,
-} from '@d11/react-native-fast-image';
+import FastImage, { type ImageStyle as FastImageStyle, type ResizeMode } from '@d11/react-native-fast-image';
 import PlaceholderImage from '@/assets/icons/Placeholder.icon';
 import isEmpty from '@/shared/utilities/isEmpty';
 import Skeleton from '../skeleton/Skeleton';
@@ -86,7 +83,7 @@ const ImagePreview: React.FC<Properties> = ({
     setIsLoading(true);
     onLoadStart?.();
   }, [onLoadStart]);
-
+  
   const handleLoadEnd = useCallback(() => {
     setIsLoading(false);
     onLoadEnd?.();
@@ -102,18 +99,8 @@ const ImagePreview: React.FC<Properties> = ({
     if (sourceObj?.uri) {
       return {
         uri: sourceObj.uri,
-        priority:
-          _priority === 'high'
-            ? FastImage.priority.high
-            : _priority === 'low'
-              ? FastImage.priority.low
-              : FastImage.priority.normal,
-        cache:
-          _cache === 'web'
-            ? FastImage.cacheControl.web
-            : _cache === 'cacheOnly'
-              ? FastImage.cacheControl.cacheOnly
-              : FastImage.cacheControl.immutable,
+        priority: _priority === 'high' ? FastImage.priority.high : _priority === 'low' ? FastImage.priority.low : FastImage.priority.normal,
+        cache: _cache === 'web' ? FastImage.cacheControl.web : _cache === 'cacheOnly' ? FastImage.cacheControl.cacheOnly : FastImage.cacheControl.immutable,
       };
     }
 

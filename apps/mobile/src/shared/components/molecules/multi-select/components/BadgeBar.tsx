@@ -34,9 +34,7 @@ const BadgeBar: React.FC<BadgeBarProps> = ({
   if (selected.length === 0) return null;
 
   const shouldShowMore = selected.length > maxVisible && !showAll;
-  const badgesToShow = shouldShowMore
-    ? selected.slice(0, maxVisible)
-    : selected;
+  const badgesToShow = shouldShowMore ? selected.slice(0, maxVisible) : selected;
   const remaining = selected.length - maxVisible;
 
   return (
@@ -47,12 +45,7 @@ const BadgeBar: React.FC<BadgeBarProps> = ({
         return (
           <TouchableOpacity
             key={`badge-${String(stored)}-${idx}`}
-            style={[
-              badgeBaseStyle,
-              badgeStyles,
-              layout.row,
-              layout.itemsCenter,
-            ]}
+            style={[badgeBaseStyle, badgeStyles, layout.row, layout.itemsCenter]}
             onPress={() => onRemove(stored)}
             accessibilityRole="button"
             accessibilityLabel={`Remove ${String(label)}`}
@@ -78,13 +71,7 @@ const BadgeBar: React.FC<BadgeBarProps> = ({
 
       {shouldShowMore && (
         <TouchableOpacity
-          style={[
-            badgeBaseStyle,
-            badgeStyles,
-            layout.row,
-            layout.itemsCenter,
-            { backgroundColor: colors.primary },
-          ]}
+          style={[badgeBaseStyle, badgeStyles, layout.row, layout.itemsCenter, { backgroundColor: colors.primary }]}
           onPress={() => onToggleShowAll(true)}
           accessibilityRole="button"
           accessibilityLabel={`Show ${remaining} more items`}
@@ -101,13 +88,7 @@ const BadgeBar: React.FC<BadgeBarProps> = ({
 
       {showAll && selected.length > maxVisible && (
         <TouchableOpacity
-          style={[
-            badgeBaseStyle,
-            badgeStyles,
-            layout.row,
-            layout.itemsCenter,
-            { backgroundColor: colors.primary },
-          ]}
+          style={[badgeBaseStyle, badgeStyles, layout.row, layout.itemsCenter, { backgroundColor: colors.primary }]}
           onPress={() => onToggleShowAll(false)}
           accessibilityRole="button"
           accessibilityLabel="Show less items"
