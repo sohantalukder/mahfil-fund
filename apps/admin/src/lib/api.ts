@@ -1,20 +1,33 @@
+import axios from 'axios';
 import { createApiClient } from '@mahfil/api-sdk';
+
+const internalHttp = axios.create({ baseURL: '/' });
 
 export function getApi() {
   return createApiClient({
     baseUrl: process.env.NEXT_PUBLIC_API_URL!,
     getAccessToken: async () => {
-      const res = await fetch('/api/auth/access-token', { method: 'GET', cache: 'no-store' });
-      if (!res.ok) return null;
-      const data = (await res.json()) as { accessToken?: string };
-      return data.accessToken ?? null;
+      try {
+        const { data } = await internalHttp.get<{ accessToken?: string }>('/api/auth/access-token');
+        return data.accessToken ?? null;
+      } catch {
+        return null;
+      }
     },
     onUnauthorizedRetry: async () => {
-      const res = await fetch('/api/auth/refresh', { method: 'POST' });
-      return res.ok;
+      try {
+        await internalHttp.post('/api/auth/refresh');
+        return true;
+      } catch {
+        return false;
+      }
     },
     onAuthFailure: async () => {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      try {
+        await internalHttp.post('/api/auth/logout');
+      } catch {
+        // ignore failure during logout
+      }
     }
   });
 }

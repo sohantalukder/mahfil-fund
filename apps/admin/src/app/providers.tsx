@@ -16,6 +16,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { I18nextProvider } from 'react-i18next';
 import { ensureI18n } from '@/lib/i18n';
 import { ToastProvider } from './components/toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 type ThemeMode = 'light' | 'dark';
 type LanguageMode = 'bn' | 'en';
@@ -97,6 +98,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void i18n.changeLanguage(language);
+    document.documentElement.lang = language;
     window.localStorage.setItem('mf_admin_language', language);
   }, [i18n, language]);
 
@@ -120,7 +122,7 @@ export function Providers({ children }: { children: ReactNode }) {
             <CommunityContext.Provider value={communityValue}>
               <div data-theme={theme}>
                 <ToastProvider>
-                  {children}
+                  <ErrorBoundary>{children}</ErrorBoundary>
                 </ToastProvider>
               </div>
             </CommunityContext.Provider>

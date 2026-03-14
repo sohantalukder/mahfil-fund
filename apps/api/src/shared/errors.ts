@@ -18,6 +18,15 @@ export const Errors = {
     new AppError({ code: 'BAD_REQUEST', message, statusCode: 400, details }),
   notFound: (message = 'Not found') => new AppError({ code: 'NOT_FOUND', message, statusCode: 404 }),
   conflict: (message = 'Conflict', details?: unknown) =>
-    new AppError({ code: 'CONFLICT', message, statusCode: 409, details })
+    new AppError({ code: 'CONFLICT', message, statusCode: 409, details }),
+  /** Too many requests (rate limit) */
+  rateLimited: (message = 'Too many requests') =>
+    new AppError({ code: 'RATE_LIMITED', message, statusCode: 429 }),
+  /** Validation / unprocessable entity */
+  unprocessable: (message = 'Unprocessable entity', details?: unknown) =>
+    new AppError({ code: 'UNPROCESSABLE', message, statusCode: 422, details }),
+  /** Generic server failure */
+  internal: (message = 'Internal server error') =>
+    new AppError({ code: 'INTERNAL', message, statusCode: 500 })
 } as const;
 

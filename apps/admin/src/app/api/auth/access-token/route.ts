@@ -25,7 +25,7 @@ export async function GET() {
 
   const refreshed = await callApi<RefreshData>('/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken })
+    data: { refreshToken },
   });
   if (!refreshed.ok) {
     await clearAuthCookies();

@@ -1,44 +1,44 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '../components/toast';
 import { useCommunity } from '../providers';
-
-interface Invitation {
-  id: string;
-  email: string;
-  fullName: string;
-  phoneNumber?: string;
-  role: string;
-  status: string;
-  expiresAt: string;
-  createdAt: string;
-  inviteCode?: string;
-  createdBy?: { fullName?: string; email: string };
-}
-
-interface InvitationsResponse {
-  invitations: Invitation[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import {
+  useInvitations,
+  useCreateInvitation,
+  useCancelInvitation,
+  useResendInvitation,
+} from '@/hooks/useInvitations';
+import { TableCard } from '@/components/shared/TableCard';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import styles from './invitations.module.css';
+import formStyles from '@/styles/form.module.css';
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#D97706',
-  USED: '#16A34A',
-  EXPIRED: '#9CA3AF',
-  CANCELLED: '#EF4444'
+  PENDING: 'var(--color-warning)',
+  USED: 'var(--color-success)',
+  EXPIRED: 'var(--color-text-muted)',
+  CANCELLED: 'var(--color-danger)',
+};
+
+const BLANK = {
+  email: '', fullName: '', phoneNumber: '', role: 'collector', note: '', expiresInDays: '7',
 };
 
 export default function InvitationsPage() {
+  return <Suspense><InvitationsContent /></Suspense>;
+}
+
+function InvitationsContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const { activeCommunity, communities } = useCommunity();
-  const { addToast } = useToast();
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [communityId, setCommunityId] = useState(
     searchParams.get('communityId') ?? activeCommunity?.id ?? ''
@@ -46,105 +46,96 @@ export default function InvitationsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...BLANK });
 
-  const [form, setForm] = useState({
-    email: '', fullName: '', phoneNumber: '', role: 'collector', note: '', expiresInDays: '7'
-  });
+  const { data, isLoading } = useInvitations({ communityId, status: statusFilter });
+  const createInvitation = useCreateInvitation(communityId);
+  const cancelInvitation = useCancelInvitation(communityId);
+  const resendInvitation = useResendInvitation(communityId);
 
-  const { data, isLoading } = useQuery<InvitationsResponse>({
-    queryKey: ['invitations', communityId, statusFilter],
-    queryFn: async () => {
-      if (!communityId) return { invitations: [], total: 0, page: 1, totalPages: 1 };
-      const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      const res = await fetch(`/api/communities/${communityId}/invitations?${params}`, {
-        headers: { 'X-Community-Id': communityId }
+  const invitations = data?.invitations ?? [];
+
+  async function handleCreate() {
+    try {
+      const result = await createInvitation.mutateAsync({
+        email: form.email,
+        fullName: form.fullName,
+        phoneNumber: form.phoneNumber || undefined,
+        role: form.role,
+        note: form.note || undefined,
+        expiresInDays: parseInt(form.expiresInDays),
       });
-      if (!res.ok) throw new Error('Failed to load');
-      const json = await res.json() as { data: InvitationsResponse };
-      return json.data;
-    },
-    enabled: !!communityId
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (payload: typeof form) => {
-      const res = await fetch(`/api/communities/${communityId}/invitations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Community-Id': communityId },
-        body: JSON.stringify({ ...payload, expiresInDays: parseInt(payload.expiresInDays) })
-      });
-      const json = await res.json() as { data?: { invitation: Invitation }; error?: { message: string } };
-      if (!res.ok) throw new Error(json.error?.message ?? 'Failed');
-      return json.data!;
-    },
-    onSuccess: (data) => {
-      setCreatedCode(data.invitation.inviteCode ?? null);
+      setCreatedCode(result.invitation.inviteCode ?? null);
       setShowCreate(false);
-      setForm({ email: '', fullName: '', phoneNumber: '', role: 'collector', note: '', expiresInDays: '7' });
-      void queryClient.invalidateQueries({ queryKey: ['invitations', communityId] });
-    },
-    onError: (e: Error) => addToast({ type: 'error', message: e.message })
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/invitations/${id}/cancel`, { method: 'POST', headers: { 'X-Community-Id': communityId } });
-      if (!res.ok) throw new Error('Failed to cancel');
-    },
-    onSuccess: () => {
-      addToast({ type: 'success', message: 'Invitation cancelled' });
-      void queryClient.invalidateQueries({ queryKey: ['invitations', communityId] });
+      setForm({ ...BLANK });
+      toast('Invitation created!', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create invitation', 'error');
     }
-  });
+  }
 
-  const resendMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/invitations/${id}/resend`, { method: 'POST', headers: { 'X-Community-Id': communityId } });
-      const json = await res.json() as { data?: { invitation: { inviteCode: string } }; error?: { message: string } };
-      if (!res.ok) throw new Error(json.error?.message ?? 'Failed');
-      return json.data!;
-    },
-    onSuccess: (data) => {
-      setCreatedCode(data.invitation.inviteCode);
-      addToast({ type: 'success', message: 'New code generated!' });
-      void queryClient.invalidateQueries({ queryKey: ['invitations', communityId] });
+  async function handleCancel(id: string) {
+    try {
+      await cancelInvitation.mutateAsync(id);
+      toast('Invitation cancelled', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to cancel', 'error');
     }
-  });
+  }
+
+  async function handleResend(id: string) {
+    try {
+      const result = await resendInvitation.mutateAsync(id);
+      setCreatedCode(result.invitation.inviteCode);
+      toast('New code generated!', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to resend', 'error');
+    }
+  }
 
   return (
     <PageShell
-      title="Invitations"
-      subtitle="Manage community invitations and invite codes"
+      title={t('dashboard.invitationsTitle')}
+      subtitle={t('dashboard.invitationsSubtitleAlt')}
       actions={
-        <button className="db-btn-primary" onClick={() => setShowCreate(true)} disabled={!communityId}>
+        <Button onClick={() => setShowCreate(true)} disabled={!communityId}>
           + Create Invitation
-        </button>
+        </Button>
       }
     >
-      {/* Created code banner */}
       {createdCode && (
-        <div className="db-alert-success" style={{ marginBottom: 20, padding: 16, borderRadius: 12 }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>Invitation created! Share this code:</div>
-          <div style={{ fontSize: 22, fontFamily: 'monospace', letterSpacing: 4, fontWeight: 700 }}>{createdCode}</div>
-          <button style={{ marginTop: 8, fontSize: 12 }} onClick={() => { void navigator.clipboard.writeText(createdCode); addToast({ type: 'success', message: 'Copied!' }); }}>
+        <div className={styles.codeBanner}>
+          <div className={styles.codeLabel}>Invitation created! Share this code:</div>
+          <div className={styles.code}>{createdCode}</div>
+          <button
+            type="button"
+            className={styles.copyBtn}
+            onClick={() => {
+              void navigator.clipboard.writeText(createdCode);
+              toast('Copied!', 'success');
+            }}
+          >
             Copy code
           </button>
         </div>
       )}
 
-      {/* Community selector & filters */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className={styles.filterRow}>
         <select
-          className="db-input"
-          style={{ flex: '0 0 240px' }}
+          className={`${styles.filterSelect} min-w-[200px]`}
           value={communityId}
           onChange={(e) => setCommunityId(e.target.value)}
         >
           <option value="">Select community</option>
-          {communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {communities.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
         </select>
-        <select className="db-input" style={{ flex: '0 0 160px' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <select
+          className={styles.filterSelect}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="USED">Used</option>
@@ -153,55 +144,92 @@ export default function InvitationsPage() {
         </select>
       </div>
 
-      {/* Create form */}
       {showCreate && (
-        <div className="db-card" style={{ padding: 24, marginBottom: 24 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600 }}>New Invitation</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="db-form-group">
-              <label className="db-label">Full Name *</label>
-              <input className="db-input" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
+        <div className={styles.createCard}>
+          <h3 className={styles.createTitle}>New Invitation</h3>
+          <div className={formStyles.formGrid}>
+            <div className={formStyles.formRow}>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Full Name *</label>
+                <Input
+                  value={form.fullName}
+                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Email *</label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
             </div>
-            <div className="db-form-group">
-              <label className="db-label">Email *</label>
-              <input className="db-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <div className={formStyles.formRow}>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Phone</label>
+                <Input
+                  value={form.phoneNumber}
+                  onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+                />
+              </div>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Role</label>
+                <select
+                  className={formStyles.nativeSelect}
+                  value={form.role}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="collector">Collector</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
             </div>
-            <div className="db-form-group">
-              <label className="db-label">Phone</label>
-              <input className="db-input" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} />
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">Role</label>
-              <select className="db-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                <option value="admin">Admin</option>
-                <option value="collector">Collector</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">Expires in (days)</label>
-              <input className="db-input" type="number" min={1} max={30} value={form.expiresInDays} onChange={(e) => setForm({ ...form, expiresInDays: e.target.value })} />
-            </div>
-            <div className="db-form-group">
-              <label className="db-label">Note</label>
-              <input className="db-input" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+            <div className={formStyles.formRow}>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Expires in (days)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={form.expiresInDays}
+                  onChange={(e) => setForm((f) => ({ ...f, expiresInDays: e.target.value }))}
+                />
+              </div>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Note</label>
+                <Input
+                  value={form.note}
+                  onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+                />
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
-            <button className="db-btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
-            <button className="db-btn-primary" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Creating...' : 'Create Invitation'}
-            </button>
+          <div className={formStyles.formActions}>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void handleCreate()} disabled={createInvitation.isPending}>
+              {createInvitation.isPending ? 'Creating…' : 'Create Invitation'}
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      {isLoading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>Loading...</div>
-      ) : (
-        <div className="db-card" style={{ overflow: 'hidden' }}>
-          <table className="db-table" style={{ width: '100%' }}>
+      <TableCard
+        title="Invitations"
+        badge={data ? `${invitations.length} of ${data.total}` : undefined}
+        empty={!isLoading && invitations.length === 0 ? 'No invitations found.' : undefined}
+      >
+        {isLoading ? (
+          <div className="p-10 text-center text-muted-foreground">
+            Loading…
+          </div>
+        ) : invitations.length > 0 ? (
+          <table className="dataTable">
             <thead>
               <tr>
                 <th>Name / Email</th>
@@ -213,29 +241,48 @@ export default function InvitationsPage() {
               </tr>
             </thead>
             <tbody>
-              {!data?.invitations?.length ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#9CA3AF' }}>No invitations found</td></tr>
-              ) : data.invitations.map((inv) => (
+              {invitations.map((inv) => (
                 <tr key={inv.id}>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{inv.fullName}</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>{inv.email}</div>
+                    <div className="font-semibold text-foreground">{inv.fullName}</div>
+                    <div className="text-[11px] text-muted-foreground">{inv.email}</div>
                   </td>
-                  <td><span style={{ fontSize: 11, textTransform: 'capitalize' }}>{inv.role}</span></td>
+                  <td className="text-xs capitalize">{inv.role}</td>
                   <td>
-                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, color: STATUS_COLORS[inv.status], background: `${STATUS_COLORS[inv.status]}18` }}>
+                    {/* badge color/bg derives from STATUS_COLORS map at runtime — kept as inline */}
+                    <span
+                      className={styles.statusBadge}
+                      style={{
+                        color: STATUS_COLORS[inv.status] ?? 'var(--color-text-muted)',
+                        background: (STATUS_COLORS[inv.status] ?? 'var(--color-text-muted)') + '18',
+                      }}
+                    >
                       {inv.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: 12 }}>{new Date(inv.expiresAt).toLocaleDateString('en-US')}</td>
-                  <td style={{ fontSize: 12 }}>{inv.createdBy?.fullName ?? inv.createdBy?.email ?? '—'}</td>
+                  <td className="text-xs">{new Date(inv.expiresAt).toLocaleDateString()}</td>
+                  <td className="text-xs">
+                    {(inv as { createdBy?: { fullName?: string; email?: string } }).createdBy?.fullName ??
+                     (inv as { createdBy?: { fullName?: string; email?: string } }).createdBy?.email ??
+                     '—'}
+                  </td>
                   <td>
                     {inv.status === 'PENDING' && (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="db-btn-secondary" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => resendMutation.mutate(inv.id)} disabled={resendMutation.isPending}>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={() => void handleResend(inv.id)}
+                          disabled={resendInvitation.isPending}
+                        >
                           Resend
                         </button>
-                        <button className="db-btn-secondary" style={{ fontSize: 11, padding: '3px 8px', color: '#EF4444' }} onClick={() => cancelMutation.mutate(inv.id)}>
+                        <button
+                          type="button"
+                          className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                          onClick={() => void handleCancel(inv.id)}
+                          disabled={cancelInvitation.isPending}
+                        >
                           Cancel
                         </button>
                       </div>
@@ -245,8 +292,8 @@ export default function InvitationsPage() {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+        ) : null}
+      </TableCard>
     </PageShell>
   );
 }

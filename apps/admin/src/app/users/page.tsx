@@ -1,242 +1,139 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { getApi } from '@/lib/api';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
-import { Button } from '../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { useToast } from '../components/toast';
-import { ListToolbar } from '../components/list-toolbar';
-import { PaginationControls } from '../components/pagination-controls';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
-
-type AppUser = {
-  id: string;
-  email?: string;
-  fullName?: string;
-  isActive: boolean;
-  roles: string[];
-  createdAt: string;
-};
-
-const ALL_ROLES = ['super_admin', 'admin', 'collector', 'viewer'] as const;
-type RoleName = typeof ALL_ROLES[number];
-
-const fmt = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-
-const ROLE_COLOR: Record<string, string> = {
-  super_admin: '#7c3aed',
-  admin: '#2563eb',
-  collector: '#059669',
-  viewer: '#6b7280',
-};
-
-const ROLE_PERMS: Record<string, { read: boolean; write: boolean; del: boolean; admin: boolean }> = {
-  viewer:      { read: true,  write: false, del: false, admin: false },
-  collector:   { read: true,  write: true,  del: false, admin: false },
-  admin:       { read: true,  write: true,  del: true,  admin: false },
-  super_admin: { read: true,  write: true,  del: true,  admin: true  },
-};
-
-const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#ea580c', '#db2777', '#0f766e'];
-
-function prettyNameFromEmail(email?: string): string {
-  if (!email) return 'Unknown User';
-  const local = email.split('@')[0] ?? '';
-  return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim() || email;
-}
+import {
+  useUsers,
+  useMe,
+  useCreateUser,
+  useUpdateUserRoles,
+  useToggleUserStatus,
+} from '@/hooks/useUsers';
+import { TableCard } from '@/components/shared/TableCard';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { UserAvatar } from '@/components/shared/UserAvatar';
+import { StatGrid, StatCard } from '@/components/shared/StatGrid';
+import { ListToolbar } from '@/components/shared/ListToolbar';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import { InviteUserModal } from '@/components/shared/InviteUserModal';
+import { EditRolesModal } from '@/components/shared/EditRolesModal';
+import { ALL_ROLES, ROLE_COLOR, ROLE_PERMS, formatRole } from '@/constants/roles';
+import type { RoleName } from '@/constants/roles';
+import type { AppUser } from '@/types';
+import styles from './users.module.css';
 
 function getDisplayName(user: AppUser): string {
   const candidate = user.fullName?.trim();
   if (candidate) return candidate;
-  return prettyNameFromEmail(user.email);
-}
-
-function getInitials(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
-function getAvatarColor(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? AVATAR_COLORS[0];
+  if (!user.email) return 'Unknown User';
+  const local = user.email.split('@')[0] ?? '';
+  return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim() || user.email;
 }
 
 export default function AdminUsersPage() {
-  const api = useMemo(() => getApi(), []);
+  const { t } = useTranslation();
   const { toast } = useToast();
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [me, setMe] = useState<{ id: string; roles: string[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  // Invite modal
-  const [inviteModal, setInviteModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', password: '', fullName: '', roles: ['viewer'] as RoleName[] });
-  const [inviting, setInviting] = useState(false);
+  const { data: usersData, isLoading } = useUsers({
+    page,
+    pageSize,
+    search: debouncedSearch.trim(),
+  });
+  const { data: me } = useMe();
 
-  // Role edit modal
-  const [roleModal, setRoleModal] = useState<AppUser | null>(null);
+  const createUser = useCreateUser();
+  const updateRoles = useUpdateUserRoles();
+  const toggleStatus = useToggleUserStatus();
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [roleTarget, setRoleTarget] = useState<AppUser | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
-  const [savingRoles, setSavingRoles] = useState(false);
 
-  // Status toggle
-  const [togglingId, setTogglingId] = useState('');
+  const users = usersData?.users ?? [];
+  const total = usersData?.total ?? 0;
+  const totalPages = usersData?.totalPages ?? 1;
+  const isSuperAdmin = me?.roles.includes('super_admin') ?? false;
 
-  async function load() {
-    setLoading(true); setError(null);
-    const params = new URLSearchParams({
-      page: String(page),
-      pageSize: String(pageSize)
-    });
-    if (searchQuery) params.set('search', searchQuery);
-    const [usersRes, meRes] = await Promise.all([
-      api.get<{ users: AppUser[]; total?: number; totalPages?: number; page?: number }>(`/users?${params.toString()}`),
-      api.get<{ user: { id: string; roles: string[] } }>('/me'),
-    ]);
-    setLoading(false);
-    if (!usersRes.success) { setError(usersRes.error.message); return; }
-    if (meRes.success) {
-      const meData = meRes.data as { user?: { id: string; roles: string[] } } | { id: string; roles: string[] };
-      setMe((meData as { user?: { id: string; roles: string[] } }).user ?? (meData as { id: string; roles: string[] }));
+  async function handleInvite(form: { email: string; password: string; fullName: string; roles: RoleName[] }) {
+    try {
+      await createUser.mutateAsync({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName || null,
+        roles: form.roles,
+      });
+      setInviteOpen(false);
+      toast(`User created: ${form.email}`, 'success');
+    } catch (err) {
+      // error surfaced via createUser.error
     }
-    const ud = usersRes.data as { users?: AppUser[]; total?: number; totalPages?: number; page?: number } | AppUser[];
-    const list: AppUser[] = Array.isArray(ud) ? ud : (ud.users ?? []);
-    setUsers(list);
-    if (!Array.isArray(ud)) {
-      const nextTotalPages = Math.max(1, ud.totalPages ?? 1);
-      setTotal(ud.total ?? 0);
-      setTotalPages(nextTotalPages);
-      if ((ud.page ?? page) > nextTotalPages) {
-        setPage(nextTotalPages);
-      }
-    }
-  }
-
-  useEffect(() => {
-    setSearchQuery(debouncedSearch.trim());
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    (async () => { await load(); })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, page, pageSize]);
-
-  async function invite() {
-    setInviting(true); setError(null);
-    const res = await fetch('/api/admin/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: inviteForm.email,
-        password: inviteForm.password,
-        fullName: inviteForm.fullName || null,
-        roles: inviteForm.roles
-      }),
-    });
-    setInviting(false);
-    const d = await res.json();
-    if (!res.ok) { setError(d.error || 'Invite failed'); return; }
-    setInviteModal(false);
-    setInviteForm({ email: '', password: '', fullName: '', roles: ['viewer'] });
-    toast(`User created: ${inviteForm.email}`, 'success');
-    load();
-  }
-
-  function toggleInviteRole(role: RoleName) {
-    setInviteForm((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(role) ? prev.roles.filter((r) => r !== role) : [...prev.roles, role]
-    }));
   }
 
   function openRoleEdit(u: AppUser) {
     setSelectedRoles(u.roles as RoleName[]);
-    setRoleModal(u);
+    setRoleTarget(u);
   }
 
-  function toggleRole(role: RoleName) {
-    setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
+  async function handleSaveRoles() {
+    if (!roleTarget) return;
+    try {
+      await updateRoles.mutateAsync({ userId: roleTarget.id, roles: selectedRoles });
+      setRoleTarget(null);
+      toast('Roles updated', 'success');
+    } catch (err) {
+      // error surfaced via updateRoles.error
+    }
   }
 
-  async function saveRoles() {
-    if (!roleModal) return;
-    setSavingRoles(true); setError(null);
-    const res = await api.patch(`/users/${roleModal.id}/roles`, { roles: selectedRoles });
-    setSavingRoles(false);
-    if (!res.success) { setError(res.error.message); return; }
-    setRoleModal(null);
-    load();
+  async function handleToggleStatus(u: AppUser) {
+    try {
+      await toggleStatus.mutateAsync({ userId: u.id, isActive: !u.isActive });
+    } catch (err) {
+      toast('Failed to update status', 'error');
+    }
   }
-
-  async function toggleStatus(u: AppUser) {
-    setTogglingId(u.id);
-    const res = await api.patch(`/users/${u.id}/status`, { isActive: !u.isActive });
-    setTogglingId('');
-    if (!res.success) { setError(res.error.message); return; }
-    load();
-  }
-
-  const isSuperAdmin = me?.roles.includes('super_admin') ?? false;
 
   return (
     <PageShell
-      title="User Management"
-      subtitle="Manage staff accounts, roles, and access control."
+      title={t('dashboard.usersManagement')}
+      subtitle={t('dashboard.usersSubtitle')}
       actions={
-        <Button type="button" onClick={() => setInviteModal(true)}>
-          + Create User
-        </Button>
+        <Button onClick={() => setInviteOpen(true)}>+ Create User</Button>
       }
     >
-      {error && <div className="db-error">{error}</div>}
-
       <ListToolbar
-        searchPlaceholder="Search by name, email, role, or status…"
+        searchPlaceholder="Search by name, email, role…"
         searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onSearchSubmit={() => {
-          setSearchQuery(searchInput.trim());
-          setPage(1);
-        }}
+        onSearchChange={(v) => { setSearchInput(v); setPage(1); }}
       />
 
-      {/* Stats */}
-      <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
+      <StatGrid columns={4}>
         {ALL_ROLES.map((role) => (
-          <div className="db-stat-card animate-card" key={role}>
-            <div className="db-stat-title">{fmt(role)}s</div>
-            <div className="db-stat-value" style={{ color: ROLE_COLOR[role], fontSize: 28 }}>
+          <StatCard key={role} label={`${formatRole(role)}s`}>
+            {/* color is a dynamic runtime value from ROLE_COLOR[role] — kept as inline */}
+            <span style={{ color: ROLE_COLOR[role] }}>
               {users.filter((u) => u.roles.includes(role)).length}
-            </div>
-          </div>
+            </span>
+          </StatCard>
         ))}
-      </div>
+      </StatGrid>
 
-      {/* Users table */}
-      <div className="db-table-card animate-card">
-        <div className="db-table-header">
-          <span className="db-table-title">All Users</span>
-          <span className="db-stat-badge db-stat-badge-blue">{users.length} on page / {total} total</span>
-        </div>
-        {users.length === 0 && !loading ? (
-          <div className="db-empty">No users found.</div>
-        ) : (
-          <table className="db-table">
+      <TableCard
+        title="All Users"
+        badge={`${users.length} on page / ${total} total`}
+        badgeVariant="blue"
+        empty={!isLoading && users.length === 0 ? 'No users found.' : undefined}
+      >
+        {users.length > 0 && (
+          <table className="dataTable">
             <thead>
               <tr>
                 <th>User</th>
@@ -250,99 +147,62 @@ export default function AdminUsersPage() {
             <tbody>
               {users.map((u) => {
                 const displayName = getDisplayName(u);
-                const initials = getInitials(displayName);
-                const avatarColor = getAvatarColor(u.id || u.email || displayName);
                 const isMe = u.id === me?.id;
+                const isToggling = toggleStatus.isPending && toggleStatus.variables?.userId === u.id;
                 return (
-                  <tr key={u.id} style={{ opacity: u.isActive ? 1 : 0.55 }}>
+                  <tr key={u.id} className={!u.isActive ? styles.disabledRow : undefined}>
                     <td>
-                      <div className="db-donor-cell">
-                        <div className="db-donor-avatar"
-                          style={{ background: avatarColor, color: '#fff' }}>
-                          {initials}
-                        </div>
+                      <div className={styles.nameCell}>
+                        <UserAvatar name={displayName} size="sm" />
                         <div>
-                          <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>
-                            {displayName}
-                          </span>
-                          {isMe && (
-                            <span style={{ marginLeft: 6, fontSize: 11, color: '#059669' }}>● you</span>
-                          )}
+                          <span className={styles.nameText}>{displayName}</span>
+                          {isMe && <span className={styles.youBadge}>● you</span>}
                         </div>
                       </div>
                     </td>
-                    <td style={{ fontSize: 13 }}>{u.email || '—'}</td>
+                    <td className={styles.email}>{u.email || '—'}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <div className={styles.roleList}>
                         {u.roles.length === 0
-                          ? <span style={{ color: 'var(--db-td)', fontSize: 12 }}>No roles</span>
+                          ? <span className={styles.noRoles}>No roles</span>
+                          /* badge color is a dynamic runtime value from ROLE_COLOR — kept as inline */
                           : u.roles.map((role) => (
-                            <span key={role} className="db-stat-badge"
-                              style={{ background: (ROLE_COLOR[role] || '#6b7280') + '22', color: ROLE_COLOR[role] || '#6b7280' }}>
-                              {fmt(role)}
+                            <span
+                              key={role}
+                              className={styles.roleBadge}
+                              style={{
+                                background: (ROLE_COLOR[role as keyof typeof ROLE_COLOR] ?? '#6b7280') + '22',
+                                color: ROLE_COLOR[role as keyof typeof ROLE_COLOR] ?? '#6b7280',
+                              }}
+                            >
+                              {formatRole(role as RoleName)}
                             </span>
                           ))}
                       </div>
                     </td>
                     <td>
-                      <span className={u.isActive ? 'db-status-active' : 'db-status-archived'}>
-                        {u.isActive ? 'Active' : 'Disabled'}
-                      </span>
+                      <StatusBadge status={u.isActive ? 'active' : 'archived'} />
                     </td>
-                    <td style={{ fontSize: 13 }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className={styles.date}>{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {/* Edit Roles */}
+                      <div className={styles.actionRow}>
                         <button
                           type="button"
                           disabled={!isSuperAdmin}
                           onClick={() => openRoleEdit(u)}
-                          title={isSuperAdmin ? 'Edit roles' : 'Requires super_admin role'}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            padding: '5px 10px', borderRadius: 6, border: '1px solid var(--db-card-bd)',
-                            background: 'var(--db-btn-bg)', color: '#2563eb',
-                            fontSize: 12, fontWeight: 500, cursor: isSuperAdmin ? 'pointer' : 'not-allowed',
-                            opacity: isSuperAdmin ? 1 : 0.4,
-                          }}>
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                            <circle cx="6" cy="5" r="3" fill="currentColor" opacity=".8"/>
-                            <path d="M1 13c0-2.8 2.2-5 5-5h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
-                            <path d="M11 8l4 4-1.5 1.5L9.5 9.5 11 8z" fill="currentColor"/>
-                            <path d="M13.5 7a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z" fill="currentColor" opacity=".6"/>
-                          </svg>
+                          title={isSuperAdmin ? 'Edit roles' : 'Requires super_admin'}
+                          className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                        >
                           Roles
                         </button>
-
-                        {/* Enable / Disable */}
                         <button
                           type="button"
-                          disabled={!isSuperAdmin || isMe || togglingId === u.id}
-                          onClick={() => toggleStatus(u)}
-                          title={isMe ? 'Cannot change your own status' : (u.isActive ? 'Disable account' : 'Enable account')}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            padding: '5px 10px', borderRadius: 6, border: '1px solid var(--db-card-bd)',
-                            background: 'var(--db-btn-bg)',
-                            color: u.isActive ? '#dc2626' : '#059669',
-                            fontSize: 12, fontWeight: 500,
-                            cursor: (!isSuperAdmin || isMe) ? 'not-allowed' : 'pointer',
-                            opacity: (!isSuperAdmin || isMe) ? 0.4 : 1,
-                          }}>
-                          {togglingId === u.id
-                            ? <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6" opacity=".3"/><path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>
-                            : u.isActive
-                            ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/>
-                                <line x1="5" y1="5" x2="11" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                                <line x1="11" y1="5" x2="5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                              </svg>
-                            : <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/>
-                                <path d="M5.5 8l2 2 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                          }
-                          {togglingId === u.id ? '…' : (u.isActive ? 'Disable' : 'Enable')}
+                          disabled={!isSuperAdmin || isMe || isToggling}
+                          onClick={() => handleToggleStatus(u)}
+                          title={isMe ? 'Cannot change your own status' : (u.isActive ? 'Disable' : 'Enable')}
+                          className={`${styles.actionBtn} ${u.isActive ? styles.actionBtnDisable : styles.actionBtnEnable}`}
+                        >
+                          {isToggling ? '…' : (u.isActive ? 'Disable' : 'Enable')}
                         </button>
                       </div>
                     </td>
@@ -357,159 +217,69 @@ export default function AdminUsersPage() {
           pageSize={pageSize}
           total={total}
           totalPages={totalPages}
-          loading={loading}
+          loading={isLoading}
           onPageChange={setPage}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
-      </div>
+      </TableCard>
 
-      {/* Role permission reference */}
-      <div className="db-table-card" style={{ marginTop: 20 }}>
-        <div className="db-table-header">
-          <span className="db-table-title">Role Permissions</span>
-        </div>
-        <table className="db-table">
+      <TableCard title="Role Permissions">
+        <table className="dataTable">
           <thead>
-            <tr><th>Role</th><th>Read</th><th>Write / Create</th><th>Delete</th><th>User Admin</th></tr>
+            <tr>
+              <th>Role</th>
+              <th>Read</th>
+              <th>Write / Create</th>
+              <th>Delete</th>
+              <th>User Admin</th>
+            </tr>
           </thead>
           <tbody>
             {ALL_ROLES.map((role) => {
               const p = ROLE_PERMS[role];
-              const tick = <span style={{ color: '#059669' }}>✓</span>;
-              const dash = <span style={{ color: 'var(--db-td)' }}>—</span>;
               return (
                 <tr key={role}>
                   <td>
-                    <span className="db-stat-badge"
-                      style={{ background: ROLE_COLOR[role] + '22', color: ROLE_COLOR[role] }}>
-                      {fmt(role)}
+                    {/* badge color is a dynamic runtime value from ROLE_COLOR — kept as inline */}
+                    <span
+                      className={styles.roleBadge}
+                      style={{ background: ROLE_COLOR[role] + '22', color: ROLE_COLOR[role] }}
+                    >
+                      {formatRole(role)}
                     </span>
                   </td>
-                  <td>{p.read ? tick : dash}</td>
-                  <td>{p.write ? tick : dash}</td>
-                  <td>{p.del ? tick : dash}</td>
-                  <td>{p.admin ? tick : dash}</td>
+                  <td><span className={p.read ? styles.tick : styles.dash}>{p.read ? '✓' : '—'}</span></td>
+                  <td><span className={p.write ? styles.tick : styles.dash}>{p.write ? '✓' : '—'}</span></td>
+                  <td><span className={p.del ? styles.tick : styles.dash}>{p.del ? '✓' : '—'}</span></td>
+                  <td><span className={p.admin ? styles.tick : styles.dash}>{p.admin ? '✓' : '—'}</span></td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
+      </TableCard>
 
-      {/* Invite modal */}
-      {inviteModal && (
-        <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setInviteModal(false)}>
-          <div className="db-modal animate-modal">
-            <div className="db-modal-title">Invite User</div>
-            <p style={{ fontSize: 13, color: 'var(--db-td)', marginBottom: 16 }}>
-              Create a new user account with initial roles.
-            </p>
-            <div className="db-field">
-              <label className="db-label">Email *</label>
-              <input className="db-input" type="email"
-                value={inviteForm.email}
-                onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="user@example.com" />
-            </div>
-            <div className="db-field" style={{ marginTop: 12 }}>
-              <label className="db-label">Password *</label>
-              <input className="db-input" type="password"
-                value={inviteForm.password}
-                onChange={(e) => setInviteForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder="Minimum 8 characters" />
-            </div>
-            <div className="db-field" style={{ marginTop: 12 }}>
-              <label className="db-label">Full Name</label>
-              <input className="db-input"
-                value={inviteForm.fullName}
-                onChange={(e) => setInviteForm((f) => ({ ...f, fullName: e.target.value }))}
-                placeholder="Optional" />
-            </div>
-            <div className="db-field" style={{ marginTop: 12 }}>
-              <label className="db-label">Initial Roles *</label>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {ALL_ROLES.map((role) => (
-                  <label key={role} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                    <input
-                      type="checkbox"
-                      checked={inviteForm.roles.includes(role)}
-                      onChange={() => toggleInviteRole(role)}
-                    />
-                    {fmt(role)}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="db-form-actions">
-              <Button type="button" variant="outline" onClick={() => setInviteModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={inviting || !inviteForm.email || inviteForm.password.length < 8 || inviteForm.roles.length === 0}
-                onClick={invite}
-              >
-                {inviting ? 'Creating…' : 'Create User'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InviteUserModal
+        open={inviteOpen}
+        loading={createUser.isPending}
+        error={createUser.error?.message}
+        onClose={() => { setInviteOpen(false); createUser.reset(); }}
+        onSubmit={handleInvite}
+      />
 
-      {/* Role edit modal */}
-      {roleModal && (
-        <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setRoleModal(null)}>
-          <div className="db-modal animate-modal">
-            <div className="db-modal-title">
-              Edit Roles — {roleModal.fullName || roleModal.email || roleModal.id.slice(0, 8)}
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--db-td)', marginBottom: 16 }}>
-              Select one or more roles. Changes take effect on the user&apos;s next request.
-            </p>
-            <div style={{ display: 'grid', gap: 10 }}>
-              {ALL_ROLES.map((role) => {
-                const checked = selectedRoles.includes(role);
-                const p = ROLE_PERMS[role];
-                return (
-                  <label key={role} style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                    border: `1.5px solid ${checked ? ROLE_COLOR[role] : 'var(--db-card-bd)'}`,
-                    borderRadius: 8, cursor: 'pointer',
-                    background: checked ? ROLE_COLOR[role] + '11' : 'transparent',
-                  }}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleRole(role)}
-                      style={{ width: 16, height: 16, accentColor: ROLE_COLOR[role] }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, color: checked ? ROLE_COLOR[role] : 'var(--db-td-em)', fontSize: 14 }}>
-                        {fmt(role)}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--db-td)', marginTop: 2 }}>
-                        {[p.read && 'Read', p.write && 'Write', p.del && 'Delete', p.admin && 'User Admin'].filter(Boolean).join(' · ')}
-                      </div>
-                    </div>
-                    {checked && <span style={{ color: ROLE_COLOR[role], fontWeight: 700 }}>✓</span>}
-                  </label>
-                );
-              })}
-            </div>
-            <div className="db-form-actions">
-              <Button type="button" variant="outline" onClick={() => setRoleModal(null)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={savingRoles}
-                onClick={saveRoles}
-              >
-                {savingRoles ? 'Saving…' : 'Save Roles'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditRolesModal
+        open={roleTarget !== null}
+        userName={roleTarget ? getDisplayName(roleTarget) : ''}
+        selectedRoles={selectedRoles}
+        loading={updateRoles.isPending}
+        onToggleRole={(role) =>
+          setSelectedRoles((prev) =>
+            prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+          )
+        }
+        onSave={handleSaveRoles}
+        onClose={() => { setRoleTarget(null); updateRoles.reset(); }}
+      />
     </PageShell>
   );
 }

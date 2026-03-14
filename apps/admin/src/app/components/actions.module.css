@@ -1,0 +1,113 @@
+.triggerWrap {
+  position: relative;
+  display: inline-block;
+}
+
+.menuPortal {
+  position: fixed;
+  z-index: 2000;
+  min-width: 170px;
+  overflow: hidden;
+  padding: var(--space-1) 0;
+  background: var(--menu-surface);
+  border: 1px solid var(--menu-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--menu-shadow);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.menuItem:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.menuItemDanger {
+  color: var(--color-danger);
+}
+
+.menuItemDanger:hover:not(:disabled) {
+  background: var(--color-danger-subtle);
+}
+
+.menuItem:hover:not(:disabled):not(.menuItemDanger) {
+  background: var(--menu-item-hover);
+}
+
+.iconMuted {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* Confirm modal */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: var(--space-4);
+}
+
+.confirmCard {
+  max-width: 420px;
+  width: 100%;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-modal);
+}
+
+.confirmHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.dangerIconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  background: var(--color-danger-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-danger);
+}
+
+.confirmTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.confirmDesc {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

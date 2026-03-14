@@ -1,59 +1,36 @@
 /* eslint-disable react-native/no-inline-styles, react-native/no-color-literals */
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, Linking } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList, ActivityIndicator } from 'react-native';
 import routes from '@/navigation/routes';
 import type { RootScreenProps } from '@/navigation/types';
-import { createDonorOffline, listDonors } from './donorRepository';
 import { useStore } from '@/state/store';
+import { useDonorList } from './hooks/useDonorList';
 
 type Props = RootScreenProps<typeof routes.donors>;
 
-export default function DonorListScreen({ navigation }: Props) {
+export default function DonorListScreen({ navigation: _navigation }: Props) {
   const isOnline = useStore((s) => s.isOnline);
-  const [search, setSearch] = useState('');
-  type DonorItem = {
-    id: string;
-    fullName: string;
-    phone: string;
-    syncState: string;
-  };
-  const [items, setItems] = useState<DonorItem[]>([]);
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  async function load() {
-    const donors = await listDonors(search);
-    setItems(donors as unknown as DonorItem[]);
-  }
+  const {
+    search,
+    setSearch,
+    items,
+    fullName,
+    setFullName,
+    phone,
+    setPhone,
+    error,
+    loading,
+    load,
+    addDonor,
+  } = useDonorList();
 
   useEffect(() => {
     load().catch(() => undefined);
-  }, []);
-
-  const onAdd = async () => {
-    setError(null);
-    try {
-      await createDonorOffline({
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        donorType: 'individual',
-        preferredLanguage: 'bn',
-        tags: [],
-      });
-      setFullName('');
-      setPhone('');
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed');
-    }
-  };
+  }, [load]);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
-        Donors
-      </Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Donors</Text>
       <Text style={{ color: '#6b7280', marginBottom: 12 }}>
         {isOnline ? 'Online' : 'Offline'} • cached list
       </Text>
@@ -71,11 +48,9 @@ export default function DonorListScreen({ navigation }: Props) {
             padding: 10,
           }}
         />
-        <Button
-          title="Go"
-          onPress={() => load()}
-        />
+        <Button title="Search" onPress={load} disabled={loading} />
       </View>
+      {loading ? <ActivityIndicator style={{ marginBottom: 8 }} /> : null}
 
       <View
         style={{
@@ -86,9 +61,7 @@ export default function DonorListScreen({ navigation }: Props) {
           marginBottom: 12,
         }}
       >
-        <Text style={{ fontWeight: '700', marginBottom: 8 }}>
-          Add donor (offline-first)
-        </Text>
+        <Text style={{ fontWeight: '700', marginBottom: 8 }}>Add donor (offline)</Text>
         <TextInput
           value={fullName}
           onChangeText={setFullName}
@@ -113,21 +86,13 @@ export default function DonorListScreen({ navigation }: Props) {
             marginBottom: 8,
           }}
         />
-        {error && (
-          <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{error}</Text>
-        )}
-        <Button
-          title="Save locally"
-          onPress={onAdd}
-          disabled={!fullName.trim() || !phone.trim()}
-        />
+        {error ? <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{error}</Text> : null}
+        <Button title="Save locally" onPress={addDonor} disabled={loading} />
       </View>
 
       <FlatList
         data={items}
-        keyExtractor={(d) => d.id}
-        onRefresh={load}
-        refreshing={false}
+        keyExtractor={(d) => String(d.id)}
         renderItem={({ item }) => (
           <View
             style={{
@@ -139,24 +104,11 @@ export default function DonorListScreen({ navigation }: Props) {
             }}
           >
             <Text style={{ fontWeight: '600' }}>{item.fullName}</Text>
-            <Text style={{ color: '#6b7280' }}>{item.phone}</Text>
+            <Text>{item.phone}</Text>
             <Text style={{ color: '#6b7280' }}>Sync: {item.syncState}</Text>
-            <View style={{ marginTop: 8 }}>
-              <Button
-                title="Call"
-                onPress={() => Linking.openURL(`tel:${item.phone}`)}
-              />
-            </View>
           </View>
         )}
       />
-
-      <View style={{ marginTop: 12 }}>
-        <Button
-          title="Sync Center"
-          onPress={() => navigation.navigate(routes.syncCenter)}
-        />
-      </View>
     </View>
   );
 }

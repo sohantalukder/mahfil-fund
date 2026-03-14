@@ -1,8 +1,8 @@
 import type { StateCreator } from 'zustand';
 import localStore from '@/services/storage/localStore.service';
-import appConfig from '@/config/appConfig';
 import type { UserRole } from '@mahfil/types';
 import { api } from '@/services/api/apiClient';
+import { authAxios } from '@/services/api/authHttp';
 
 export interface IUser {
   id: string;
@@ -78,12 +78,7 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
     set({ isBootstrapped: true });
   },
   login: async (email, password) => {
-    const response = await fetch(`${appConfig.api.baseUrl.replace(/\/+$/, '')}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Client': 'mahfil' },
-      body: JSON.stringify({ email, password })
-    });
-    const payload = (await response.json()) as {
+    const { data: payload, status } = await authAxios.post<{
       success?: boolean;
       error?: { message?: string };
       data?: {
@@ -91,22 +86,23 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
         refreshToken?: string;
         user?: { id: string; email?: string; fullName?: string; roles: UserRole[] };
       };
-    };
-    if (!response.ok || !payload.success || !payload.data?.accessToken || !payload.data.refreshToken) {
+    }>('/auth/login', { email, password });
+
+    if (status < 200 || status >= 300 || !payload.success || !payload.data?.accessToken || !payload.data.refreshToken) {
       throw new Error(payload.error?.message ?? 'Login failed');
     }
 
-    localStore.setApiToken(payload.data.accessToken);
-    localStore.setRefreshToken(payload.data.refreshToken);
+    localStore.setApiToken(payload.data!.accessToken);
+    localStore.setRefreshToken(payload.data!.refreshToken);
     set({
       isAuthenticated: true,
       isOfflineMode: false,
-      user: payload.data.user
+      user: payload.data!.user
         ? {
-            id: payload.data.user.id,
-            roles: payload.data.user.roles,
-            ...(payload.data.user.email ? { email: payload.data.user.email } : {}),
-            ...(payload.data.user.fullName ? { fullName: payload.data.user.fullName } : {})
+            id: payload.data!.user!.id,
+            roles: payload.data!.user!.roles,
+            ...(payload.data!.user!.email ? { email: payload.data!.user!.email } : {}),
+            ...(payload.data!.user!.fullName ? { fullName: payload.data!.user!.fullName } : {})
           }
         : null
     });
@@ -115,15 +111,15 @@ export const createAuthSlice: StateCreator<AuthState> = (set) => ({
     const refreshToken = localStore.getRefreshToken();
     const accessToken = localStore.getApiToken();
     if (refreshToken) {
-      fetch(`${appConfig.api.baseUrl.replace(/\/+$/, '')}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Client': 'mahfil',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
-        },
-        body: JSON.stringify({ refreshToken })
-      }).catch(() => undefined);
+      authAxios
+        .post(
+          '/auth/logout',
+          { refreshToken },
+          {
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+          },
+        )
+        .catch(() => undefined);
     }
     localStore.clearAuthTokens();
     set({

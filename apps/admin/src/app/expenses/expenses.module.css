@@ -1,0 +1,42 @@
+.eventSelect {
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  outline: none;
+  min-width: 160px;
+  transition: border-color var(--transition-fast);
+}
+
+.eventSelect:focus {
+  border-color: var(--color-border-focus);
+}
+
+.eventSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.categoryBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.amount {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-warning);
+}
+
+.dateCell {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}

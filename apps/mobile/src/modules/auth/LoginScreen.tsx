@@ -1,40 +1,24 @@
 /* eslint-disable react-native/no-inline-styles, react-native/no-color-literals */
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TextInput, Button } from 'react-native';
-import { useStore } from '@/state/store';
 import routes from '@/navigation/routes';
 import type { RootScreenProps } from '@/navigation/types';
+import { useAuthLogin } from './hooks/useAuthLogin';
 
 type Props = RootScreenProps<typeof routes.login>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const login = useStore((s) => s.login);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { email, setEmail, password, setPassword, error, submitting, submit } = useAuthLogin();
 
   const onSubmit = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await login(email.trim(), password);
-      navigation.reset({ index: 0, routes: [{ name: routes.home }] });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    const ok = await submit();
+    if (ok) navigation.reset({ index: 0, routes: [{ name: routes.home }] });
   };
 
   return (
     <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 8 }}>
-        Mahfil Fund
-      </Text>
-      <Text style={{ color: '#6b7280', marginBottom: 16 }}>
-        Login to continue
-      </Text>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 8 }}>Mahfil Fund</Text>
+      <Text style={{ color: '#6b7280', marginBottom: 16 }}>Login to continue</Text>
 
       <TextInput
         value={email}
@@ -64,15 +48,9 @@ export default function LoginScreen({ navigation }: Props) {
         }}
       />
 
-      {error && (
-        <Text style={{ color: '#b91c1c', marginBottom: 12 }}>{error}</Text>
-      )}
+      {error ? <Text style={{ color: '#b91c1c', marginBottom: 12 }}>{error}</Text> : null}
 
-      <Button
-        title={loading ? 'Signing in...' : 'Login'}
-        onPress={onSubmit}
-        disabled={loading}
-      />
+      <Button title={submitting ? 'Signing in...' : 'Login'} onPress={onSubmit} disabled={submitting} />
     </View>
   );
 }

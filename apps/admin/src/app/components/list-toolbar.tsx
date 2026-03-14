@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import styles from './list-toolbar.module.css';
 
 type PrimaryAction = {
   label: string;
@@ -36,29 +37,11 @@ export function ListToolbar({
   };
 
   return (
-    <div
-      className="db-toolbar animate-page"
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 10,
-        marginBottom: 16,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
+    <div className={styles.root}>
+      <div className={styles.left}>
+        <div className={styles.searchWrap}>
           <Input
-            className="db-input w-full max-w-md"
+            className={styles.searchInput}
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -71,7 +54,6 @@ export function ListToolbar({
       {primaryAction && (
         <Button
           type="button"
-          size="md"
           onClick={primaryAction.onClick}
           disabled={primaryAction.disabled}
         >
@@ -81,4 +63,3 @@ export function ListToolbar({
     </div>
   );
 }
-

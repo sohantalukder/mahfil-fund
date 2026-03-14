@@ -1,204 +1,169 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { getApi } from '@/lib/api';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
-import { Button } from '../components/ui/button';
+import { Button } from '@/components/ui/button';
+import { useAllEvents } from '@/hooks/useEvents';
+import { useEventSummary } from '@/hooks/useReports';
+import { StatGrid, StatCard } from '@/components/shared/StatGrid';
+import { TableCard } from '@/components/shared/TableCard';
+import { fmtBDT } from '@/constants/payments';
+import styles from './reports.module.css';
 
-type Event = { id: string; name: string; year: number; isActive: boolean };
-
-type EventSummary = {
-  eventId: string;
-  eventName: string;
-  totalDonors: number;
-  totalDonations: number;
-  totalCollection: number;
-  totalExpenses: number;
-  balance: number;
-  donationsByMethod?: Record<string, number>;
-  expensesByCategory?: Record<string, number>;
-};
-
-const fmtBDT = (n: number) => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n);
-const pct = (part: number, total: number) => total ? Math.round((part / total) * 100) : 0;
+function pct(part: number, total: number): number {
+  return total ? Math.round((part / total) * 100) : 0;
+}
 
 export default function AdminReportsPage() {
-  const api = useMemo(() => getApi(), []);
-  const [events, setEvents] = useState<Event[]>([]);
+  const { t } = useTranslation();
   const [eventId, setEventId] = useState('');
-  const [summary, setSummary] = useState<EventSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [eventsLoading, setEventsLoading] = useState(true);
+  const { data: allEvents, isLoading: eventsLoading } = useAllEvents();
+  const { data: summary, isLoading: summaryLoading, refetch } = useEventSummary(eventId);
 
-  async function loadSummary(id = eventId) {
-    if (!id) return;
-    setLoading(true); setError(null);
-    const res = await api.get<{ summary?: EventSummary } | EventSummary>(`/reports/event-summary?eventId=${id}`);
-    setLoading(false);
-    if (!res.success) { setError(res.error.message); return; }
-    const d = res.data as { summary?: EventSummary } | EventSummary;
-    setSummary((d as { summary?: EventSummary }).summary ?? (d as EventSummary));
-  }
+  const events = allEvents ?? [];
+  const balanceColor = summary && summary.balance >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
 
-  useEffect(() => {
-    api.get<{ events?: Event[] } | Event[]>('/events')
-      .then((res) => {
-        const d = res.success ? res.data : ([] as Event[]);
-        const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
-        setEvents(list);
-        const active = list.find((e: Event) => e.isActive) || list[0];
-        if (active) {
-          setEventId(active.id);
-          loadSummary(active.id);
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setEventsLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const activeId = useMemo(() => {
+    if (eventId) return eventId;
+    if (!events.length) return '';
+    return events.find((e) => e.isActive)?.id ?? events[0]?.id ?? '';
+  }, [eventId, events]);
 
-  const balanceColor = summary && summary.balance >= 0 ? '#059669' : '#dc2626';
+  // Auto-select active event once loaded
+  if (!eventId && activeId) setEventId(activeId);
 
   return (
     <PageShell
-      title="Reports"
-      subtitle="Financial summaries and statistics per event."
+      title={t('dashboard.reportsTitle')}
+      subtitle={t('dashboard.reportsSubtitleAlt')}
       actions={
         <div className="flex items-center gap-2">
           <select
-            className="db-input"
-            style={{ minWidth: 200 }}
+            className={styles.eventSelect}
             value={eventId}
-            onChange={(e) => { setEventId(e.target.value); loadSummary(e.target.value); }}
+            onChange={(e) => setEventId(e.target.value)}
           >
             {eventsLoading && <option value="">Loading…</option>}
             {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
             {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ' (Active)' : ''}</option>
+              <option key={ev.id} value={ev.id}>
+                {ev.name}{ev.isActive ? ' (Active)' : ''}
+              </option>
             ))}
           </select>
           <Button
-            type="button"
             variant="outline"
-            onClick={() => loadSummary()}
-            disabled={!eventId || loading}
+            onClick={() => void refetch()}
+            disabled={!eventId || summaryLoading}
           >
             Refresh
           </Button>
         </div>
       }
     >
-      {error && <div className="db-error">{error}</div>}
+      {summaryLoading && (
+        <div className="p-10 text-center text-muted-foreground">
+          Loading report…
+        </div>
+      )}
 
-      {loading && <div className="db-empty">Loading report…</div>}
+      {!summary && !summaryLoading && (
+        <div className="p-10 text-center text-muted-foreground">
+          Select an event to view its report.
+        </div>
+      )}
 
-      {summary && !loading && (
+      {summary && !summaryLoading && (
         <>
-          {/* Key metrics */}
-          <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 24 }}>
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-title">Total Collection</div>
-              <div className="db-stat-value" style={{ color: '#059669' }}>{fmtBDT(summary.totalCollection)}</div>
-            </div>
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-title">Total Expenses</div>
-              <div className="db-stat-value" style={{ color: '#dc2626' }}>{fmtBDT(summary.totalExpenses)}</div>
-            </div>
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-title">Net Balance</div>
-              <div className="db-stat-value" style={{ color: balanceColor }}>{fmtBDT(summary.balance)}</div>
-            </div>
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-title">Total Donors</div>
-              <div className="db-stat-value">{summary.totalDonors}</div>
-            </div>
-          </div>
+          <StatGrid columns={4}>
+            <StatCard label="Total Collection">
+              <span className="text-green-600 dark:text-green-400">{fmtBDT(summary.totalCollection)}</span>
+            </StatCard>
+            <StatCard label="Total Expenses">
+              <span className="text-destructive">{fmtBDT(summary.totalExpenses)}</span>
+            </StatCard>
+            <StatCard label="Net Balance">
+              {/* balanceColor is a dynamic runtime value based on balance sign — kept as inline */}
+              <span style={{ color: balanceColor }}>{fmtBDT(summary.balance)}</span>
+            </StatCard>
+            <StatCard label="Total Donors">{summary.totalDonors}</StatCard>
+          </StatGrid>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="animate-page">
-            {/* Collections by method */}
+          <div className={styles.chartsRow}>
             {summary.donationsByMethod && Object.keys(summary.donationsByMethod).length > 0 && (
-              <div className="db-table-card animate-card" style={{ padding: 20 }}>
-                <div className="db-table-header" style={{ marginBottom: 16 }}>
-                  <span className="db-table-title">Collections by Method</span>
-                </div>
-                <div style={{ display: 'grid', gap: 12 }}>
+              <TableCard title="Collections by Method">
+                <div className={styles.barList}>
                   {Object.entries(summary.donationsByMethod).map(([method, amount]) => {
                     const p = pct(amount, summary.totalCollection);
                     return (
-                      <div key={method}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                          <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>{method}</span>
-                          <span style={{ color: 'var(--db-td)' }}>{fmtBDT(amount)} ({p}%)</span>
+                      <div key={method} className={styles.barItem}>
+                        <div className={styles.barLabel}>
+                          <span>{method}</span>
+                          <span>{fmtBDT(amount)} ({p}%)</span>
                         </div>
-                        <div style={{ height: 6, background: 'var(--db-bar-bg)', borderRadius: 3 }}>
-                          <div style={{ height: '100%', width: `${p}%`, background: '#1a5c38', borderRadius: 3 }} />
+                        <div className={styles.barTrack}>
+                          <div className={styles.barFillGreen} style={{ width: `${p}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </TableCard>
             )}
 
-            {/* Expenses by category */}
             {summary.expensesByCategory && Object.keys(summary.expensesByCategory).length > 0 && (
-              <div className="db-table-card animate-card" style={{ padding: 20 }}>
-                <div className="db-table-header" style={{ marginBottom: 16 }}>
-                  <span className="db-table-title">Expenses by Category</span>
-                </div>
-                <div style={{ display: 'grid', gap: 12 }}>
+              <TableCard title="Expenses by Category">
+                <div className={styles.barList}>
                   {Object.entries(summary.expensesByCategory).map(([cat, amount]) => {
                     const p = pct(amount, summary.totalExpenses);
                     return (
-                      <div key={cat}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                          <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>{cat}</span>
-                          <span style={{ color: 'var(--db-td)' }}>{fmtBDT(amount)} ({p}%)</span>
+                      <div key={cat} className={styles.barItem}>
+                        <div className={styles.barLabel}>
+                          <span>{cat}</span>
+                          <span>{fmtBDT(amount)} ({p}%)</span>
                         </div>
-                        <div style={{ height: 6, background: 'var(--db-bar-bg)', borderRadius: 3 }}>
-                          <div style={{ height: '100%', width: `${p}%`, background: '#dc2626', borderRadius: 3 }} />
+                        <div className={styles.barTrack}>
+                          <div className={styles.barFillRed} style={{ width: `${p}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </TableCard>
             )}
           </div>
 
-          {/* Summary table */}
-          <div className="db-table-card animate-card" style={{ marginTop: 20 }}>
-            <div className="db-table-header">
-              <span className="db-table-title">Financial Summary — {summary.eventName}</span>
-            </div>
-            <table className="db-table">
+          <TableCard title={`Financial Summary — ${summary.eventName ?? ''}`}>
+            <table className="dataTable">
               <tbody>
                 <tr>
-                  <td style={{ color: 'var(--db-td)' }}>Total Donations</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600 }}>{summary.totalDonations}</td>
+                  <td>Total Donations</td>
+                  <td className="text-right font-semibold">{summary.totalDonations}</td>
                 </tr>
                 <tr>
-                  <td style={{ color: 'var(--db-td)' }}>Total Collection</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, color: '#059669' }}>{fmtBDT(summary.totalCollection)}</td>
+                  <td>Total Collection</td>
+                  <td className="text-right font-semibold text-green-600 dark:text-green-400">
+                    {fmtBDT(summary.totalCollection)}
+                  </td>
                 </tr>
                 <tr>
-                  <td style={{ color: 'var(--db-td)' }}>Total Expenses</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, color: '#dc2626' }}>{fmtBDT(summary.totalExpenses)}</td>
+                  <td>Total Expenses</td>
+                  <td className="text-right font-semibold text-destructive">
+                    {fmtBDT(summary.totalExpenses)}
+                  </td>
                 </tr>
-                <tr style={{ borderTop: '2px solid var(--db-card-bd)' }}>
-                  <td style={{ fontWeight: 700, color: 'var(--db-td-em)' }}>Net Balance</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: balanceColor }}>{fmtBDT(summary.balance)}</td>
+                <tr className="border-t-2 border-border">
+                  <td className="font-bold text-foreground">Net Balance</td>
+                  {/* balanceColor is a dynamic runtime value based on balance sign — kept as inline */}
+                  <td className="text-right font-bold" style={{ color: balanceColor }}>
+                    {fmtBDT(summary.balance)}
+                  </td>
                 </tr>
               </tbody>
             </table>
-          </div>
+          </TableCard>
         </>
-      )}
-
-      {!summary && !loading && !error && (
-        <div className="db-empty">Select an event to view its report.</div>
       )}
     </PageShell>
   );

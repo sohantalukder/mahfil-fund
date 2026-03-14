@@ -7,8 +7,9 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious
+  PaginationPrevious,
 } from './ui/pagination';
+import styles from './pagination-controls.module.css';
 
 type PaginationControlsProps = {
   page: number;
@@ -47,7 +48,7 @@ export function PaginationControls({
   loading = false,
   pageSizeOptions = [10, 25, 50, 100],
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
 }: PaginationControlsProps) {
   const safeTotalPages = Math.max(1, totalPages);
   const safePage = Math.min(Math.max(page, 1), safeTotalPages);
@@ -57,17 +58,15 @@ export function PaginationControls({
   const pageRange = buildPageRange(safePage, safeTotalPages);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mt-3.5">
-      <div className="flex items-center gap-2">
-        <span className="db-page-subtitle" style={{ margin: 0 }}>
-          {loading ? 'Loading…' : `${total} total`}
-        </span>
+    <div className={styles.root}>
+      <div className={styles.metaRow}>
+        <p className={styles.metaText}>{loading ? 'Loading…' : `${total} total`}</p>
         <select
-          className="db-input"
+          className={styles.select}
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          style={{ minWidth: 100, maxWidth: 120 }}
           disabled={loading}
+          aria-label="Rows per page"
         >
           {pageSizeOptions.map((option) => (
             <option key={option} value={option}>
@@ -77,7 +76,7 @@ export function PaginationControls({
         </select>
       </div>
 
-      <Pagination className="w-auto mx-0">
+      <Pagination className={styles.paginationWrap}>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
@@ -101,7 +100,7 @@ export function PaginationControls({
                   {item}
                 </PaginationLink>
               </PaginationItem>
-            )
+            ),
           )}
 
           <PaginationItem>

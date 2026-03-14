@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useLanguage, useTheme } from '../providers';
 import { PageShell } from '../components/shell';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import styles from './settings.module.css';
 
 export default function AdminSettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -12,19 +14,18 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   return (
-    <PageShell title="Settings" subtitle="Manage appearance and language preferences for the admin panel.">
-      <div style={{ maxWidth: 560, display: 'grid', gap: 24 }}>
+    <PageShell title={t('settings.settings')} subtitle={t('settings.manageAppearance')}>
+      <div className={styles.container}>
         {/* Theme */}
-        <div className="db-table-card" style={{ padding: 24 }}>
-          <div className="db-table-header" style={{ marginBottom: 16 }}>
-            <span className="db-table-title">Appearance</span>
-          </div>
-          <div className="db-field">
-            <label className="db-label">Theme</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>{t('settings.appearance')}</div>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('settings.theme')}</label>
+            <div className={styles.btnGroup}>
+              <Button
                 type="button"
-                className={'db-btn' + (theme === 'light' ? ' db-btn-primary' : '')}
+                variant={theme === 'light' ? 'default' : 'outline'}
+                size="sm"
                 disabled={saving}
                 onClick={() => {
                   setSaving(true);
@@ -32,11 +33,12 @@ export default function AdminSettingsPage() {
                   setTimeout(() => setSaving(false), 300);
                 }}
               >
-                ☀ Light
-              </button>
-              <button
+                ☀ {t('settings.light')}
+              </Button>
+              <Button
                 type="button"
-                className={'db-btn' + (theme === 'dark' ? ' db-btn-primary' : '')}
+                variant={theme === 'dark' ? 'default' : 'outline'}
+                size="sm"
                 disabled={saving}
                 onClick={() => {
                   setSaving(true);
@@ -44,61 +46,59 @@ export default function AdminSettingsPage() {
                   setTimeout(() => setSaving(false), 300);
                 }}
               >
-                ● Dark
-              </button>
+                ● {t('settings.dark')}
+              </Button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>
-              {saving ? 'Applying theme…' : 'Changes apply immediately.'}
+            <p className={styles.hint}>
+              {saving ? t('settings.applyingTheme') : t('settings.changesApplyImmediately')}
             </p>
           </div>
         </div>
 
         {/* Language */}
-        <div className="db-table-card" style={{ padding: 24 }}>
-          <div className="db-table-header" style={{ marginBottom: 16 }}>
-            <span className="db-table-title">Language</span>
-          </div>
-          <div className="db-field">
-            <label className="db-label">Display Language</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>{t('settings.language')}</div>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('settings.displayLanguage')}</label>
+            <div className={styles.btnGroup}>
+              <Button
                 type="button"
-                className={'db-btn' + (language === 'bn' ? ' db-btn-primary' : '')}
+                variant={language === 'bn' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setLanguage('bn')}
               >
-                বাংলা
-              </button>
-              <button
+                {t('settings.bangla')}
+              </Button>
+              <Button
                 type="button"
-                className={'db-btn' + (language === 'en' ? ' db-btn-primary' : '')}
+                variant={language === 'en' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setLanguage('en')}
               >
-                English
-              </button>
+                {t('settings.english')}
+              </Button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--db-td)', marginTop: 8 }}>
-              {t('app.name')} - {t('dashboard.dashboard')}
+            <p className={styles.hint}>
+              {t('app.name')} — {t('dashboard.dashboard')}
             </p>
           </div>
         </div>
 
-        {/* Info */}
-        <div className="db-table-card" style={{ padding: 24 }}>
-          <div className="db-table-header" style={{ marginBottom: 16 }}>
-            <span className="db-table-title">About</span>
-          </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-              <span style={{ color: 'var(--db-td)' }}>Application</span>
-              <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>Mahfil Fund Admin</span>
+        {/* About */}
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>{t('settings.about')}</div>
+          <div className={styles.infoGrid}>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>{t('settings.application')}</span>
+              <span className={styles.infoValue}>{t('settings.mahfilFundAdmin')}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-              <span style={{ color: 'var(--db-td)' }}>Version</span>
-              <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>1.0.0</span>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>{t('settings.version')}</span>
+              <span className={styles.infoValue}>1.0.0</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-              <span style={{ color: 'var(--db-td)' }}>Environment</span>
-              <span style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>{process.env.NODE_ENV}</span>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>{t('settings.environment')}</span>
+              <span className={styles.infoValue}>{process.env.NODE_ENV}</span>
             </div>
           </div>
         </div>

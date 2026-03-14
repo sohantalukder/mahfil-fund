@@ -1,6 +1,17 @@
 'use client';
 
-import { createContext, type ReactElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  type ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+
+import styles from './toast.module.css';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -18,21 +29,37 @@ export function useToast() {
 
 const ICONS: Record<ToastType, ReactElement> = {
   success: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" fill="#059669" />
-      <path d="M4.5 8l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="7" className={styles.iconSuccessCircle} />
+      <path
+        d="M4.5 8l2.5 2.5 4.5-4.5"
+        stroke="var(--color-primary-fg)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   error: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" fill="#dc2626" />
-      <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="7" className={styles.iconErrorCircle} />
+      <path
+        d="M5.5 5.5l5 5M10.5 5.5l-5 5"
+        stroke="var(--color-primary-fg)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   info: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" fill="#2563eb" />
-      <path d="M8 7v4M8 5.5v.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="7" className={styles.iconInfoCircle} />
+      <path
+        d="M8 7v4M8 5.5v.5"
+        stroke="var(--color-primary-fg)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   ),
 };
@@ -42,35 +69,27 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
-    const t = setTimeout(() => { setVisible(false); setTimeout(() => onRemove(toast.id), 300); }, 3500);
+    const t = setTimeout(() => {
+      setVisible(false);
+      setTimeout(() => onRemove(toast.id), 300);
+    }, 3500);
     return () => clearTimeout(t);
   }, [toast.id, onRemove]);
 
-  const BG: Record<ToastType, string> = {
-    success: 'var(--db-toast-success)',
-    error: 'var(--db-toast-error)',
-    info: 'var(--db-toast-info)',
-  };
+  const typeClass =
+    toast.type === 'success' ? styles.success : toast.type === 'error' ? styles.error : styles.info;
 
   return (
     <div
-      style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 16px', borderRadius: 10,
-        background: BG[toast.type],
-        boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-        fontSize: 13, fontWeight: 500,
-        color: 'var(--db-toast-text)',
-        maxWidth: 340, width: '100%',
-        transform: visible ? 'translateX(0)' : 'translateX(120%)',
-        opacity: visible ? 1 : 0,
-        transition: 'transform 0.28s cubic-bezier(.4,0,.2,1), opacity 0.28s ease',
-        cursor: 'default',
+      className={`${styles.item} ${typeClass} ${visible ? styles.itemVisible : styles.itemHidden}`}
+      onClick={() => {
+        setVisible(false);
+        setTimeout(() => onRemove(toast.id), 300);
       }}
-      onClick={() => { setVisible(false); setTimeout(() => onRemove(toast.id), 300); }}
+      role="status"
     >
-      <span style={{ flexShrink: 0 }}>{ICONS[toast.type]}</span>
-      <span style={{ flex: 1 }}>{toast.message}</span>
+      <span className={styles.iconWrap}>{ICONS[toast.type]}</span>
+      <span className={styles.message}>{toast.message}</span>
     </div>
   );
 }
@@ -91,13 +110,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ toast }}>
       {children}
-      <div style={{
-        position: 'fixed', bottom: 24, right: 24,
-        display: 'flex', flexDirection: 'column', gap: 10,
-        zIndex: 9999, pointerEvents: 'none',
-      }}>
+      <div className={styles.anchor}>
         {toasts.map((t) => (
-          <div key={t.id} style={{ pointerEvents: 'auto' }}>
+          <div key={t.id} className={styles.anchorItem}>
             <ToastItem toast={t} onRemove={remove} />
           </div>
         ))}

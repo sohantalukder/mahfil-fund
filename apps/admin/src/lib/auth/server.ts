@@ -1,3 +1,4 @@
+import axios, { type AxiosRequestConfig } from 'axios';
 import { cookies } from 'next/headers';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from './constants';
 
@@ -8,41 +9,51 @@ type ApiSuccess<T> = { success: true; data: T };
 type ApiFailure = { success: false; error?: { message?: string } };
 type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 
+function getServerHttp() {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const normalizedBaseUrl = baseUrl.replace('://localhost', '://127.0.0.1').replace(/\/+$/, '');
+  return axios.create({ baseURL: normalizedBaseUrl });
+}
+
 export async function callApi<T>(
   path: string,
-  init?: RequestInit
+  init?: AxiosRequestConfig
 ): Promise<{ ok: true; data: T } | { ok: false; status: number; message: string }> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) return { ok: false, status: 500, message: 'Missing NEXT_PUBLIC_API_URL' };
-  const normalizedBaseUrl = baseUrl.replace('://localhost', '://127.0.0.1');
-
-  let response: Response;
-  try {
-    response = await fetch(`${normalizedBaseUrl.replace(/\/+$/, '')}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init?.headers ?? {})
-      },
-      cache: 'no-store'
-    });
-  } catch (err) {
-    const cause = err instanceof Error ? err.message : String(err);
-    return { ok: false, status: 503, message: `API unreachable: ${cause}` };
-  }
 
   let payload: ApiResult<T> | null = null;
+  let status = 500;
+
   try {
-    payload = (await response.json()) as ApiResult<T>;
-  } catch {
-    payload = null;
+    const http = getServerHttp();
+    const response = await http.request<ApiResult<T>>({
+      url: path,
+      method: init?.method ?? 'GET',
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+      data: init?.data,
+      ...init,
+    });
+    status = response.status;
+    payload = response.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      status = err.response?.status ?? 503;
+      payload = err.response?.data as ApiResult<T> | null;
+      if (!payload) {
+        return { ok: false, status, message: `API unreachable: ${err.message}` };
+      }
+    } else {
+      const cause = err instanceof Error ? err.message : String(err);
+      return { ok: false, status: 503, message: `API unreachable: ${cause}` };
+    }
   }
 
-  if (!response.ok || !payload || !payload.success) {
+  if (!payload || !payload.success) {
     return {
       ok: false,
-      status: response.status,
-      message: payload && !payload.success ? payload.error?.message ?? 'Request failed' : 'Request failed'
+      status,
+      message: payload && !payload.success ? (payload.error?.message ?? 'Request failed') : 'Request failed'
     };
   }
 

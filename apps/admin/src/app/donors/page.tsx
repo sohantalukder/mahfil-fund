@@ -1,167 +1,69 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getApi } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
-import { ActionsMenu, ConfirmModal } from '../components/actions';
+import { Button } from '@/components/ui/button';
 import { useToast } from '../components/toast';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { NativeSelect } from '../components/ui/select';
-import { Textarea } from '../components/ui/textarea';
-import { Table, Tbody, Td, Th, Thead, Tr } from '../components/ui/table';
-import { Form, FormField } from '../components/ui/form';
-import { Skeleton } from '../components/ui/skeleton';
-import { ListToolbar } from '../components/list-toolbar';
-import { PaginationControls } from '../components/pagination-controls';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
-
-type Donor = {
-  id: string;
-  fullName: string;
-  phone: string;
-  altPhone?: string;
-  address?: string;
-  donorType: string;
-  status: string;
-  note?: string;
-};
-
-type Donation = {
-  id: string;
-  eventId: string;
-  donorId: string;
-  amount: number;
-  paymentMethod: string;
-  donationDate: string;
-  note?: string | null;
-};
-
-type DonorFormValues = {
-  fullName: string;
-  phone: string;
-  altPhone?: string;
-  address?: string;
-  donorType: string;
-  note?: string;
-};
-
-const BLANK: DonorFormValues = {
-  fullName: '',
-  phone: '',
-  altPhone: '',
-  address: '',
-  donorType: 'individual',
-  note: '',
-};
-
-const fmt = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-
-const ICON_EDIT = (
-  <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-    <path d="M11 2l3 3-8 8H3v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-  </svg>
-);
-const ICON_DELETE = (
-  <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-    <path d="M3 5h10M6 5V3h4v2M6 8v4M10 8v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-  </svg>
-);
+import { useDonors, useCreateDonor, useUpdateDonor, useDeleteDonor, useDonorDonations } from '@/hooks/useDonors';
+import { TableCard } from '@/components/shared/TableCard';
+import { UserAvatar } from '@/components/shared/UserAvatar';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { ListToolbar } from '@/components/shared/ListToolbar';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ActionsMenu } from '@/components/shared/ActionsMenu';
+import { DonorFormModal, type DonorFormValues } from '@/components/shared/DonorFormModal';
+import { fmtBDT, formatLabel } from '@/constants/payments';
+import type { Donor } from '@/types';
+import styles from './donors.module.css';
 
 export default function AdminDonorsPage() {
-  const api = useMemo(() => getApi(), []);
+  return <Suspense><DonorsContent /></Suspense>;
+}
+
+function DonorsContent() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [donors, setDonors] = useState<Donor[]>([]);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const initialSearch = searchParams.get('search') ?? '';
+  const [searchInput, setSearchInput] = useState(initialSearch);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
-  const [editId, setEditId] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Donor | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [donationPanel, setDonationPanel] = useState<Donor | null>(null);
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [donationsLoading, setDonationsLoading] = useState(false);
-
-  const form = useForm<DonorFormValues>({
-    defaultValues: BLANK,
-  });
-
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  async function load({ q = searchQuery, targetPage = page, targetPageSize = pageSize }: { q?: string; targetPage?: number; targetPageSize?: number } = {}) {
-    setLoading(true);
-    const params = new URLSearchParams({
-      page: String(targetPage),
-      pageSize: String(targetPageSize)
-    });
-    if (q) params.set('search', q);
-    const query = `?${params.toString()}`;
-    const res = await api.get<{ donors: Donor[] }>(`/donors${query}`);
-    setLoading(false);
-    if (!res.success) { toast(res.error.message, 'error'); return; }
-    const d = res.data as { donors?: Donor[]; total?: number; totalPages?: number; page?: number } | Donor[];
-    setDonors(Array.isArray(d) ? d : (d.donors ?? []));
-    if (!Array.isArray(d)) {
-      const nextTotal = d.total ?? 0;
-      const nextTotalPages = Math.max(1, d.totalPages ?? 1);
-      setTotal(nextTotal);
-      setTotalPages(nextTotalPages);
-      // If current page became invalid (e.g., after delete), jump to last valid page.
-      if ((d.page ?? targetPage) > nextTotalPages) {
-        setPage(nextTotalPages);
-      }
-    }
-  }
+  const { data: donorsData, isLoading } = useDonors({
+    page,
+    pageSize,
+    search: debouncedSearch.trim(),
+  });
 
-  useEffect(() => {
-    const initial = searchParams.get('search') ?? '';
-    setSearchInput(initial);
-    setSearchQuery(initial);
-    setPage(1);
-  }, [searchParams]);
+  const createDonor = useCreateDonor();
+  const updateDonor = useUpdateDonor();
+  const deleteDonor = useDeleteDonor();
 
-  useEffect(() => {
-    setSearchQuery(debouncedSearch.trim());
-    setPage(1);
-  }, [debouncedSearch]);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
+  const [editTarget, setEditTarget] = useState<Donor | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Donor | null>(null);
+  const [donationPanelDonor, setDonationPanelDonor] = useState<Donor | null>(null);
 
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, page, pageSize]);
+  const { data: donorDonationsData, isLoading: donationsLoading } = useDonorDonations(
+    donationPanelDonor?.id ?? ''
+  );
 
-  function openCreate() {
-    form.reset(BLANK);
-    setEditId('');
-    setModal('create');
-  }
+  const donors = donorsData?.donors ?? [];
+  const total = donorsData?.total ?? 0;
+  const totalPages = donorsData?.totalPages ?? 1;
+  const panelDonations = donorDonationsData ?? [];
+  const donorTotal = panelDonations.reduce((s, d) => s + d.amount, 0);
 
-  function openEdit(d: Donor) {
-    form.reset({
-      fullName: d.fullName,
-      phone: d.phone,
-      altPhone: d.altPhone || '',
-      address: d.address || '',
-      donorType: d.donorType,
-      note: d.note || '',
-    });
-    setEditId(d.id);
-    setModal('edit');
-  }
+  const isSaving = createDonor.isPending || updateDonor.isPending;
+  const saveError = (createDonor.error ?? updateDonor.error)?.message;
 
   async function handleSubmit(values: DonorFormValues) {
-    setSaving(true);
-    const body = {
+    const payload = {
       fullName: values.fullName,
       phone: values.phone,
       altPhone: values.altPhone || null,
@@ -171,336 +73,179 @@ export default function AdminDonorsPage() {
       preferredLanguage: 'en',
       tags: [],
     };
-    const res = modal === 'create'
-      ? await api.post<Donor>('/donors', body)
-      : await api.patch<Donor>(`/donors/${editId}`, body);
-    setSaving(false);
-    if (!res.success) { toast(res.error.message, 'error'); return; }
-    toast(modal === 'create' ? 'Donor added successfully.' : 'Donor updated successfully.', 'success');
-    setModal(null);
-    void load();
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    const res = await api.delete(`/donors/${deleteTarget.id}`);
-    setDeleting(false);
-    if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
-    toast(`${deleteTarget.fullName} deleted.`, 'success');
-    setDeleteTarget(null);
-    void load();
-  }
-
-  const isSubmitting = form.formState.isSubmitting || saving;
-
-  async function openDonations(donor: Donor) {
-    setDonationPanel(donor);
-    setDonations([]);
-    setDonationsLoading(true);
     try {
-      const res = await api.get<{ donations: Donation[] }>(`/donations?donorId=${encodeURIComponent(donor.id)}`);
-      if (!res.success) {
-        toast(res.error.message, 'error');
-      } else {
-        const dd = res.data as { donations?: Donation[] } | Donation[];
-        setDonations(Array.isArray(dd) ? dd : (dd.donations ?? []));
+      if (modalMode === 'create') {
+        await createDonor.mutateAsync(payload);
+        toast(t('admin.forms.donorsPage.donorAdded'), 'success');
+      } else if (editTarget) {
+        await updateDonor.mutateAsync({ id: editTarget.id, input: payload });
+        toast(t('admin.forms.donorsPage.donorUpdated'), 'success');
       }
-    } finally {
-      setDonationsLoading(false);
+      setModalMode(null);
+    } catch {
+      // saveError surfaced via hook
     }
   }
 
-  const donorTotal = donations.reduce((sum, d) => sum + d.amount, 0);
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteDonor.mutateAsync(deleteTarget.id);
+      toast(`${deleteTarget.fullName} deleted.`, 'success');
+      setDeleteTarget(null);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Delete failed', 'error');
+    }
+  }
 
   return (
     <PageShell
-      title="Donor Management"
-      subtitle="Search, add, edit, and remove donor records."
+      title={t('dashboard.donorManagement')}
+      subtitle={t('dashboard.donorManagementSubtitle')}
     >
       <ListToolbar
-        searchPlaceholder="Search by name or phone…"
+        searchPlaceholder={t('dashboard.searchByNameOrPhone')}
         searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onSearchSubmit={() => {
-          setSearchQuery(searchInput.trim());
-          setPage(1);
-        }}
-        primaryAction={{
-          label: '+ Add Donor',
-          onClick: openCreate,
-        }}
+        onSearchChange={(v) => { setSearchInput(v); setPage(1); }}
+        primaryAction={{ label: `+ ${t('donors.addDonor')}`, onClick: () => { setEditTarget(null); setModalMode('create'); createDonor.reset(); } }}
       />
 
-      <div className="db-table-card animate-card">
-        <div className="db-table-header">
-          <span className="db-table-title">Donors</span>
-          <span className="db-stat-badge db-stat-badge-blue">{total} total</span>
-        </div>
-        {loading && donors.length === 0 ? (
-          <div className="p-4 space-y-2">
-            {[1, 2, 3].map((key) => (
-              <div key={key} className="flex items-center gap-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-4 w-1/4" />
-              </div>
-            ))}
-          </div>
-        ) : donors.length === 0 ? (
-          <div className="db-empty">No donors found. Try a different search or add a new donor.</div>
-        ) : (
-          <Table className="db-table">
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Phone</Th>
-                <Th>Type</Th>
-                <Th>Status</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {donors.map((d) => {
-                const initials = d.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-                return (
-                  <Tr key={d.id}>
-                    <Td>
-                      <div className="db-donor-cell">
-                        <div className="db-donor-avatar">{initials}</div>
-                        <span style={{ color: 'var(--db-td-em)' }}>{d.fullName}</span>
-                      </div>
-                    </Td>
-                    <Td>{d.phone}</Td>
-                    <Td>{fmt(d.donorType)}</Td>
-                    <Td>
-                      <span className={d.status === 'ACTIVE' ? 'db-status-active' : 'db-status-archived'}>
-                        {fmt(d.status)}
-                      </span>
-                    </Td>
-                    <Td>
-                      <ActionsMenu
-                        items={[
-                          { label: 'View Donations', icon: ICON_EDIT, onClick: () => openDonations(d) },
-                          { label: 'Edit', icon: ICON_EDIT, onClick: () => openEdit(d) },
-                          { label: 'Delete', icon: ICON_DELETE, onClick: () => setDeleteTarget(d), danger: true },
-                        ]}
-                      />
-                    </Td>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
+      <TableCard
+        title={t('donors.donors')}
+        badge={`${total} ${t('common.total')}`}
+        badgeVariant="blue"
+        empty={!isLoading && donors.length === 0 ? t('dashboard.noDonorsFound') : undefined}
+      >
+        {donors.length > 0 && (
+          <table className="dataTable">
+            <thead>
+              <tr>
+                <th>{t('admin.ui.name')}</th>
+                <th>{t('donors.phone')}</th>
+                <th>{t('donors.donorType')}</th>
+                <th>{t('admin.ui.status')}</th>
+                <th>{t('admin.ui.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {donors.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <div className={styles.donorCell}>
+                      <UserAvatar name={d.fullName} size="sm" />
+                      <span className="text-foreground">{d.fullName}</span>
+                    </div>
+                  </td>
+                  <td>{d.phone}</td>
+                  <td className="capitalize">{d.donorType}</td>
+                  <td>
+                    <StatusBadge status={d.status} />
+                  </td>
+                  <td>
+                    <ActionsMenu
+                      items={[
+                        { label: t('admin.forms.donorsPage.viewDonations'), onClick: () => setDonationPanelDonor(d) },
+                        { label: t('common.edit'), onClick: () => { setEditTarget(d); setModalMode('edit'); updateDonor.reset(); } },
+                        { label: t('common.delete'), onClick: () => setDeleteTarget(d), danger: true },
+                      ]}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
         <PaginationControls
           page={page}
           pageSize={pageSize}
           total={total}
           totalPages={totalPages}
-          loading={loading}
+          loading={isLoading}
           onPageChange={setPage}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
-      </div>
+      </TableCard>
 
-      {modal && (
-        <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="db-modal w-full max-w-xl animate-modal">
-            <div className="db-modal-title">{modal === 'create' ? 'Add Donor' : 'Edit Donor'}</div>
-            <Form form={form} onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  name="fullName"
-                  control={form.control}
-                  label="Full Name"
-                  rules={{ required: 'Full name is required' }}
-                >
-                  {(field) => (
-                    <Input
-                      {...field}
-                      placeholder="Full name"
-                      className="db-input"
-                    />
-                  )}
-                </FormField>
-                <FormField
-                  name="phone"
-                  control={form.control}
-                  label="Phone"
-                  rules={{ required: 'Phone is required' }}
-                >
-                  {(field) => (
-                    <Input
-                      {...field}
-                      placeholder="+880…"
-                      className="db-input"
-                    />
-                  )}
-                </FormField>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  name="altPhone"
-                  control={form.control}
-                  label="Alt Phone"
-                >
-                  {(field) => (
-                    <Input
-                      {...field}
-                      placeholder="Optional"
-                      className="db-input"
-                    />
-                  )}
-                </FormField>
-                <FormField
-                  name="donorType"
-                  control={form.control}
-                  label="Donor Type"
-                >
-                  {(field) => (
-                    <NativeSelect
-                      {...field}
-                      className="db-select"
-                    >
-                      <option value="individual">Individual</option>
-                      <option value="family">Family</option>
-                      <option value="business">Business</option>
-                      <option value="organization">Organization</option>
-                    </NativeSelect>
-                  )}
-                </FormField>
-              </div>
-
-              <FormField
-                name="address"
-                control={form.control}
-                label="Address"
-              >
-                {(field) => (
-                  <Input
-                    {...field}
-                    placeholder="Address"
-                    className="db-input"
-                  />
-                )}
-              </FormField>
-
-              <FormField
-                name="note"
-                control={form.control}
-                label="Note"
-                helperText="Internal notes, visible only to admins."
-              >
-                {(field) => (
-                  <Textarea
-                    {...field}
-                    placeholder="Internal notes…"
-                    className="db-textarea"
-                  />
-                )}
-              </FormField>
-
-              <div className="db-form-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => setModal(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto"
-                >
-                  {isSubmitting ? 'Saving…' : (modal === 'create' ? 'Add Donor' : 'Save Changes')}
-                </Button>
-              </div>
-            </Form>
-          </div>
-        </div>
-      )}
-
-      {donationPanel && (
-        <div className="db-table-card animate-card" style={{ marginTop: 20 }}>
-          <div className="db-table-header">
-            <div>
-              <span className="db-table-title">
-                Donations – {donationPanel.fullName}
-              </span>
-              <div className="db-page-subtitle">
-                {donationsLoading
-                  ? 'Loading donation history…'
-                  : donations.length === 0
-                  ? 'No donations found for this donor.'
-                  : `${donations.length} donations • Total ${new Intl.NumberFormat('en-BD', {
-                      style: 'currency',
-                      currency: 'BDT',
-                      maximumFractionDigits: 0,
-                    }).format(donorTotal)}`}
-              </div>
-            </div>
-            <Button type="button" variant="outline" onClick={() => setDonationPanel(null)}>
-              Close
+      {donationPanelDonor && (
+        <TableCard
+          title={t('admin.forms.donorsPage.donationsFor', { name: donationPanelDonor.fullName })}
+          actions={
+            <Button variant="outline" size="sm" onClick={() => setDonationPanelDonor(null)}>
+              {t('common.close')}
             </Button>
-          </div>
+          }
+        >
           {donationsLoading ? (
-            <div className="p-4 space-y-2">
-              {[1, 2, 3].map((key) => (
-                <div key={key} className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-4 w-1/4" />
-                  <Skeleton className="h-4 w-1/6" />
-                </div>
-              ))}
+            <div className="p-6 text-center text-muted-foreground">
+              {t('admin.forms.donorsPage.loadingHistory')}
             </div>
-          ) : donations.length === 0 ? null : (
-            <Table className="db-table">
-              <Thead>
-                <Tr>
-                  <Th>Date</Th>
-                  <Th>Method</Th>
-                  <Th style={{ textAlign: 'right' }}>Amount</Th>
-                  <Th>Note</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {donations.map((x) => (
-                  <Tr key={x.id}>
-                    <Td>{new Date(x.donationDate).toLocaleDateString()}</Td>
-                    <Td>{fmt(x.paymentMethod)}</Td>
-                    <Td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--db-td-em)' }}>
-                      {new Intl.NumberFormat('en-BD', {
-                        style: 'currency',
-                        currency: 'BDT',
-                        maximumFractionDigits: 0,
-                      }).format(x.amount)}
-                    </Td>
-                    <Td>{x.note || '—'}</Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
+          ) : panelDonations.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground">
+              {t('admin.forms.donorsPage.noDonationsForDonor')}
+            </div>
+          ) : (
+            <>
+              <div className="px-5 py-2 text-xs text-muted-foreground">
+                {panelDonations.length} donations • Total {fmtBDT(donorTotal)}
+              </div>
+              <table className="dataTable">
+                <thead>
+                  <tr>
+                    <th>{t('dashboard.date')}</th>
+                    <th>{t('dashboard.method')}</th>
+                    <th className="text-right">{t('dashboard.amount')}</th>
+                    <th>{t('donors.note')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {panelDonations.map((x) => (
+                    <tr key={x.id}>
+                      <td>{new Date(x.donationDate).toLocaleDateString()}</td>
+                      <td>{formatLabel(x.paymentMethod)}</td>
+                      <td className="text-right font-semibold text-foreground">
+                        {fmtBDT(x.amount)}
+                      </td>
+                      <td>{x.note || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
-        </div>
+        </TableCard>
       )}
 
-      {deleteTarget && (
-        <ConfirmModal
-          title={`Delete "${deleteTarget.fullName}"?`}
-          description="This donor will be permanently removed. This action cannot be undone."
-          confirmLabel="Delete Donor"
-          loading={deleting}
-          onConfirm={confirmDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <DonorFormModal
+        open={modalMode !== null}
+        mode={modalMode ?? 'create'}
+        initial={
+          editTarget
+            ? {
+                fullName: editTarget.fullName,
+                phone: editTarget.phone,
+                altPhone: editTarget.altPhone ?? '',
+                address: editTarget.address ?? '',
+                donorType: editTarget.donorType,
+                note: editTarget.note ?? '',
+              }
+            : undefined
+        }
+        loading={isSaving}
+        error={saveError}
+        onClose={() => { setModalMode(null); createDonor.reset(); updateDonor.reset(); }}
+        onSubmit={handleSubmit}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={t('admin.forms.donorsPage.deleteDonorTitle', { name: deleteTarget?.fullName ?? '' })}
+        description={t('admin.forms.donorsPage.deleteDonorDesc')}
+        confirmLabel={t('admin.forms.donorsPage.deleteDonorConfirm')}
+        variant="destructive"
+        loading={deleteDonor.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </PageShell>
   );
 }

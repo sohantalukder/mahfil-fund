@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { getApi } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../../components/shell';
 import { useToast } from '../../components/toast';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import formStyles from '@/styles/form.module.css';
+import styles from './new-community.module.css';
 
 interface FormData {
   name: string;
@@ -23,31 +24,13 @@ interface FormData {
   email: string;
 }
 
-function Label({ children, required, className }: { children: React.ReactNode; required?: boolean; className?: string }) {
-  return (
-    <label className={cn('text-sm font-medium text-foreground', className)}>
-      {children}
-      {required && <span className="ml-0.5 text-red-500">*</span>}
-    </label>
-  );
-}
-
-function FormField({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label required={required}>{label}</Label>
-      {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
-  );
-}
-
 export default function NewCommunityPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const [form, setForm] = useState<FormData>({
     name: '', slug: '', description: '', location: '',
-    district: '', thana: '', contactNumber: '', email: ''
+    district: '', thana: '', contactNumber: '', email: '',
   });
 
   const createMutation = useMutation({
@@ -63,7 +46,7 @@ export default function NewCommunityPage() {
       toast('Community created!', 'success');
       router.push('/communities');
     },
-    onError: (err: Error) => toast(err.message, 'error')
+    onError: (err: Error) => toast(err.message, 'error'),
   });
 
   const autoSlug = (name: string) =>
@@ -73,106 +56,122 @@ export default function NewCommunityPage() {
     setForm((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === 'name' && !prev.slug ? { slug: autoSlug(value) } : {})
+      ...(field === 'name' && !prev.slug ? { slug: autoSlug(value) } : {}),
     }));
   }
 
   return (
-    <PageShell title="New Community" subtitle="Create a new community tenant">
+    <PageShell title={t('dashboard.newCommunity')} subtitle={t('dashboard.newCommunitySubtitle')}>
       <form
         onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }}
-        className="flex max-w-2xl flex-col gap-5"
+        className={styles.form}
       >
         {/* Basic Information */}
-        <Card className="flex flex-col gap-5">
-          <div className="border-b border-border-subtle/60 pb-3">
-            <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">Core details that identify this community.</p>
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Basic Information</h3>
+            <p className={styles.sectionDesc}>Core details that identify this community.</p>
           </div>
 
-          <FormField label="Community Name" required>
-            <Input
-              value={form.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="e.g. Bhabanipur Youth Society"
-              required
-            />
-          </FormField>
+          <div className={formStyles.formGrid}>
+            <div className={formStyles.field}>
+              <label className={`${formStyles.label} ${formStyles.labelRequired}`}>
+                Community Name
+              </label>
+              <Input
+                value={form.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                placeholder="e.g. Bhabanipur Youth Society"
+                required
+              />
+            </div>
 
-          <FormField
-            label="Slug"
-            required
-            hint="Only lowercase letters, numbers, and hyphens"
-          >
-            <Input
-              value={form.slug}
-              onChange={(e) => handleChange('slug', e.target.value)}
-              placeholder="e.g. bhabanipur-youth-society"
-              pattern="[a-z0-9-]+"
-              required
-            />
-          </FormField>
+            <div className={formStyles.field}>
+              <label className={`${formStyles.label} ${formStyles.labelRequired}`}>
+                Slug
+              </label>
+              <Input
+                value={form.slug}
+                onChange={(e) => handleChange('slug', e.target.value)}
+                placeholder="e.g. bhabanipur-youth-society"
+                pattern="[a-z0-9-]+"
+                required
+              />
+              <span className={formStyles.fieldHint}>
+                Only lowercase letters, numbers, and hyphens
+              </span>
+            </div>
 
-          <FormField label="Description">
-            <Textarea
-              value={form.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Brief description of this community..."
-              rows={3}
-            />
-          </FormField>
-        </Card>
+            <div className={formStyles.field}>
+              <label className={formStyles.label}>Description</label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="Brief description of this community…"
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Location & Contact */}
-        <Card className="flex flex-col gap-5">
-          <div className="border-b border-border-subtle/60 pb-3">
-            <h3 className="text-sm font-semibold text-foreground">Location & Contact</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">Where this community is based and how to reach them.</p>
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Location & Contact</h3>
+            <p className={styles.sectionDesc}>Where this community is based and how to reach them.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="Location">
+          <div className={formStyles.formGrid}>
+            <div className={formStyles.formRow}>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Location</label>
+                <Input
+                  value={form.location}
+                  onChange={(e) => handleChange('location', e.target.value)}
+                  placeholder="Area/Village"
+                />
+              </div>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>District</label>
+                <Input
+                  value={form.district}
+                  onChange={(e) => handleChange('district', e.target.value)}
+                  placeholder="District"
+                />
+              </div>
+            </div>
+            <div className={formStyles.formRow}>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Thana</label>
+                <Input
+                  value={form.thana}
+                  onChange={(e) => handleChange('thana', e.target.value)}
+                  placeholder="Thana"
+                />
+              </div>
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Contact Number</label>
+                <Input
+                  value={form.contactNumber}
+                  onChange={(e) => handleChange('contactNumber', e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                />
+              </div>
+            </div>
+            <div className={formStyles.field}>
+              <label className={formStyles.label}>Email</label>
               <Input
-                value={form.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                placeholder="Area/Village"
+                type="email"
+                value={form.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="contact@community.org"
               />
-            </FormField>
-            <FormField label="District">
-              <Input
-                value={form.district}
-                onChange={(e) => handleChange('district', e.target.value)}
-                placeholder="District"
-              />
-            </FormField>
-            <FormField label="Thana">
-              <Input
-                value={form.thana}
-                onChange={(e) => handleChange('thana', e.target.value)}
-                placeholder="Thana"
-              />
-            </FormField>
-            <FormField label="Contact Number">
-              <Input
-                value={form.contactNumber}
-                onChange={(e) => handleChange('contactNumber', e.target.value)}
-                placeholder="01XXXXXXXXX"
-              />
-            </FormField>
+            </div>
           </div>
-
-          <FormField label="Email">
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="contact@community.org"
-            />
-          </FormField>
-        </Card>
+        </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-1">
+        <div className={styles.formActions}>
           <Button
             type="button"
             variant="outline"
@@ -183,11 +182,10 @@ export default function NewCommunityPage() {
           </Button>
           <Button
             type="submit"
-            variant="default"
             size="lg"
             disabled={createMutation.isPending}
           >
-            {createMutation.isPending ? 'Creating...' : 'Create Community'}
+            {createMutation.isPending ? 'Creating…' : 'Create Community'}
           </Button>
         </div>
       </form>

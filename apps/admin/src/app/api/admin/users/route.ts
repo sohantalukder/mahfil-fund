@@ -11,7 +11,7 @@ async function ensureAccessToken(): Promise<string | null> {
 
   const refreshed = await callApi<RefreshData>('/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken })
+    data: { refreshToken },
   });
   if (!refreshed.ok) {
     await clearAuthCookies();
@@ -35,12 +35,12 @@ export async function POST(req: NextRequest) {
     const created = await callApi<CreateUserData>('/users', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
+      data: {
         email,
         password,
         fullName: fullName || undefined,
-        roles: Array.isArray(roles) ? roles : undefined
-      })
+        roles: Array.isArray(roles) ? roles : undefined,
+      },
     });
     if (!created.ok) return NextResponse.json({ error: created.message }, { status: created.status });
     return NextResponse.json(created.data, { status: 201 });

@@ -1,107 +1,85 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
+import { Button } from '@/components/ui/button';
 import { useToast } from '../components/toast';
-import type { Community, CommunityCreationStats } from '@mahfil/types';
-
-type CommunitiesResponse = {
-  communities: (Community & { _count: { memberships: number; events: number } })[];
-  total: number;
-  page: number;
-  totalPages: number;
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: '#16A34A',
-  ARCHIVED: '#9CA3AF',
-  SUSPENDED: '#EF4444'
-};
+import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { useCommunities, useCommunityCreationStats, useArchiveCommunity } from '@/hooks/useCommunities';
+import { TableCard } from '@/components/shared/TableCard';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { ListToolbar } from '@/components/shared/ListToolbar';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import type { CommunityWithCounts } from '@/services/communityService';
+import styles from './communities.module.css';
 
 export default function CommunitiesPage() {
-  const [search, setSearch] = useState('');
+  const { t } = useTranslation();
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
-  const queryClient = useQueryClient();
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
   const { toast } = useToast();
 
-  const { data, isLoading } = useQuery<CommunitiesResponse>({
-    queryKey: ['communities', search, page],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), pageSize: '20' });
-      if (search) params.set('search', search);
-      const res = await fetch(`/api/communities?${params}`);
-      if (!res.ok) throw new Error('Failed to load communities');
-      const json = await res.json() as { data: CommunitiesResponse };
-      return json.data;
-    }
-  });
+  const { data, isLoading } = useCommunities({ page, pageSize: 20, search: debouncedSearch.trim() });
+  const { data: statsData } = useCommunityCreationStats();
+  const archive = useArchiveCommunity();
 
-  const { data: statsData } = useQuery<{ stats: CommunityCreationStats }>({
-    queryKey: ['communities', 'creation-stats'],
-    queryFn: async () => {
-      const res = await fetch('/api/communities/creation-stats');
-      if (!res.ok) throw new Error('Failed to load stats');
-      const json = await res.json() as { data: { stats: CommunityCreationStats } };
-      return json.data;
-    }
-  });
-
-  const archiveMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/communities/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to archive');
-    },
-    onSuccess: () => {
-      toast('Community archived', 'success');
-      void queryClient.invalidateQueries({ queryKey: ['communities'] });
-    },
-    onError: () => toast('Failed to archive community', 'error')
-  });
+  const [archiveTarget, setArchiveTarget] = useState<CommunityWithCounts | null>(null);
 
   const stats = statsData?.stats;
   const atLimit = stats?.remaining !== null && stats?.remaining === 0;
 
+  async function handleArchive() {
+    if (!archiveTarget) return;
+    try {
+      await archive.mutateAsync(archiveTarget.id);
+      toast('Community archived', 'success');
+    } catch {
+      toast('Failed to archive community', 'error');
+    } finally {
+      setArchiveTarget(null);
+    }
+  }
+
   return (
     <PageShell
-      title="Communities"
-      subtitle="Manage all communities and tenants"
+      title={t('dashboard.communitiesTitle')}
+      subtitle={t('dashboard.communitiesSubtitleAlt')}
       actions={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className={styles.statsRow}>
           {stats && (
-            <span style={{ fontSize: 12, color: atLimit ? '#EF4444' : '#6B7280' }}>
+            <span className={`${styles.statsLabel} ${atLimit ? styles.statsLabelLimit : styles.statsLabelNormal}`}>
               {stats.remaining !== null
                 ? `${stats.created}/${stats.limit} created`
                 : `${stats.created} created`}
             </span>
           )}
-          <Link
-            href="/communities/new"
-            className={atLimit ? 'db-btn db-btn-secondary' : 'db-btn db-btn-primary'}
-            style={{ opacity: atLimit ? 0.5 : 1, pointerEvents: atLimit ? 'none' : 'auto' }}
-          >
-            + New Community
-          </Link>
+          {atLimit ? (
+            <Button disabled variant="secondary">+ New Community</Button>
+          ) : (
+            <Button>
+              <Link href="/communities/new">+ New Community</Link>
+            </Button>
+          )}
         </div>
       }
     >
-      {/* Search */}
-      <div style={{ marginBottom: 20 }}>
-        <input
-          className="db-input"
-          placeholder="Search communities..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-        />
-      </div>
+      <ListToolbar
+        searchPlaceholder="Search communities…"
+        searchValue={searchInput}
+        onSearchChange={(v) => { setSearchInput(v); setPage(1); }}
+      />
 
-      {/* Table */}
-      {isLoading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>Loading communities...</div>
-      ) : (
-        <div className="db-card" style={{ overflow: 'hidden' }}>
-          <table className="db-table" style={{ width: '100%' }}>
+      <TableCard
+        title="All Communities"
+        badge={data ? `${data.communities.length} on page / ${data.total} total` : undefined}
+        empty={!isLoading && !data?.communities.length ? 'No communities found.' : undefined}
+      >
+        {(data?.communities.length ?? 0) > 0 && (
+          <table className="dataTable">
             <thead>
               <tr>
                 <th>Name</th>
@@ -114,68 +92,69 @@ export default function CommunitiesPage() {
               </tr>
             </thead>
             <tbody>
-              {!data?.communities?.length ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: '#9CA3AF' }}>
-                    No communities found
+              {data!.communities.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <div className={styles.communityName}>{c.name}</div>
+                    {c.description && (
+                      <div className={styles.communityDesc}>{c.description.slice(0, 60)}</div>
+                    )}
+                  </td>
+                  <td><code className={styles.slug}>{c.slug}</code></td>
+                  <td>{c.district ?? c.location ?? '—'}</td>
+                  <td>{c._count.memberships}</td>
+                  <td>{c._count.events}</td>
+                  <td>
+                    <StatusBadge status={c.status} />
+                  </td>
+                  <td>
+                    <div className={styles.actionRow}>
+                      <Link
+                        href={`/invitations?communityId=${c.id}`}
+                        className={styles.actionLink}
+                      >
+                        Invite
+                      </Link>
+                      <button
+                        type="button"
+                        className={styles.archiveBtn}
+                        onClick={() => setArchiveTarget(c)}
+                        disabled={c.status === 'ARCHIVED'}
+                      >
+                        Archive
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ) : (
-                data.communities.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{c.name}</div>
-                      {c.description && (
-                        <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{c.description.slice(0, 60)}</div>
-                      )}
-                    </td>
-                    <td><code style={{ fontSize: 11 }}>{c.slug}</code></td>
-                    <td>{c.district ?? c.location ?? '—'}</td>
-                    <td>{c._count.memberships}</td>
-                    <td>{c._count.events}</td>
-                    <td>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: STATUS_COLORS[c.status],
-                        background: `${STATUS_COLORS[c.status]}18`
-                      }}>
-                        {c.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Link href={`/invitations?communityId=${c.id}`} className="db-btn-secondary" style={{ fontSize: 11, padding: '4px 8px' }}>
-                          Invite
-                        </Link>
-                        <button
-                          className="db-btn-secondary"
-                          style={{ fontSize: 11, padding: '4px 8px', color: '#EF4444' }}
-                          onClick={() => { if (confirm('Archive this community?')) archiveMutation.mutate(c.id); }}
-                          disabled={c.status === 'ARCHIVED'}
-                        >
-                          Archive
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
+        )}
+        {isLoading && (
+          <div className="p-10 text-center text-muted-foreground">
+            Loading communities…
+          </div>
+        )}
+        <PaginationControls
+          page={page}
+          pageSize={20}
+          total={data?.total ?? 0}
+          totalPages={data?.totalPages ?? 1}
+          loading={isLoading}
+          onPageChange={setPage}
+        />
+      </TableCard>
 
-          {(data?.totalPages ?? 0) > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '16px' }}>
-              <button className="db-btn-secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Prev</button>
-              <span style={{ padding: '6px 12px', fontSize: 13 }}>Page {page} of {data?.totalPages}</span>
-              <button className="db-btn-secondary" disabled={page >= (data?.totalPages ?? 1)} onClick={() => setPage(page + 1)}>Next →</button>
-            </div>
-          )}
-        </div>
-      )}
+      <ConfirmDialog
+        open={archiveTarget !== null}
+        title="Archive Community"
+        description={`Are you sure you want to archive "${archiveTarget?.name}"? This action can be reversed.`}
+        confirmLabel="Archive"
+        variant="destructive"
+        loading={archive.isPending}
+        onConfirm={handleArchive}
+        onCancel={() => setArchiveTarget(null)}
+      />
     </PageShell>
   );
 }

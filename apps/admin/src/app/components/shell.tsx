@@ -1,16 +1,21 @@
 'use client';
 
 import { type ReactNode, useEffect, useState } from 'react';
+import axios from 'axios';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { useTheme, useLanguage, useCommunity } from '../providers';
+import styles from './shell.module.css';
 
-const NAV = [
+const shellHttp = axios.create({ baseURL: '/' });
+
+const NAV_ITEMS: { href: string; labelKey: string; icon: React.ReactNode }[] = [
   {
     href: '/',
-    label: 'Dashboard',
+    labelKey: 'dashboard.dashboard',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="1" y="1" width="6" height="6" rx="1.5" />
         <rect x="9" y="1" width="6" height="6" rx="1.5" />
         <rect x="1" y="9" width="6" height="6" rx="1.5" />
@@ -20,9 +25,9 @@ const NAV = [
   },
   {
     href: '/events',
-    label: 'Events',
+    labelKey: 'events.events',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <line x1="5" y1="1.5" x2="5" y2="5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         <line x1="11" y1="1.5" x2="11" y2="5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -32,9 +37,9 @@ const NAV = [
   },
   {
     href: '/donors',
-    label: 'Donors',
+    labelKey: 'donors.donors',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <circle cx="8" cy="5" r="3" />
         <path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z" />
       </svg>
@@ -42,9 +47,9 @@ const NAV = [
   },
   {
     href: '/donations',
-    label: 'Donations',
+    labelKey: 'donations.donations',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="2" y="3" width="12" height="10" rx="2" />
         <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
       </svg>
@@ -52,9 +57,9 @@ const NAV = [
   },
   {
     href: '/expenses',
-    label: 'Expenses',
+    labelKey: 'expenses.expenses',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <path d="M2 4h12l-1.5 8H3.5L2 4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
         <circle cx="5.5" cy="14" r="1" />
         <circle cx="10.5" cy="14" r="1" />
@@ -64,9 +69,9 @@ const NAV = [
   },
   {
     href: '/reports',
-    label: 'Reports',
+    labelKey: 'reports.reports',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="1" y="10" width="3" height="5" rx="0.5" />
         <rect x="6" y="6" width="3" height="9" rx="0.5" />
         <rect x="11" y="2" width="3" height="13" rx="0.5" />
@@ -75,9 +80,9 @@ const NAV = [
   },
   {
     href: '/users',
-    label: 'Users',
+    labelKey: 'admin.nav.users',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <circle cx="6" cy="5" r="2.5" />
         <circle cx="11" cy="5" r="2" />
         <path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5H1z" />
@@ -87,9 +92,9 @@ const NAV = [
   },
   {
     href: '/communities',
-    label: 'Communities',
+    labelKey: 'community.communities',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <circle cx="4" cy="6" r="2.5" />
         <circle cx="12" cy="6" r="2.5" />
         <circle cx="8" cy="3" r="2" />
@@ -100,9 +105,9 @@ const NAV = [
   },
   {
     href: '/invitations',
-    label: 'Invitations',
+    labelKey: 'invitation.invitations',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="1" y="4" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M1 6l7 4 7-4" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
       </svg>
@@ -110,9 +115,9 @@ const NAV = [
   },
   {
     href: '/invoices',
-    label: 'Invoices',
+    labelKey: 'invoice.invoices',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="3" y="1" width="10" height="14" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" fill="none" />
       </svg>
@@ -120,9 +125,9 @@ const NAV = [
   },
   {
     href: '/audit-logs',
-    label: 'Audit Logs',
+    labelKey: 'admin.nav.auditLogs',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <rect x="2" y="2" width="12" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M5 6h6M5 9h4M5 12h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
       </svg>
@@ -130,9 +135,9 @@ const NAV = [
   },
   {
     href: '/error-logs',
-    label: 'Error Logs',
+    labelKey: 'errorLogs.errorLogs',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M8 5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
         <circle cx="8" cy="11" r="0.8" />
@@ -141,9 +146,9 @@ const NAV = [
   },
   {
     href: '/settings',
-    label: 'Settings',
+    labelKey: 'settings.settings',
     icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
         <circle cx="8" cy="8" r="2" />
         <path
           d="M8 1.5l1 2a5 5 0 0 1 1.2.7l2-.5.7 1.2-1.5 1.5a5 5 0 0 1 0 1.2l1.5 1.5-.7 1.2-2-.5A5 5 0 0 1 9 9.5l-1 2H7l-1-2a5 5 0 0 1-1.2-.7l-2 .5-.7-1.2 1.5-1.5a5 5 0 0 1 0-1.2L2.1 3.9l.7-1.2 2 .5A5 5 0 0 1 7 2.5L8 .5v1z"
@@ -169,6 +174,7 @@ export function PageShell({
   subtitle?: string;
   actions?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -178,49 +184,46 @@ export function PageShell({
   const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
-    fetch('/api/auth/me', { method: 'GET', cache: 'no-store' })
-      .then(async (res) => {
-        if (!res.ok) { router.replace('/login'); return null; }
-        const data = (await res.json()) as {
-          user?: {
-            email?: string;
-            fullName?: string | null;
-            communities?: Array<{ id: string; name: string; slug: string; role: string }>;
-          }
+    shellHttp
+      .get<{
+        user?: {
+          email?: string;
+          fullName?: string | null;
+          communities?: Array<{ id: string; name: string; slug: string; role: string }>;
         };
-        return data.user ?? null;
-      })
+      }>('/api/auth/me')
+      .then((res) => res.data.user ?? null)
       .then((authUser) => {
-        if (!authUser) return;
+        if (!authUser) { router.replace('/login'); return; }
         const fullName: string = authUser.fullName || authUser.email?.split('@')[0] || 'Admin';
         const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-        setUser({ name: fullName, email: authUser.email || '', initials });
+        setUser({ name: fullName, email: authUser.email ?? '', initials });
         if (authUser.communities?.length) {
           setCommunities(authUser.communities);
           if (!activeCommunity) setActiveCommunity(authUser.communities[0]);
         }
       })
       .catch(() => { router.replace('/login'); });
-  }, [router]);
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSignOut() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try { await shellHttp.post('/api/auth/logout'); } catch { /* ignore */ }
     router.replace('/login');
   }
 
   return (
-    <div className="db-shell">
+    <div className={styles.shell}>
       {/* ── Sidebar ──────────────────────────────────────── */}
-      <aside className="db-sidebar">
-        <div className="db-sidebar-brand">
-          <div className="db-sidebar-icon">🕌</div>
-          <div className="db-sidebar-brand-text">
-            <span className="db-sidebar-brand-name">Mahfil Fund</span>
-            <span className="db-sidebar-brand-role">Admin Control Panel</span>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>🕌</div>
+          <div className={styles.brandText}>
+            <span className={styles.brandName}>{t('app.name')}</span>
+            <span className={styles.brandRole}>{t('admin.nav.adminControlPanel')}</span>
           </div>
         </div>
 
-        {NAV.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const active =
             item.href === '/'
               ? pathname === '/'
@@ -229,51 +232,50 @@ export function PageShell({
             <Link
               key={item.href}
               href={item.href}
-              className={'db-nav-link' + (active ? ' active' : '')}
+              className={`${styles.navLink} ${active ? styles.navLinkActive : ''}`}
             >
               {item.icon}
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}
 
-        <div className="db-sidebar-spacer" />
+        <div className={styles.sidebarSpacer} />
 
         {/* Sign out */}
         <button
           type="button"
-          onClick={handleSignOut}
-          className="db-nav-link"
-          style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}
+          onClick={() => void handleSignOut()}
+          className={styles.navLink}
         >
-          <svg viewBox="0 0 16 16" fill="currentColor" className="db-nav-icon">
+          <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
             <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
             <path d="M11 5l3 3-3 3M14 8H6" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Sign Out
+          {t('admin.nav.signOut')}
         </button>
 
         {/* Target progress */}
-        <div className="db-target-box">
-          <div className="db-target-label">Target Progress</div>
-          <div className="db-target-bar-track">
-            <div className="db-target-bar-fill" style={{ width: '75%' }} />
+        <div className={styles.targetBox}>
+          <div className={styles.targetLabel}>{t('admin.nav.targetProgress')}</div>
+          <div className={styles.targetTrack}>
+            <div className={`${styles.targetFill} w-3/4`} />
           </div>
-          <div className="db-target-caption">75% of Ramadan Goal</div>
+          <div className={styles.targetCaption}>{t('admin.nav.targetCaption')}</div>
         </div>
       </aside>
 
       {/* ── Main ─────────────────────────────────────────── */}
-      <div className="db-main">
+      <div className={styles.main}>
         {/* Topbar */}
-        <header className="db-topbar">
-          <div className="db-search">
+        <header className={styles.topbar}>
+          <div className={styles.search}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
               <line x1="10.5" y1="10.5" x2="14.5" y2="14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <input
-              placeholder="Search donors, events, expenses…"
+              placeholder={t('admin.nav.searchPlaceholder')}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               onKeyDown={(e) => {
@@ -290,25 +292,16 @@ export function PageShell({
               }}
             />
           </div>
-          <div className="db-topbar-spacer" />
+          <div className={styles.topbarSpacer} />
 
           {/* Community Switcher */}
           {communities.length > 0 && (
             <select
+              className={styles.communitySelect}
               value={activeCommunity?.id ?? ''}
               onChange={(e) => {
-                const c = communities.find((c) => c.id === e.target.value);
+                const c = communities.find((com) => com.id === e.target.value);
                 if (c) setActiveCommunity(c);
-              }}
-              style={{
-                fontSize: 12,
-                padding: '4px 8px',
-                borderRadius: 8,
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--surface)',
-                color: 'var(--foreground)',
-                cursor: 'pointer',
-                maxWidth: 160
               }}
             >
               {communities.map((c) => (
@@ -319,22 +312,21 @@ export function PageShell({
 
           {/* Language Toggle */}
           <button
-            className="db-icon-btn"
+            className={styles.iconBtn}
             type="button"
             onClick={() => setLanguage(language === 'bn' ? 'en' : 'bn')}
-            title={language === 'bn' ? 'Switch to English' : 'বাংলায় পরিবর্তন করুন'}
-            style={{ fontSize: 11, fontWeight: 600, minWidth: 28 }}
+            title={language === 'bn' ? t('admin.nav.switchToEnglish') : t('admin.nav.switchToBangla')}
           >
             {language === 'bn' ? 'EN' : 'বা'}
           </button>
 
           {/* Theme Toggle */}
           <button
-            className="db-icon-btn"
+            className={styles.iconBtn}
             type="button"
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            aria-label="Toggle theme"
+            title={theme === 'light' ? t('admin.nav.switchToDarkMode') : t('admin.nav.switchToLightMode')}
+            aria-label={t('settings.theme')}
           >
             {theme === 'light' ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -352,23 +344,24 @@ export function PageShell({
               </svg>
             )}
           </button>
-          <Link href="/profile" className="db-topbar-user">
-            <div className="db-topbar-user-text">
-              <span className="db-topbar-user-name">{user.name}</span>
-              <span className="db-topbar-user-role">{user.email}</span>
+
+          <Link href="/profile" className={styles.topbarUser}>
+            <div className={styles.topbarUserText}>
+              <span className={styles.topbarUserName}>{user.name}</span>
+              <span className={styles.topbarUserEmail}>{user.email}</span>
             </div>
-            <div className="db-avatar">{user.initials}</div>
+            <div className={styles.avatar}>{user.initials}</div>
           </Link>
         </header>
 
         {/* Content */}
-        <div className="db-content">
-          <div className="db-page-header">
+        <div className={styles.content}>
+          <div className={styles.pageHeader}>
             <div>
-              <div className="db-page-title">{title}</div>
-              {subtitle && <div className="db-page-subtitle">{subtitle}</div>}
+              <div className={styles.pageTitle}>{title}</div>
+              {subtitle && <div className={styles.pageSubtitle}>{subtitle}</div>}
             </div>
-            {actions && <div className="db-header-actions">{actions}</div>}
+            {actions && <div className={styles.headerActions}>{actions}</div>}
           </div>
           {children}
         </div>

@@ -2,9 +2,12 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import styles from './login.module.css';
 
 function LoginForm() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,52 +19,49 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     const supabase = createSupabaseBrowserClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
     setLoading(false);
     if (authError) {
       setError(authError.message);
       return;
     }
-
     router.replace(params.get('next') ?? '/');
   }
 
   return (
-    <div className="db-login-page">
-      <div className="db-login-card">
-        <div className="db-login-brand">
-          <div className="db-login-icon">🕌</div>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>🕌</div>
           <div>
-            <div className="db-login-brand-name">Mahfil Fund</div>
-            <div className="db-login-brand-role">Admin Control Panel</div>
+            <div className={styles.brandName}>{t('app.name')}</div>
+            <div className={styles.brandRole}>{t('admin.nav.adminControlPanel')}</div>
           </div>
         </div>
 
-        <div className="db-login-title">Welcome back</div>
-        <div className="db-login-subtitle">Sign in to continue to the admin portal.</div>
+        <div className={styles.title}>{t('admin.login.welcomeBack')}</div>
+        <div className={styles.subtitle}>{t('admin.login.signInToContinue')}</div>
 
         <form onSubmit={(e) => void onSubmit(e)}>
-          <div className="db-login-field">
-            <label className="db-login-label" htmlFor="email">Email address</label>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="email">{t('admin.login.emailAddress')}</label>
             <input
               id="email"
-              className="db-login-input"
+              className={styles.input}
               type="email"
-              placeholder="admin@example.com"
+              placeholder={t('admin.login.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
             />
           </div>
-          <div className="db-login-field">
-            <label className="db-login-label" htmlFor="password">Password</label>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="password">{t('auth.password')}</label>
             <input
               id="password"
-              className="db-login-input"
+              className={styles.input}
               type="password"
               placeholder="••••••••"
               value={password}
@@ -70,10 +70,10 @@ function LoginForm() {
               autoComplete="current-password"
             />
           </div>
-          <button className="db-login-btn" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+          <button className={styles.submitBtn} type="submit" disabled={loading}>
+            {loading ? t('admin.login.signingIn') : t('admin.login.signIn')}
           </button>
-          {error && <div className="db-login-error">{error}</div>}
+          {error && <div className={styles.errorMsg}>{error}</div>}
         </form>
       </div>
     </div>

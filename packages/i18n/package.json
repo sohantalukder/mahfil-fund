@@ -12,7 +12,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && cp src/en.json src/bn.json dist/",
     "typecheck": "tsc -b --pretty false",
     "lint": "echo \"(lint handled at repo root)\""
   }

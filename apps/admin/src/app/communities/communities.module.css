@@ -1,0 +1,77 @@
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statsLabel {
+  font-size: var(--font-size-sm);
+}
+
+.statsLabelLimit {
+  color: var(--color-danger);
+}
+
+.statsLabelNormal {
+  color: var(--color-text-muted);
+}
+
+.communityName {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.communityDesc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.slug {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-text-secondary);
+}
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionLink {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.actionLink:hover {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.archiveBtn {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-danger);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.archiveBtn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.archiveBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

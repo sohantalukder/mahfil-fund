@@ -1,241 +1,184 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { getApi } from '@/lib/api';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
-import { ActionsMenu, ConfirmModal } from '../components/actions';
 import { useToast } from '../components/toast';
-import { Button } from '../components/ui/button';
-import { ListToolbar } from '../components/list-toolbar';
-import { PaginationControls } from '../components/pagination-controls';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
-
-type Event = { id: string; name: string; year: number; isActive: boolean };
-type Expense = {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
-  expenseDate: string;
-  status: string;
-  vendor?: string;
-  paymentMethod: string;
-};
-
-const BLANK = { title: '', category: '', amount: '', expenseDate: new Date().toISOString().slice(0, 10), vendor: '', paymentMethod: 'CASH', note: '' };
-const fmt = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-const fmtBDT = (n: number) => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(n);
-
-const ICON_EDIT = (
-  <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-    <path d="M11 2l3 3-8 8H3v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-  </svg>
-);
-const ICON_DELETE = (
-  <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-    <path d="M3 5h10M6 5V3h4v2M6 8v4M10 8v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-  </svg>
-);
+import { useAllEvents } from '@/hooks/useEvents';
+import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense } from '@/hooks/useExpenses';
+import { TableCard } from '@/components/shared/TableCard';
+import { StatGrid, StatCard } from '@/components/shared/StatGrid';
+import { ListToolbar } from '@/components/shared/ListToolbar';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExpenseFormModal, type ExpenseFormValues } from '@/components/shared/ExpenseFormModal';
+import { ActionsMenu } from '@/components/shared/ActionsMenu';
+import { fmtBDT, formatLabel } from '@/constants/payments';
+import type { Expense } from '@/types';
+import styles from './expenses.module.css';
 
 export default function AdminExpensesPage() {
-  const api = useMemo(() => getApi(), []);
+  const { t } = useTranslation();
   const { toast } = useToast();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [eventId, setEventId] = useState('');
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [eventsLoading, setEventsLoading] = useState(true);
-  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
-  const [form, setForm] = useState({ ...BLANK });
-  const [editId, setEditId] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [eventId, setEventId] = useState('');
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  async function load(id = eventId, q = searchQuery, targetPage = page, targetPageSize = pageSize) {
-    if (!id) return;
-    setLoading(true);
-    const params = new URLSearchParams({
-      eventId: id,
-      page: String(targetPage),
-      pageSize: String(targetPageSize)
-    });
-    if (q) params.set('search', q);
-    const res = await api.get<{ expenses?: Expense[]; total?: number; totalPages?: number; page?: number } | Expense[]>(`/expenses?${params.toString()}`);
-    setLoading(false);
-    if (!res.success) { toast(res.error.message, 'error'); return; }
-    const d = res.data as { expenses?: Expense[]; total?: number; totalPages?: number; page?: number } | Expense[];
-    setExpenses(Array.isArray(d) ? d : (d.expenses ?? []));
-    if (!Array.isArray(d)) {
-      const nextTotal = d.total ?? 0;
-      const nextTotalPages = Math.max(1, d.totalPages ?? 1);
-      setTotal(nextTotal);
-      setTotalPages(nextTotalPages);
-      if ((d.page ?? targetPage) > nextTotalPages) {
-        setPage(nextTotalPages);
+  const { data: allEvents, isLoading: eventsLoading } = useAllEvents();
+  const { data: expensesData, isLoading: expensesLoading } = useExpenses({
+    eventId,
+    page,
+    pageSize,
+    search: debouncedSearch.trim(),
+  });
+
+  const createExpense = useCreateExpense();
+  const updateExpense = useUpdateExpense();
+  const deleteExpense = useDeleteExpense();
+
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
+  const [editTarget, setEditTarget] = useState<Expense | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+
+  const events = allEvents ?? [];
+  const expenses = expensesData?.expenses ?? [];
+  const total = expensesData?.total ?? 0;
+  const totalPages = expensesData?.totalPages ?? 1;
+  const totalAmount = expenses.reduce((s, x) => s + x.amount, 0);
+
+  const isSaving = createExpense.isPending || updateExpense.isPending;
+  const saveError = (createExpense.error ?? updateExpense.error)?.message;
+  const hasEvents = !eventsLoading && events.length > 0;
+
+  async function handleSubmit(values: ExpenseFormValues) {
+    const payload = {
+      eventId,
+      title: values.title,
+      category: values.category,
+      amount: parseFloat(values.amount),
+      expenseDate: new Date(values.expenseDate),
+      vendor: values.vendor || null,
+      paymentMethod: values.paymentMethod,
+      note: values.note || null,
+    };
+    try {
+      if (modalMode === 'create') {
+        await createExpense.mutateAsync(payload);
+        toast('Expense added.', 'success');
+      } else if (editTarget) {
+        await updateExpense.mutateAsync({ id: editTarget.id, input: payload });
+        toast('Expense updated.', 'success');
       }
+      setModalMode(null);
+    } catch {
+      // saveError surfaced via hook
     }
   }
 
-  useEffect(() => {
-    api.get<{ events?: Event[] } | Event[]>('/events?page=1&pageSize=100')
-      .then((res) => {
-        const d = res.success ? res.data : ([] as Event[]);
-        const list: Event[] = Array.isArray(d) ? d : (d.events ?? []);
-        setEvents(list);
-        const active = list.find((e: Event) => e.isActive) || list[0];
-        if (active) { setEventId(active.id); }
-      })
-      .catch(() => {})
-      .finally(() => setEventsLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setSearchQuery(debouncedSearch.trim());
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    if (!eventId) return;
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, searchQuery, page, pageSize]);
-
-  function openCreate() { setForm({ ...BLANK }); setModal('create'); }
-  function openEdit(x: Expense) {
-    setForm({ title: x.title, category: x.category, amount: String(x.amount), expenseDate: x.expenseDate.slice(0, 10), vendor: x.vendor || '', paymentMethod: x.paymentMethod, note: '' });
-    setEditId(x.id); setModal('edit');
-  }
-
-  async function save() {
-    setSaving(true);
-    const body = { eventId, title: form.title, category: form.category, amount: parseFloat(form.amount), expenseDate: new Date(form.expenseDate), vendor: form.vendor || null, paymentMethod: form.paymentMethod, note: form.note || null };
-    const res = modal === 'create'
-      ? await api.post<Expense>('/expenses', body)
-      : await api.patch<Expense>(`/expenses/${editId}`, body);
-    setSaving(false);
-    if (!res.success) { toast(res.error.message, 'error'); return; }
-    toast(modal === 'create' ? 'Expense added.' : 'Expense updated.', 'success');
-    setModal(null);
-    void load();
-  }
-
-  async function confirmDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
-    const res = await api.delete(`/expenses/${deleteTarget.id}`);
-    setDeleting(false);
-    if (!res.success) { toast((res as { error?: { message?: string } }).error?.message || 'Delete failed', 'error'); return; }
-    toast(`"${deleteTarget.title}" deleted.`, 'success');
-    setDeleteTarget(null);
-    void load();
+    try {
+      await deleteExpense.mutateAsync(deleteTarget.id);
+      toast(`"${deleteTarget.title}" deleted.`, 'success');
+      setDeleteTarget(null);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Delete failed', 'error');
+    }
   }
-
-  const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
-  const totalAmount = expenses.reduce((s, x) => s + x.amount, 0);
-  const hasEvents = !eventsLoading && events.length > 0;
-  const isInitialLoading = (eventsLoading || loading) && expenses.length === 0;
 
   return (
     <PageShell
-      title="Expense Management"
-      subtitle="Review, add, and manage event expenses."
+      title={t('dashboard.expensesManagement')}
+      subtitle={t('dashboard.expensesSubtitle')}
     >
       <ListToolbar
-        searchPlaceholder="Search by title, category, or vendor…"
+        searchPlaceholder={t('admin.forms.expensesPage.searchPlaceholder')}
         searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onSearchSubmit={() => {
-          setSearchQuery(searchInput.trim());
-          setPage(1);
-        }}
+        onSearchChange={(v) => { setSearchInput(v); setPage(1); }}
         primaryAction={
           hasEvents
-            ? {
-                label: '+ Add Expense',
-                onClick: openCreate,
-                disabled: !eventId || eventsLoading,
-              }
+            ? { label: `+ ${t('expenses.addExpense')}`, onClick: () => { setEditTarget(null); setModalMode('create'); createExpense.reset(); }, disabled: !eventId || eventsLoading }
             : undefined
         }
       >
         <select
-          className="db-input"
-          style={{ minWidth: 160 }}
+          className={styles.eventSelect}
           value={eventId}
-          onChange={(e) => {
-            setEventId(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => { setEventId(e.target.value); setPage(1); }}
+          disabled={eventsLoading}
         >
-          {eventsLoading && <option value="">Loading…</option>}
-          {!eventsLoading && events.length === 0 && <option value="">No events found</option>}
+          {eventsLoading && <option value="">{t('admin.ui.loading')}</option>}
+          {!eventsLoading && events.length === 0 && <option value="">{t('dashboard.noEventsFound')}</option>}
+          {!eventsLoading && events.length > 0 && !eventId && <option value="">{t('dashboard.selectEvent')}</option>}
           {events.map((ev) => (
-            <option key={ev.id} value={ev.id}>
-              {ev.name}
-              {ev.isActive ? ' (Active)' : ''}
-            </option>
+            <option key={ev.id} value={ev.id}>{ev.name}{ev.isActive ? ` (${t('dashboard.active')})` : ''}</option>
           ))}
         </select>
       </ListToolbar>
-      <div className="db-stat-grid animate-page" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-        <div className="db-stat-card animate-card">
-          <div className="db-stat-title">Total Expenses</div>
-          <div className="db-stat-value">{isInitialLoading ? '…' : fmtBDT(totalAmount)}</div>
-        </div>
-        <div className="db-stat-card animate-card">
-          <div className="db-stat-title">Number of Items</div>
-          <div className="db-stat-value">{isInitialLoading ? '…' : expenses.length}</div>
-        </div>
-        <div className="db-stat-card animate-card">
-          <div className="db-stat-title">Avg per Item</div>
-          <div className="db-stat-value">
-            {isInitialLoading ? '…' : expenses.length ? fmtBDT(totalAmount / expenses.length) : '—'}
-          </div>
-        </div>
-      </div>
 
-      <div className="db-table-card animate-card">
-        <div className="db-table-header">
-          <span className="db-table-title">Expenses</span>
-          <span className="db-stat-badge db-stat-badge-blue">
-            {isInitialLoading
-              ? 'Loading…'
-              : `${expenses.length} on page / ${total} total`}
+      <StatGrid columns={3}>
+        <StatCard label={t('admin.forms.expensesPage.totalExpensesSum')}>
+          <span className="text-amber-600 dark:text-amber-400">
+            {expensesLoading ? '…' : fmtBDT(totalAmount)}
           </span>
-        </div>
-        {isInitialLoading ? (
-          <div className="db-empty">Loading expenses…</div>
-        ) : !eventId ? (
-          <div className="db-empty">Select an event to load expenses.</div>
-        ) : expenses.length === 0 && !loading ? (
-          <div className="db-empty">No expenses found for this event.</div>
-        ) : (
-          <table className="db-table">
+        </StatCard>
+        <StatCard label={t('admin.forms.expensesPage.numberOfItems')}>{expensesLoading ? '…' : expenses.length}</StatCard>
+        <StatCard label={t('admin.forms.expensesPage.avgPerItem')}>
+          {expensesLoading ? '…' : expenses.length ? fmtBDT(totalAmount / expenses.length) : '—'}
+        </StatCard>
+      </StatGrid>
+
+      <TableCard
+        title={t('expenses.expenses')}
+        badge={expensesLoading ? t('admin.ui.loading') : t('admin.ui.onPageTotal', { onPage: expenses.length, total })}
+        badgeVariant="blue"
+        empty={
+          !expensesLoading && !eventId
+            ? t('admin.forms.expensesPage.selectEventLoad')
+            : !expensesLoading && expenses.length === 0
+            ? t('admin.forms.expensesPage.noExpensesEvent')
+            : undefined
+        }
+      >
+        {expenses.length > 0 && (
+          <table className="dataTable">
             <thead>
-              <tr><th>Title</th><th>Category</th><th>Method</th><th>Date</th><th style={{ textAlign: 'right' }}>Amount</th><th>Actions</th></tr>
+              <tr>
+                <th>{t('expenses.title')}</th>
+                <th>{t('expenses.category')}</th>
+                <th>{t('dashboard.method')}</th>
+                <th>{t('dashboard.date')}</th>
+                <th className="text-right">{t('dashboard.amount')}</th>
+                <th>{t('admin.ui.actions')}</th>
+              </tr>
             </thead>
             <tbody>
               {expenses.map((x) => (
                 <tr key={x.id}>
-                  <td style={{ color: 'var(--db-td-em)' }}>{x.title}</td>
+                  <td className="font-medium text-foreground">{x.title}</td>
                   <td>{x.category}</td>
-                  <td>{fmt(x.paymentMethod)}</td>
+                  <td>{formatLabel(x.paymentMethod)}</td>
                   <td>{new Date(x.expenseDate).toLocaleDateString()}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--db-td-em)' }}>{fmtBDT(x.amount)}</td>
+                  <td className="text-right font-semibold text-foreground">
+                    {fmtBDT(x.amount)}
+                  </td>
                   <td>
-                    <ActionsMenu items={[
-                      { label: 'Edit', icon: ICON_EDIT, onClick: () => openEdit(x) },
-                      { label: 'Delete', icon: ICON_DELETE, onClick: () => setDeleteTarget(x), danger: true },
-                    ]} />
+                    <ActionsMenu
+                      items={[
+                        {
+                          label: t('common.edit'),
+                          onClick: () => {
+                            setEditTarget(x);
+                            setModalMode('edit');
+                            updateExpense.reset();
+                          },
+                        },
+                        { label: t('common.delete'), onClick: () => setDeleteTarget(x), danger: true },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}
@@ -247,84 +190,44 @@ export default function AdminExpensesPage() {
           pageSize={pageSize}
           total={total}
           totalPages={totalPages}
-          loading={loading}
+          loading={expensesLoading}
           onPageChange={setPage}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
-      </div>
+      </TableCard>
 
-      {modal && (
-        <div className="db-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="db-modal animate-modal">
-            <div className="db-modal-title">{modal === 'create' ? 'Add Expense' : 'Edit Expense'}</div>
-            <div className="db-form-row">
-              <div className="db-field">
-                <label className="db-label">Title *</label>
-                <input className="db-input" value={form.title} onChange={(e) => f('title', e.target.value)} placeholder="Expense title" />
-              </div>
-              <div className="db-field">
-                <label className="db-label">Category *</label>
-                <input className="db-input" value={form.category} onChange={(e) => f('category', e.target.value)} placeholder="e.g. Catering" />
-              </div>
-            </div>
-            <div className="db-form-row">
-              <div className="db-field">
-                <label className="db-label">Amount (BDT) *</label>
-                <input className="db-input" type="number" value={form.amount} onChange={(e) => f('amount', e.target.value)} placeholder="0" />
-              </div>
-              <div className="db-field">
-                <label className="db-label">Date *</label>
-                <input className="db-input" type="date" value={form.expenseDate} onChange={(e) => f('expenseDate', e.target.value)} />
-              </div>
-            </div>
-            <div className="db-form-row">
-              <div className="db-field">
-                <label className="db-label">Payment Method</label>
-                <select className="db-select" value={form.paymentMethod} onChange={(e) => f('paymentMethod', e.target.value)}>
-                  <option value="CASH">Cash</option>
-                  <option value="BKASH">bKash</option>
-                  <option value="NAGAD">Nagad</option>
-                  <option value="BANK">Bank</option>
-                </select>
-              </div>
-              <div className="db-field">
-                <label className="db-label">Vendor</label>
-                <input className="db-input" value={form.vendor} onChange={(e) => f('vendor', e.target.value)} placeholder="Vendor name" />
-              </div>
-            </div>
-            <div className="db-field">
-              <label className="db-label">Note</label>
-              <textarea className="db-textarea" value={form.note} onChange={(e) => f('note', e.target.value)} placeholder="Optional notes…" />
-            </div>
-            <div className="db-form-actions">
-              <Button type="button" variant="outline" onClick={() => setModal(null)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={saving || !form.title || !form.category || !form.amount}
-                onClick={save}
-              >
-                {saving ? 'Saving…' : (modal === 'create' ? 'Add Expense' : 'Save Changes')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ExpenseFormModal
+        open={modalMode !== null}
+        mode={modalMode ?? 'create'}
+        initial={
+          editTarget
+            ? {
+                title: editTarget.title,
+                category: editTarget.category,
+                amount: String(editTarget.amount),
+                expenseDate: editTarget.expenseDate.slice(0, 10),
+                paymentMethod: editTarget.paymentMethod,
+                vendor: editTarget.vendor ?? '',
+                note: '',
+              }
+            : undefined
+        }
+        loading={isSaving}
+        error={saveError}
+        onClose={() => { setModalMode(null); createExpense.reset(); updateExpense.reset(); }}
+        onSubmit={handleSubmit}
+      />
 
-      {deleteTarget && (
-        <ConfirmModal
-          title={`Delete "${deleteTarget.title}"?`}
-          description="This expense record will be permanently removed."
-          confirmLabel="Delete Expense"
-          loading={deleting}
-          onConfirm={confirmDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Delete "${deleteTarget?.title}"?`}
+        description="This expense record will be permanently removed."
+        confirmLabel="Delete Expense"
+        variant="destructive"
+        loading={deleteExpense.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </PageShell>
   );
 }

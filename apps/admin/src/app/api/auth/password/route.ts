@@ -11,7 +11,7 @@ async function ensureAccessToken(): Promise<string | null> {
 
   const refreshed = await callApi<RefreshData>('/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken })
+    data: { refreshToken },
   });
   if (!refreshed.ok) {
     await clearAuthCookies();
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest) {
   const changed = await callApi<PasswordData>('/me/password', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ currentPassword, newPassword })
+    data: { currentPassword, newPassword },
   });
   if (!changed.ok) return NextResponse.json({ error: changed.message }, { status: changed.status });
 

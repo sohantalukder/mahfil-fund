@@ -2,11 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getApi } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 import { useApiQuery } from '@/lib/query';
 import { PageShell } from './components/shell';
 import { Skeleton } from './components/ui/skeleton';
 import { Button } from './components/ui/button';
+import { StatGrid, StatCard } from '@/components/shared/StatGrid';
+import { TableCard } from '@/components/shared/TableCard';
+import { UserAvatar } from '@/components/shared/UserAvatar';
+import styles from './dashboard.module.css';
 
 type Event = { id: string; name: string; year: number; isActive: boolean };
 type EventSummary = {
@@ -18,29 +22,29 @@ type EventSummary = {
   totalDonationsCount: number;
   totalExpensesCount: number;
 };
-type Donation = { id: string; donorName?: string; amount: number; paymentMethod: string; donationDate: string; status?: string };
+type Donation = {
+  id: string;
+  donorName?: string;
+  amount: number;
+  paymentMethod: string;
+  donationDate: string;
+};
 type ExpenseForChart = { id: string; category: string; amount: number };
 
 const fmtBDT = (n: number) =>
-  `৳ ${new Intl.NumberFormat('en-BD', {
-    maximumFractionDigits: 0,
-  }).format(n)}`;
+  `৳ ${new Intl.NumberFormat('en-BD', { maximumFractionDigits: 0 }).format(n)}`;
+
+const PIE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#34d399', '#10b981', '#6ee7b7'];
 
 export default function AdminDashboard() {
-  const api = useMemo(() => getApi(), []);
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState('');
 
-  const {
-    data: eventsData,
-    isLoading: eventsLoading,
-    error: eventsError,
-  } = useApiQuery<{ events: Event[] }>(
+  const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useApiQuery<{ events: Event[] }>(
     ['events'],
     (client) =>
       client.get<{ events: Event[] }>('/events').then((res) => {
-        if (!res.success) {
-          throw new Error(res.error.message);
-        }
+        if (!res.success) throw new Error(res.error.message);
         const data = res.data as { events?: Event[] } | Event[];
         const list = Array.isArray(data) ? data : (data.events ?? []);
         return { events: list };
@@ -54,28 +58,22 @@ export default function AdminDashboard() {
     return active?.id ?? '';
   }, [selectedId, eventsData]);
 
-  const {
-    data: summaryAndDonations,
-    isLoading: summaryLoading,
-    error: summaryError,
-  } = useApiQuery<{ summary: EventSummary | null; donations: Donation[] }>(
+  const { data: summaryData, isLoading: summaryLoading, error: summaryError } = useApiQuery<{
+    summary: EventSummary | null;
+    donations: Donation[];
+  }>(
     ['event-summary', activeId],
     async (client) => {
-      if (!activeId) {
-        return { summary: null, donations: [] };
-      }
+      if (!activeId) return { summary: null, donations: [] };
       const [sumRes, donRes] = await Promise.all([
         client.get<{ summary?: EventSummary } | EventSummary>(`/reports/event-summary?eventId=${activeId}`),
-        client.get<{ donations?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/donations?eventId=${activeId}&limit=5`),
+        client.get<{ donations?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+          `/donations?eventId=${activeId}&limit=5`
+        ),
       ]);
-
-      if (!sumRes.success) {
-        throw new Error(sumRes.error.message);
-      }
-
+      if (!sumRes.success) throw new Error(sumRes.error.message);
       const sumData = sumRes.data as { summary?: EventSummary } | EventSummary;
       const summary = ((sumData as { summary?: EventSummary }).summary ?? sumData) as EventSummary;
-
       let donations: Donation[] = [];
       if (donRes.success) {
         const d = donRes.data as { donations?: Record<string, unknown>[] } | Record<string, unknown>[];
@@ -86,329 +84,256 @@ export default function AdminDashboard() {
           amount: Number(item.amount ?? 0),
           paymentMethod: String(item.paymentMethod ?? ''),
           donationDate: String(item.donationDate ?? ''),
-          status: item.status !== undefined ? String(item.status) : undefined,
         }));
       }
-
       return { summary, donations };
     },
-    {
-      enabled: !!activeId,
+    { enabled: !!activeId },
+  );
+
+  const { data: expensesData, isLoading: expensesLoading, error: expensesError } = useApiQuery<{
+    expenses: ExpenseForChart[];
+  }>(
+    ['event-expenses', activeId],
+    async (client) => {
+      if (!activeId) return { expenses: [] };
+      const res = await client.get<
+        { expenses?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >(`/expenses?eventId=${activeId}`);
+      if (!res.success) throw new Error(res.error.message);
+      const d = res.data as { expenses?: Record<string, unknown>[] } | Record<string, unknown>[];
+      const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d.expenses ?? []);
+      return {
+        expenses: raw.map((item) => ({
+          id: String(item.id ?? ''),
+          category: String(item.category || 'Uncategorized'),
+          amount: Number(item.amount ?? 0),
+        })),
+      };
     },
+    { enabled: !!activeId },
   );
 
   const events = eventsData?.events ?? [];
-  const summary = summaryAndDonations?.summary ?? null;
-  const donations = summaryAndDonations?.donations ?? [];
-  const loading = summaryLoading;
-  const error = eventsError?.message ?? summaryError?.message ?? null;
-
-  const {
-    data: expensesData,
-    isLoading: expensesLoading,
-    error: expensesError,
-  } = useApiQuery<{ expenses: ExpenseForChart[] }>(
-    ['event-expenses', activeId],
-    async (client) => {
-      if (!activeId) {
-        return { expenses: [] };
-      }
-
-      const res = await client.get<{ expenses?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/expenses?eventId=${activeId}`);
-      if (!res.success) {
-        throw new Error(res.error.message);
-      }
-
-      const d = res.data as { expenses?: Record<string, unknown>[] } | Record<string, unknown>[];
-      const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d.expenses ?? []);
-      const expenses: ExpenseForChart[] = raw.map((item) => ({
-        id: String(item.id ?? ''),
-        category: String(item.category || 'Uncategorized'),
-        amount: Number(item.amount ?? 0),
-      }));
-
-      return { expenses };
-    },
-    {
-      enabled: !!activeId,
-    },
-  );
-
-  const bal = summary?.balance ?? 0;
+  const summary = summaryData?.summary ?? null;
+  const donations = summaryData?.donations ?? [];
   const expenses = expensesData?.expenses ?? [];
+  const bal = summary?.balance ?? 0;
+  const errorMsg = eventsError?.message ?? summaryError?.message ?? expensesError?.message ?? null;
 
-  const totalExpensesForChart = expenses.reduce((sum, x) => sum + x.amount, 0);
-
+  const totalExpenses = expenses.reduce((s, x) => s + x.amount, 0);
   const categoryTotals = expenses.reduce<Record<string, number>>((acc, curr) => {
     const key = curr.category || 'Uncategorized';
     acc[key] = (acc[key] ?? 0) + curr.amount;
     return acc;
   }, {});
-
   const categoryEntries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
-
-  const PIE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#34d399', '#10b981', '#6ee7b7'];
-
-  const categoryWithMeta = categoryEntries.map(([name, amount], index) => {
-    const pct = totalExpensesForChart > 0 ? Math.round((amount / totalExpensesForChart) * 100) : 0;
-    const color = PIE_COLORS[index % PIE_COLORS.length];
-    return { name, amount, pct, color };
-  });
+  const categoryWithMeta = categoryEntries.map(([name, amount], index) => ({
+    name,
+    amount,
+    pct: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0,
+    color: PIE_COLORS[index % PIE_COLORS.length],
+  }));
 
   let pieGradient = '';
-  if (totalExpensesForChart > 0 && categoryWithMeta.length > 0) {
-    let currentAngle = 0;
+  if (totalExpenses > 0 && categoryWithMeta.length > 0) {
+    let current = 0;
     const segments: string[] = [];
-    categoryWithMeta.forEach((cat, idx) => {
-      const angle = (cat.amount / totalExpensesForChart) * 360;
-      const start = currentAngle;
-      const end = currentAngle + angle;
-      currentAngle = end;
-      segments.push(`${cat.color} ${start.toFixed(1)}deg ${end.toFixed(1)}deg`);
+    categoryWithMeta.forEach((cat) => {
+      const angle = (cat.amount / totalExpenses) * 360;
+      segments.push(`${cat.color} ${current.toFixed(1)}deg ${(current + angle).toFixed(1)}deg`);
+      current += angle;
     });
     pieGradient = `conic-gradient(${segments.join(', ')})`;
   }
 
   return (
     <PageShell
-      title="Dashboard Overview"
-      subtitle="Welcome back — here's what's happening with the Iftar Mahfil."
+      title={t('dashboard.overview')}
+      subtitle={t('dashboard.subtitle')}
       actions={
         <>
           {eventsLoading ? (
             <Skeleton className="h-9 w-40 rounded-md" />
           ) : (
             <select
-              className="db-input"
-              style={{ minWidth: 160 }}
+              className={styles.eventSelect}
               value={activeId}
-              onChange={(e) => { setSelectedId(e.target.value); }}
+              onChange={(e) => setSelectedId(e.target.value)}
             >
-              {events.length === 0 && <option value="">No events found</option>}
+              {events.length === 0 && <option value="">{t('dashboard.noEventsFound')}</option>}
               {events.map((ev: Event) => (
                 <option key={ev.id} value={ev.id}>
-                  {ev.name} {ev.isActive ? '(Active)' : ''}
+                  {ev.name} {ev.isActive ? `(${t('dashboard.active')})` : ''}
                 </option>
               ))}
             </select>
           )}
           <Button variant="outline">
-            <Link href="/expenses">+ Add Expense</Link>
+            <Link href="/expenses">+ {t('expenses.addExpense')}</Link>
           </Button>
           <Button>
-            <Link href="/donations">+ New Donation</Link>
+            <Link href="/donations">+ {t('donations.addDonation')}</Link>
           </Button>
         </>
       }
     >
-      {(error || expensesError) && <div className="db-error">{error || expensesError?.message}</div>}
+      {errorMsg && <div className={styles.errorBanner}>{errorMsg}</div>}
 
       {/* Stat cards */}
-      <div className="db-stat-grid animate-page">
+      <StatGrid>
         {summaryLoading ? (
           <>
-            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
-            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
-            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
-            <Skeleton className="h-28 rounded-xl bg-neutral-100" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
           </>
         ) : (
           <>
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-top">
-                <div className="db-stat-icon">
-                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                    <rect x="1" y="4" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-                  </svg>
-                </div>
-                <span className="db-stat-badge db-stat-badge-green">
-                  {`${summary?.totalDonationsCount ?? 0} txns`}
-                </span>
-              </div>
-              <div className="db-stat-title">Total Collections</div>
-              <div className="db-stat-value">{fmtBDT(summary?.totalCollection ?? 0)}</div>
-            </div>
-
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-top">
-                <div className="db-stat-icon" style={{ color: '#f59e0b' }}>
-                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M2 4h12l-1.5 8H3.5L2 4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                    <circle cx="5.5" cy="14" r="1" /><circle cx="10.5" cy="14" r="1" />
-                  </svg>
-                </div>
-                <span className="db-stat-badge db-stat-badge-red">
-                  {`${summary?.totalExpensesCount ?? 0} items`}
-                </span>
-              </div>
-              <div className="db-stat-title">Total Expenses</div>
-              <div className="db-stat-value">{fmtBDT(summary?.totalExpenses ?? 0)}</div>
-            </div>
-
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-top">
-                <div className="db-stat-icon" style={{ color: '#60a5fa' }}>
-                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M5 8h6M8 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-                  </svg>
-                </div>
-                <span className={`db-stat-badge ${bal >= 0 ? 'db-stat-badge-green' : 'db-stat-badge-red'}`}>
-                  {bal >= 0 ? 'Surplus' : 'Deficit'}
-                </span>
-              </div>
-              <div className="db-stat-title">Current Balance</div>
-              <div className="db-stat-value">{fmtBDT(bal)}</div>
-            </div>
-
-            <div className="db-stat-card animate-card">
-              <div className="db-stat-top">
-                <div className="db-stat-icon">
-                  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                    <circle cx="8" cy="5" r="3" />
-                    <path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z" />
-                  </svg>
-                </div>
-                <span className="db-stat-badge db-stat-badge-blue">Donors</span>
-              </div>
-              <div className="db-stat-title">Total Donors</div>
-              <div className="db-stat-value">{summary?.totalDonors ?? 0}</div>
-            </div>
+            <StatCard label={t('dashboard.totalCollections')}>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                {fmtBDT(summary?.totalCollection ?? 0)}
+              </span>
+            </StatCard>
+            <StatCard label={t('dashboard.totalExpenses')}>
+              <span className="font-bold text-destructive">
+                {fmtBDT(summary?.totalExpenses ?? 0)}
+              </span>
+            </StatCard>
+            <StatCard label={t('dashboard.currentBalance')}>
+              {/* color depends on runtime balance sign — kept as inline */}
+              <span
+                className="font-bold"
+                style={{ color: bal >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}
+              >
+                {fmtBDT(bal)}
+              </span>
+            </StatCard>
+            <StatCard label={t('dashboard.totalDonors')}>
+              <span className="font-bold">{summary?.totalDonors ?? 0}</span>
+            </StatCard>
           </>
         )}
-      </div>
+      </StatGrid>
 
-      {/* Expense breakdown */}
-      <div className="db-bottom-row animate-page">
-        <div className="db-card animate-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div className="db-card-title">Expense Breakdown</div>
-              <div className="db-card-subtitle">By category for the selected event</div>
-            </div>
-          </div>
-          <div className="db-pie-wrap">
+      {/* Charts */}
+      <div className={styles.chartsRow}>
+        <div className={styles.chartCard}>
+          <div className={styles.chartCardTitle}>{t('dashboard.expenseBreakdown')}</div>
+          <div className={styles.chartCardSubtitle}>{t('dashboard.byCategory')}</div>
+          <div className={styles.pieWrap}>
             {expensesLoading ? (
-              <Skeleton className="h-40 w-40 rounded-full bg-neutral-100" />
-            ) : totalExpensesForChart <= 0 || categoryWithMeta.length === 0 ? (
-              <div className="db-empty" style={{ padding: 32 }}>
-                No expense data available for this event.
-              </div>
+              <Skeleton className="h-40 w-40 rounded-full" />
+            ) : totalExpenses <= 0 || categoryWithMeta.length === 0 ? (
+              <div className={styles.empty}>{t('dashboard.noExpenseData')}</div>
             ) : (
-              <div className="db-pie" style={{ backgroundImage: pieGradient || undefined }}>
-                <div className="db-pie-inner">
-                  <div className="db-pie-label">Total Expenses</div>
-                  <div className="db-pie-value">
-                    {fmtBDT(summary?.totalExpenses ?? totalExpensesForChart)}
-                  </div>
+              <div
+                className={styles.pie}
+                style={{ backgroundImage: pieGradient || undefined }}
+              >
+                <div className={styles.pieInner}>
+                  <div className={styles.pieLabel}>{t('dashboard.total')}</div>
+                  <div className={styles.pieValue}>{fmtBDT(summary?.totalExpenses ?? totalExpenses)}</div>
                 </div>
               </div>
             )}
           </div>
           {categoryWithMeta.length > 0 && (
-            <div className="db-chart-legend">
+            <div className={styles.pieLegend}>
               {categoryWithMeta.map((cat) => (
-                <div key={cat.name} className="db-legend-item">
-                  <div className="db-legend-dot" style={{ background: cat.color }} />
+                <div key={cat.name} className={styles.legendItem}>
+                  {/* background is a runtime pie-chart color — kept as inline */}
+                  <div className={styles.legendDot} style={{ background: cat.color }} />
                   <span>{cat.name}</span>
-                  <span style={{ fontSize: 10, color: 'var(--db-subtitle)' }}>{cat.pct}%</span>
+                  <span className="text-muted-foreground">{cat.pct}%</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="db-card animate-card">
-          <div className="db-card-title">Expense Categories</div>
-          <div style={{ height: 16 }} />
-          <div className="db-cat-list">
-            {(expensesLoading && categoryWithMeta.length === 0) ? (
-              <div className="db-empty" style={{ padding: 24 }}>
-                Loading categories…
-              </div>
+        <div className={styles.chartCard}>
+          <div className={styles.chartCardTitle}>{t('dashboard.expenseCategories')}</div>
+          <div className="h-3" />
+          <div className={styles.catList}>
+            {expensesLoading ? (
+              <div className={styles.empty}>{t('dashboard.loadingCategories')}</div>
             ) : categoryWithMeta.length === 0 ? (
-              <div className="db-empty" style={{ padding: 24 }}>
-                No categorized expenses for this event.
-              </div>
+              <div className={styles.empty}>{t('dashboard.noCategorizedExpenses')}</div>
             ) : (
               categoryWithMeta.map((cat) => (
-                <div key={cat.name} className="db-cat-row">
-                  <div className="db-cat-header">
-                    <span className="db-cat-name">{cat.name}</span>
-                    <span className="db-cat-amount">
-                      {fmtBDT(cat.amount)} ({cat.pct}%)
-                    </span>
+                <div key={cat.name} className={styles.catRow}>
+                  <div className={styles.catHeader}>
+                    <span className={styles.catName}>{cat.name}</span>
+                    <span className={styles.catAmount}>{fmtBDT(cat.amount)} ({cat.pct}%)</span>
                   </div>
-                  <div className="db-cat-track">
-                    <div className="db-cat-fill" style={{ width: `${cat.pct}%`, background: cat.color }} />
+                  <div className={styles.catTrack}>
+                    <div
+                      className={styles.catFill}
+                      style={{ width: `${cat.pct}%`, background: cat.color }}
+                    />
                   </div>
                 </div>
               ))
             )}
           </div>
           {categoryWithMeta.length > 0 && (
-            <Link href="/reports" className="db-download-btn">
-              Download Full Expense Report
+            <Link href="/reports" className={styles.reportLink}>
+              {t('dashboard.downloadFullReport')}
             </Link>
           )}
         </div>
       </div>
 
       {/* Recent donations */}
-      <div className="db-table-card animate-card">
-        <div className="db-table-header">
-          <span className="db-table-title">Recent Donations</span>
-          <Link href="/donors" className="db-view-all">View All</Link>
-        </div>
+      <TableCard
+        title={t('dashboard.recentDonations')}
+        actions={
+          <Link href="/donors" className={styles.viewAllLink}>{t('dashboard.viewAll')}</Link>
+        }
+        empty={
+          !summaryLoading && donations.length === 0
+            ? (activeId ? t('dashboard.noDonationsFound') : t('dashboard.selectEventAbove'))
+            : undefined
+        }
+      >
         {summaryLoading ? (
           <div className="p-4">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
+            <Skeleton className="h-4 w-1/3 mb-2" />
+            <Skeleton className="h-4 w-1/2 mb-2" />
+            <Skeleton className="h-4 w-2/3" />
           </div>
-        ) : donations.length === 0 ? (
-          <div className="db-empty">
-            {activeId ? 'No donations found for this event.' : 'Select an event above to load data.'}
-          </div>
-        ) : (
-          <table className="db-table">
+        ) : donations.length > 0 ? (
+          <table className="dataTable">
             <thead>
               <tr>
-                <th>Donor</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Date</th>
+                <th>{t('dashboard.donor')}</th>
+                <th>{t('dashboard.amount')}</th>
+                <th>{t('dashboard.method')}</th>
+                <th>{t('dashboard.date')}</th>
               </tr>
             </thead>
             <tbody>
-              {donations.map((d: Donation) => {
-                const initials = (d.donorName || 'DN')
-                  .split(' ')
-                  .map((n: string) => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2);
-                return (
-                  <tr key={d.id}>
-                    <td>
-                      <div className="db-donor-cell">
-                        <div className="db-donor-avatar">{initials}</div>
-                        <span style={{ color: 'var(--db-td-em)' }}>{d.donorName || 'Unknown'}</span>
-                      </div>
-                    </td>
-                    <td style={{ color: 'var(--db-td-em)', fontWeight: 600 }}>{fmtBDT(d.amount)}</td>
-                    <td>{d.paymentMethod}</td>
-                    <td>{new Date(d.donationDate).toLocaleDateString()}</td>
-                  </tr>
-                );
-              })}
+              {donations.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <div className={styles.donorCell}>
+                      <UserAvatar name={d.donorName ?? 'DN'} size="sm" />
+                      <span className="text-foreground">{d.donorName ?? 'Unknown'}</span>
+                    </div>
+                  </td>
+                  <td className="text-green-600 dark:text-green-400 font-semibold">
+                    {fmtBDT(d.amount)}
+                  </td>
+                  <td>{d.paymentMethod}</td>
+                  <td>{new Date(d.donationDate).toLocaleDateString()}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
-        )}
-      </div>
+        ) : null}
+      </TableCard>
     </PageShell>
   );
 }

@@ -1,176 +1,170 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
-
-type Profile = {
-  name: string;
-  email: string;
-  initials: string;
-  role: string;
-  createdAt: string;
-};
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '../components/toast';
+import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/useAuth';
+import { UserAvatar } from '@/components/shared/UserAvatar';
+import styles from './profile.module.css';
+import formStyles from '@/styles/form.module.css';
 
 export default function AdminProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ fullName: '', currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const changePasswordMutation = useChangePassword();
+
+  const [fullName, setFullName] = useState('');
+  const [passwords, setPasswords] = useState({
+    current: '', next: '', confirm: '',
+  });
 
   useEffect(() => {
-    fetch('/api/auth/me', { method: 'GET', cache: 'no-store' })
-      .then(async (res) => {
-        if (!res.ok) {
-          setLoadingProfile(false);
-          return null;
-        }
-        const data = (await res.json()) as {
-          user?: { email?: string; fullName?: string | null; roles?: string[]; createdAt?: string };
-        };
-        return data.user ?? null;
-      })
-      .then((user) => {
-        if (!user) return;
-        const fullName: string = user.fullName || user.email?.split('@')[0] || 'Admin';
-        const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-        const role = user.roles?.[0] || 'admin';
-        setProfile({
-          name: fullName,
-          email: user.email || '',
-          initials,
-          role,
-          createdAt: user.createdAt || '',
-        });
-        setForm((f) => ({ ...f, fullName }));
-        setLoadingProfile(false);
-      })
-      .catch(() => {
-        setLoadingProfile(false);
+    if (profile) {
+      setFullName(profile.fullName ?? profile.email?.split('@')[0] ?? '');
+    }
+  }, [profile]);
+
+  async function handleSaveProfile() {
+    try {
+      await updateProfile.mutateAsync(fullName);
+      toast('Profile updated successfully.', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Profile update failed', 'error');
+    }
+  }
+
+  async function handleChangePassword() {
+    if (passwords.next !== passwords.confirm) {
+      toast('Passwords do not match.', 'error');
+      return;
+    }
+    if (passwords.next.length < 8) {
+      toast('Password must be at least 8 characters.', 'error');
+      return;
+    }
+    if (!passwords.current) {
+      toast('Current password is required.', 'error');
+      return;
+    }
+    try {
+      await changePasswordMutation.mutateAsync({
+        currentPassword: passwords.current,
+        newPassword: passwords.next,
       });
-  }, []);
-
-  async function saveProfile() {
-    setSaving(true); setMsg(null);
-    const res = await fetch('/api/auth/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName: form.fullName })
-    });
-    const data = (await res.json()) as { error?: string };
-    setSaving(false);
-    if (!res.ok) { setMsg({ type: 'error', text: data.error || 'Profile update failed' }); return; }
-    setProfile((p) => p ? { ...p, name: form.fullName, initials: form.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) } : p);
-    setMsg({ type: 'success', text: 'Profile updated successfully.' });
+      setPasswords({ current: '', next: '', confirm: '' });
+      toast('Password changed successfully.', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Password change failed', 'error');
+    }
   }
 
-  async function changePassword() {
-    if (form.newPassword !== form.confirmPassword) { setMsg({ type: 'error', text: 'Passwords do not match.' }); return; }
-    if (form.newPassword.length < 8) { setMsg({ type: 'error', text: 'Password must be at least 8 characters.' }); return; }
-    if (!form.currentPassword) { setMsg({ type: 'error', text: 'Current password is required.' }); return; }
-    setSaving(true); setMsg(null);
-    const res = await fetch('/api/auth/password', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword })
-    });
-    const data = (await res.json()) as { error?: string };
-    setSaving(false);
-    if (!res.ok) { setMsg({ type: 'error', text: data.error || 'Password change failed' }); return; }
-    setForm((f) => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
-    setMsg({ type: 'success', text: 'Password changed successfully.' });
-  }
-
-  const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const displayName = profile?.fullName || profile?.email?.split('@')[0] || 'Admin';
+  const role = profile?.roles?.[0] ?? 'admin';
 
   return (
-    <PageShell title="My Profile" subtitle="View and update your account information.">
-      <div style={{ maxWidth: 560, display: 'grid', gap: 24 }}>
-        {msg && (
-          <div className={msg.type === 'error' ? 'db-error' : 'db-success'}>
-            {msg.text}
-          </div>
-        )}
-
+    <PageShell title={t('dashboard.myProfile')} subtitle={t('dashboard.profileSubtitleAlt')}>
+      <div className={styles.container}>
         {/* Profile card */}
-        <div className="db-table-card" style={{ padding: 24 }}>
-          {loadingProfile ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="db-donor-avatar" style={{ width: 56, height: 56, borderRadius: '50%' }} />
-                <div className="flex flex-col gap-2 w-full max-w-xs">
-                  <div className="h-4 w-32 bg-gray-200 animate-pulse rounded-md" />
-                  <div className="h-3 w-40 bg-gray-200 animate-pulse rounded-md" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className="h-4 w-24 bg-gray-200 animate-pulse rounded-md" />
-                <div className="h-4 w-28 bg-gray-200 animate-pulse rounded-md" />
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="h-3 w-20 bg-gray-200 animate-pulse rounded-md" />
-                <div className="h-9 w-full bg-gray-200 animate-pulse rounded-md" />
+        <div className={styles.card}>
+          {isLoading ? (
+            <div className={styles.skeleton}>
+              <div className={styles.skeletonAvatar} />
+              <div className={styles.skeletonLines}>
+                <div className={`${styles.skeletonLine} w-[140px]`} />
+                <div className={`${styles.skeletonLine} w-[180px]`} />
               </div>
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-                <div className="db-donor-avatar" style={{ width: 56, height: 56, fontSize: 22, borderRadius: '50%', background: '#1a5c38', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>
-                  {profile?.initials || '?'}
-                </div>
+              <div className={styles.profileHeader}>
+                <UserAvatar name={displayName} size="lg" />
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--db-td-em)' }}>{profile?.name || '—'}</div>
-                  <div style={{ fontSize: 13, color: 'var(--db-td)' }}>{profile?.email || '—'}</div>
-                  <div style={{ marginTop: 4 }}>
-                    <span className="db-stat-badge db-stat-badge-blue">{profile?.role || 'admin'}</span>
-                  </div>
+                  <div className={styles.profileName}>{displayName}</div>
+                  <div className={styles.profileEmail}>{profile?.email ?? '—'}</div>
+                  <span className={styles.roleBadge}>{role}</span>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, fontSize: 13 }}>
+              <div className={styles.metaGrid}>
                 <div>
-                  <div style={{ color: 'var(--db-td)', marginBottom: 2 }}>Member Since</div>
-                  <div style={{ color: 'var(--db-td-em)', fontWeight: 500 }}>
+                  <div className={styles.metaLabel}>Member Since</div>
+                  <div className={styles.metaValue}>
                     {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}
                   </div>
                 </div>
               </div>
 
-              <div className="db-field">
-                <label className="db-label">Display Name</label>
-                <input className="db-input" value={form.fullName} onChange={(e) => f('fullName', e.target.value)} placeholder="Your name" />
+              <div className={formStyles.field}>
+                <label className={formStyles.label}>Display Name</label>
+                <Input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your name"
+                />
               </div>
-              <div style={{ marginTop: 12 }}>
-                <button className="db-btn db-btn-primary" type="button" disabled={saving || !form.fullName} onClick={saveProfile}>
-                  {saving ? 'Saving…' : 'Update Profile'}
-                </button>
+              <div className={styles.actions}>
+                <Button
+                  type="button"
+                  disabled={updateProfile.isPending || !fullName}
+                  onClick={() => void handleSaveProfile()}
+                >
+                  {updateProfile.isPending ? 'Saving…' : 'Update Profile'}
+                </Button>
               </div>
             </>
           )}
         </div>
 
         {/* Change password */}
-        <div className="db-table-card" style={{ padding: 24 }}>
-          <div className="db-table-header" style={{ marginBottom: 16 }}>
-            <span className="db-table-title">Change Password</span>
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Change Password</div>
+          <div className={formStyles.formGrid}>
+            <div className={formStyles.field}>
+              <label className={formStyles.label}>Current Password</label>
+              <Input
+                type="password"
+                value={passwords.current}
+                onChange={(e) => setPasswords((p) => ({ ...p, current: e.target.value }))}
+                placeholder="Your current password"
+              />
+            </div>
+            <div className={formStyles.field}>
+              <label className={formStyles.label}>New Password</label>
+              <Input
+                type="password"
+                value={passwords.next}
+                onChange={(e) => setPasswords((p) => ({ ...p, next: e.target.value }))}
+                placeholder="Min. 8 characters"
+              />
+            </div>
+            <div className={formStyles.field}>
+              <label className={formStyles.label}>Confirm Password</label>
+              <Input
+                type="password"
+                value={passwords.confirm}
+                onChange={(e) => setPasswords((p) => ({ ...p, confirm: e.target.value }))}
+                placeholder="Repeat new password"
+              />
+            </div>
           </div>
-          <div className="db-field">
-            <label className="db-label">Current Password</label>
-            <input className="db-input" type="password" value={form.currentPassword} onChange={(e) => f('currentPassword', e.target.value)} placeholder="Your current password" />
-          </div>
-          <div className="db-field">
-            <label className="db-label">New Password</label>
-            <input className="db-input" type="password" value={form.newPassword} onChange={(e) => f('newPassword', e.target.value)} placeholder="Min. 8 characters" />
-          </div>
-          <div className="db-field" style={{ marginTop: 12 }}>
-            <label className="db-label">Confirm Password</label>
-            <input className="db-input" type="password" value={form.confirmPassword} onChange={(e) => f('confirmPassword', e.target.value)} placeholder="Repeat new password" />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <button className="db-btn db-btn-primary" type="button"
-              disabled={saving || !form.currentPassword || !form.newPassword || !form.confirmPassword} onClick={changePassword}>
-              {saving ? 'Saving…' : 'Change Password'}
-            </button>
+          <div className={styles.actions}>
+            <Button
+              type="button"
+              disabled={
+                changePasswordMutation.isPending ||
+                !passwords.current ||
+                !passwords.next ||
+                !passwords.confirm
+              }
+              onClick={() => void handleChangePassword()}
+            >
+              {changePasswordMutation.isPending ? 'Saving…' : 'Change Password'}
+            </Button>
           </div>
         </div>
       </div>
