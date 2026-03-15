@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Animated, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '@/theme';
-import { ContextMenuConfig } from '@/types/contextMenuTypes';
+import { ContextMenuConfig } from '@/types/ContextMenuTypes';
 import { useAnimatedContextMenu } from './hooks/useAnimatedContextMenu';
 import { useContextMenuRenderers } from './components/ContextMenuRenderers';
 

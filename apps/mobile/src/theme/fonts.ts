@@ -6,36 +6,30 @@ import { config } from '@/theme/_config';
 import { responsiveFontSize } from '@/shared/utilities/responsiveSize';
 
 export const generateFontColors = (configuration: UnionConfiguration) => {
-  return Object.entries(configuration.fonts.colors).reduce<FontColors>(
-    (accumulator, [key, value]) => {
-      return Object.assign(accumulator, {
-        [key]: {
-          color: value,
-        },
-      });
-    },
-    {} as FontColors
-  );
+  return Object.entries(configuration.fonts.colors).reduce<FontColors>((accumulator, [key, value]) => {
+    return Object.assign(accumulator, {
+      [key]: {
+        color: value,
+      },
+    });
+  }, {} as FontColors);
 };
 
 export const generateFontSizes = () => {
-  return config.fonts.sizes.reduce<FontSizes>(
-    (accumulator: FontSizes, size: number) => {
-      return Object.assign(accumulator, {
-        [`size_${size}`]: {
-          fontSize: responsiveFontSize(size),
-        },
-      });
-    },
-    {} as FontSizes
-  );
+  return config.fonts.sizes.reduce<FontSizes>((accumulator: FontSizes, size: number) => {
+    return Object.assign(accumulator, {
+      [`size_${size}`]: {
+        fontSize: responsiveFontSize(size),
+      },
+    });
+  }, {} as FontSizes);
 };
 
 export enum fontWeight {
-  regular = '400',
-  medium = '500',
-  semibold = '600',
-  bold = '700',
+  regular = 'SF-Pro-Regular',
+  medium = 'SF-Pro-Medium',
+  semibold = 'SF-Pro-Semibold',
+  bold = 'SF-Pro-Bold',
 }
 
 export const staticFontStyles = {
@@ -46,12 +40,18 @@ export const staticFontStyles = {
     textAlign: 'center',
   },
   bold: {
-    fontWeight: fontWeight.bold,
+    fontFamily: fontWeight.bold,
   },
   capitalize: {
     textTransform: 'capitalize',
   },
   uppercase: {
     textTransform: 'uppercase',
+  },
+  italic: {
+    fontStyle: 'italic',
+  },
+  underline: {
+    textDecorationLine: 'underline',
   },
 } as const satisfies Record<string, TextStyle>;

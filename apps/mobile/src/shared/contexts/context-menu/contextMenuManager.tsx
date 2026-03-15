@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ContextMenuConfig } from '@/types/contextMenuTypes';
+import { ContextMenuConfig } from '@/types/ContextMenuTypes';
 import styles from './styles';
 import { AnimatedContextMenu } from './AnimatedContextMenu';
 

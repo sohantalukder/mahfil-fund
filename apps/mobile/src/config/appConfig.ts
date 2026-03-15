@@ -1,6 +1,8 @@
+import { getApiBaseUrl } from '@/config/env';
+
 const appConfig = {
   api: {
-    businessService: 'https://dummyjson.com/',
+    businessService: getApiBaseUrl() || 'https://dummyjson.com/',
   },
 };
 

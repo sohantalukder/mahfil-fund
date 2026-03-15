@@ -23,10 +23,4 @@ type FontColorsKeys = keyof UnionConfiguration['fonts']['colors'];
 
 type FontSizesKeys = `size_${ArrayValue<typeof config.fonts.sizes>}`;
 
-export type TypographySize =
-  | 'heading1'
-  | 'heading2'
-  | 'heading3'
-  | 'body1'
-  | 'body2'
-  | 'body3';
+export type TypographySize = 'heading1' | 'heading2' | 'heading3' | 'body1' | 'body2' | 'body3';

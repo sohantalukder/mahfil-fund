@@ -55,7 +55,7 @@ const NoInternet: React.FC<NoInternetProps> = ({
   containerStyle,
 }) => {
   const { gutters, colors } = useTheme();
-  const { t } = useTranslation('shared');
+  const { t } = useTranslation();
 
   // Animation values
   const fadeAnim = useSharedValue(0);

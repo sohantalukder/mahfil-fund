@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   plugins: [
     [
@@ -10,7 +12,7 @@ module.exports = {
         root: ['./src'],
       },
     ],
-    'inline-dotenv',
+    ['inline-dotenv', { path: path.resolve(__dirname, '.env') }],
     'react-native-reanimated/plugin', // needs to be last
   ],
   presets: ['module:@react-native/babel-preset'],

@@ -12,7 +12,7 @@ import {
   ContextMenuConfig,
   ContextMenuItem,
   ContextMenuSection,
-} from '@/types/contextMenuTypes';
+} from '@/types/ContextMenuTypes';
 
 interface ContextMenuTriggerProps
   extends Omit<PressableProps, 'onPress' | 'onLongPress'> {

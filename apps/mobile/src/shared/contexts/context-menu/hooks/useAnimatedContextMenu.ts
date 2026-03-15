@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { Animated, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ContextMenuConfig, ContextMenuItem } from '@/types/contextMenuTypes';
+import { ContextMenuConfig, ContextMenuItem } from '@/types/ContextMenuTypes';
 import rs from '@/shared/utilities/responsiveSize';
 import { Colors } from '@/theme/types/colors';
 import { logger } from '@/ignoreWarnings';
@@ -66,7 +66,7 @@ export const useAnimatedContextMenu = (
     }
 
     try {
-      await item.onPress();
+      await item.onPress?.();
     } catch (error) {
       logger.error('Context menu item error:', error);
     }

@@ -1,0 +1,29 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/SF-Pro-Regular.otf",
+      "sha1": "e19df199e78d296e5b6491d4832a76756532ed43"
+    },
+    {
+      "path": "assets/fonts/SF-Pro-Semibold.otf",
+      "sha1": "1919ecaa21bd612d41f8eeef6ccec2f28ad029f6"
+    },
+    {
+      "path": "assets/fonts/MaterialIconsOutlined.otf",
+      "sha1": "31947883f5954ddf9277150b2710b43c9e5a3523"
+    },
+    {
+      "path": "assets/fonts/MaterialSymbolsOutlined.ttf",
+      "sha1": "de50efa0f579bc2cb23d480f5e2dd929e9449a68"
+    },
+    {
+      "path": "assets/fonts/SF-Pro-Medium.otf",
+      "sha1": "a5f5e08dd38cac2f857fb7510f7e92a2399b6f5c"
+    },
+    {
+      "path": "assets/fonts/SF-Pro-Bold.otf",
+      "sha1": "100e7b7fd24facbca4db38e6d4d7e01c73b82818"
+    }
+  ]
+}

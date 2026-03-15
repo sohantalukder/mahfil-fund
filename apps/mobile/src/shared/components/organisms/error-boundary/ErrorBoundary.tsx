@@ -16,9 +16,8 @@ const ErrorBoundary: React.FC<Properties> = ({
   onReset = () => {},
   ...props
 }) => {
-  const onErrorReport = (error: Error, info: ErrorInfo) => {
-    // use any crash reporting tool here
-    return onError?.(error, info);
+  const onErrorReport = (error: unknown, info: ErrorInfo) => {
+    onError?.(error instanceof Error ? error : new Error(String(error)), info);
   };
 
   return (

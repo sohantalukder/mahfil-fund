@@ -20,6 +20,15 @@ export const CONTENT_TYPE = {
   formUrlEncoded: 'application/x-www-form-urlencoded',
   applicationJson: 'application/json',
 };
+
+/** Optional token getter for API clients that use a different auth source (e.g. Supabase). */
+export type GetAccessToken = () => Promise<string | null> | string | null;
+
+export interface HttpConstructorOptions {
+  /** When set, used for Authorization header instead of localStore.getApiToken() */
+  getAccessToken?: GetAccessToken | undefined;
+}
+
 /**
  * Extended request configuration interface that modifies Axios's default config
  * to better suit our application's needs
@@ -37,13 +46,17 @@ export class Http {
   protected readonly axiosInstance: AxiosInstance;
   private static globalAxios = axios;
   private static readonly RETRY_LIMIT = 1;
+  private readonly getAccessToken: GetAccessToken | undefined;
+
   /**
    * Creates a new HTTP client instance with specific base URL and shared interceptors
    * @param baseURL - The base URL for all requests made through this instance
+   * @param options - Optional getAccessToken to use instead of localStore.getApiToken()
    */
-  constructor(baseURL: string) {
+  constructor(baseURL: string, options?: HttpConstructorOptions) {
+    this.getAccessToken = options?.getAccessToken;
     this.axiosInstance = axios.create({
-      baseURL,
+      baseURL: baseURL.replace(/\/+$/, ''),
       withCredentials: true,
     });
 
@@ -53,6 +66,11 @@ export class Http {
     }
 
     this.setupInterceptors();
+  }
+
+  /** Exposes the underlying axios instance for use by API clients that need to add more interceptors. */
+  getInstance(): AxiosInstance {
+    return this.axiosInstance;
   }
 
   /**
@@ -78,8 +96,10 @@ export class Http {
         if (!isNetwork.isConnected) {
           return Promise.reject(new Error(NETWORK_ERROR.noInternet));
         }
-        // Add authentication token
-        const token = localStore.getApiToken();
+        // Add authentication token (custom getter or localStore)
+        const token = this.getAccessToken
+          ? await Promise.resolve(this.getAccessToken())
+          : localStore.getApiToken();
 
         if (token) {
           config.headers.set('Authorization', `Bearer ${token}`);

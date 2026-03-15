@@ -2,7 +2,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '@/theme/types/colors';
 import rs from '@/shared/utilities/responsiveSize';
 import withOpacity from '@/shared/utilities/withOpacity';
-import { ContextMenuItem } from '@/types/contextMenuTypes';
+import { ContextMenuItem } from '@/types/ContextMenuTypes';
 const { height: screenHeight } = Dimensions.get('window');
 
 export const createAnimatedContextMenuStyles = (colors: Colors) =>

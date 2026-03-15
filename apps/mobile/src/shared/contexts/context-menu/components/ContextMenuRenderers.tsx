@@ -1,8 +1,7 @@
-import React from 'react';
 import { View, Pressable } from 'react-native';
 import { Text, IconByVariant } from '@/shared/components/atoms';
 import { useTheme } from '@/theme';
-import { ContextMenuItem, ContextMenuSection } from '@/types/contextMenuTypes';
+import { ContextMenuItem, ContextMenuSection } from '@/types/ContextMenuTypes';
 import { ContextMenuConfigWithKey } from '../hooks/useAnimatedContextMenu';
 import {
   createAnimatedContextMenuStyles,
@@ -126,7 +125,7 @@ export const useContextMenuRenderers = ({
         <View key={section.id}>
           {sectionIndex > 0 && <View style={styles.separator} />}
           {renderSectionTitle(section)}
-          {section.items.map((item: ContextMenuItem, index: number) =>
+          {(section.items ?? section.data ?? []).map((item: ContextMenuItem, index: number) =>
             renderMenuItem(item, index)
           )}
         </View>
