@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Mahfil Fund monorepo",
+  "packageManager": "pnpm@10.32.0",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",

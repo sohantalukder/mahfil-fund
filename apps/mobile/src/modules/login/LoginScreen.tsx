@@ -24,7 +24,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (session) {
       navigationRef.reset({ index: 0, routes: [{ name: routes.main, key: routes.main }] });
@@ -102,10 +101,9 @@ export default function LoginScreen() {
           <View style={[layout.itemsCenter, gutters.marginBottom_24]}>
             <Image
               source={logo}
-              style={{ width: rs(140), height: rs(140) }}
-              resizeMode="contain"
               height={rs(140)}
               width={rs(140)}
+              borderRadius={50}
             />
           </View>
         ) : null}
