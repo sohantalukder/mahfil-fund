@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import Text from '@/shared/components/atoms/text/Text';
+import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { useTheme } from '@/theme';
 import routes from './routes';
 import HomeScreen from '@/modules/home/HomeScreen';
@@ -92,22 +92,42 @@ export default function MainNavigator() {
         <Tab.Screen
           name={routes.home}
           component={HomeScreen}
-          options={{ tabBarLabel: 'Home', tabBarIcon: () => <Text>H</Text> }}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color, size }) => (
+              <IconByVariant path="home" width={size} height={size} color={color} />
+            ),
+          }}
         />
         <Tab.Screen
           name="CommunitiesTab"
           component={CommunitiesStackNav}
-          options={{ tabBarLabel: 'Communities', tabBarIcon: () => <Text>C</Text> }}
+          options={{
+            tabBarLabel: 'Donors',
+            tabBarIcon: ({ color, size }) => (
+              <IconByVariant path="people" width={size} height={size} color={color} />
+            ),
+          }}
         />
         <Tab.Screen
           name="MenuTab"
           component={MenuStackNav}
-          options={{ tabBarLabel: 'Menu', tabBarIcon: () => <Text>M</Text> }}
+          options={{
+            tabBarLabel: 'Expenses',
+            tabBarIcon: ({ color, size }) => (
+              <IconByVariant path="cart" width={size} height={size} color={color} />
+            ),
+          }}
         />
         <Tab.Screen
           name={routes.profile}
           component={ProfileScreen}
-          options={{ tabBarLabel: 'Profile', tabBarIcon: () => <Text>P</Text> }}
+          options={{
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color, size }) => (
+              <IconByVariant path="profile" width={size} height={size} color={color} />
+            ),
+          }}
         />
       </Tab.Navigator>
     </MeBootstrap>

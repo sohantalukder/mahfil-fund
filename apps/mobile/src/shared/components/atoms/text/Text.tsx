@@ -3,7 +3,6 @@ import type { TextProps, TextStyle } from 'react-native';
 import { Text as RNText } from 'react-native';
 import { useTheme } from '@/theme';
 import type { TypographySize } from '@/theme/types/fonts';
-import { fontWeight } from '@/theme/fonts';
 import withOpacity from '@/shared/utilities/withOpacity';
 export type TextColor =
   | 'default'
@@ -64,10 +63,10 @@ const Text: React.FC<PropsWithChildren> = ({
 
   // Map weight prop to actual font weight value s
   const weightMap: Record<TextWeight, TextStyle['fontWeight']> = {
-    regular: fontWeight.regular,
-    medium: fontWeight.medium,
-    semibold: fontWeight.semibold,
-    bold: fontWeight.bold,
+    regular: 'regular',
+    medium: 'medium',
+    semibold: 'semibold',
+    bold: 'bold',
   };
 
   // Map variant prop to actual typography style

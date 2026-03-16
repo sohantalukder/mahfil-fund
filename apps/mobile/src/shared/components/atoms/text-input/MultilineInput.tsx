@@ -87,9 +87,9 @@ const MultilineInput: React.FC<MultilineInputProps> = ({
   );
 
   return (
-    <View style={containerStyles}>
+    <View>
       {label ? <Text style={labelStyles}>{label}</Text> : null}
-      <TextInput
+      <View style={containerStyles}><TextInput
         testID="multiline-input"
         defaultValue={defaultValue?.toString()}
         multiline
@@ -105,6 +105,7 @@ const MultilineInput: React.FC<MultilineInputProps> = ({
         textAlignVertical="center"
         {...props}
       />
+      </View>
     </View>
   );
 };
