@@ -12,6 +12,9 @@ const routes = {
   admin: 'Admin',
   adminEvents: 'AdminEvents',
   adminDonations: 'AdminDonations',
+  settings: 'Settings',
+  notifications: 'Notifications',
+  addExpense: 'AddExpense',
 } as const;
 
 export default routes;

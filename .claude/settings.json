@@ -7,7 +7,13 @@
       "Bash(./node_modules/.bin/eslint src/modules/donations/donationRepository.ts)",
       "Bash(./node_modules/.bin/eslint src/services/sync/syncService.ts)",
       "Bash(./node_modules/.bin/eslint src/services/sync/syncService.js)",
-      "Bash(./node_modules/.bin/eslint src/services/supabase/supabaseClient.ts)"
+      "Bash(./node_modules/.bin/eslint src/services/supabase/supabaseClient.ts)",
+      "Read(//Users/sohantalukder/Development/Practices/Mahfil\\\\ Fund/apps/admin/src/types/**)",
+      "Read(//Users/sohantalukder/Development/Practices/Mahfil\\\\ Fund/apps/admin/src/lib/**)",
+      "Read(//Users/sohantalukder/Development/Practices/Mahfil\\\\ Fund/apps/admin/src/services/**)",
+      "Read(//Users/sohantalukder/Development/Practices/Mahfil\\\\ Fund/apps/admin/src/hooks/**)",
+      "Bash(curl -s 'http://localhost:4000/communities/creation-stats' -H 'Authorization: Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6ImJhM2FmYzU4LTY5MjItNGQxNy1hZmIzLTU4YzgwMDFhM2NjZCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Rrb2hjam96cGFkcWZmZWxxb2loLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI3ZGRhMTNmNC03ZjZhLTRmZTAtOTBhOS1hZjQyNjg1ODI4NTYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzczNjQ3NTA1LCJpYXQiOjE3NzM2NDM5MDUsImVtYWlsIjoic29oYW5AZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiU29oYW4gVGFsdWtkZXIifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc3MzY0MzkwNX1dLCJzZXNzaW9uX2lkIjoiMjRiNGFhNGUtMjNhYS00ZGMwLWJhMTctNzliNzgyNzIwOWE4IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.tfvrRGMuZbTlqXeU4dftm0FSCXYgqGGOUUrVmrz8-U38mVWnOKeHIDLe-4g0EmfWXipYkBGmUaMRoCEGkRHoHw' -H 'X-Community-Id: 73b87a22-6bee-4d1a-8c04-099f75480a88' -H 'Accept: application/json')",
+      "Bash(npx prisma:*)"
     ]
   }
 }

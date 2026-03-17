@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCommunity } from '@/contexts/CommunityContext';
 import { bottomSheet } from '@/shared/contexts/bottom-sheet/manager';
 import NewDonationSheet from './NewDonationSheet';
+import routes from '@/navigation/routes';
 
 // ─── Brand colours ────────────────────────────────────────────────────────────
 const GOLD = '#E8A800';
@@ -256,6 +257,7 @@ export default function HomeScreen() {
               justifyContent: 'center',
               alignItems: 'center',
             }}
+            onPress={() => navigation.navigate(routes.notifications as never)}
           >
             <IconByVariant
               path="notification"

@@ -30,7 +30,7 @@ export default function ErrorLogsPage() {
   const [page, setPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<AppErrorLog | null>(null);
 
-  const { data, isLoading } = useErrorLogs({
+  const { data, isLoading, error } = useErrorLogs({
     communityId: activeCommunity?.id,
     level: levelFilter,
     source: sourceFilter,
@@ -92,8 +92,13 @@ export default function ErrorLogsPage() {
       <TableCard
         title="Error Logs"
         badge={isLoading ? 'Loading…' : `${logs.length} on page / ${total} total`}
-        empty={!isLoading && logs.length === 0 ? 'No error logs found.' : undefined}
+        empty={!isLoading && !error && logs.length === 0 ? 'No error logs found.' : undefined}
       >
+        {error && (
+          <div className="p-6 text-center text-red-500">
+            Failed to load error logs: {error.message}
+          </div>
+        )}
         {logs.length > 0 && (
           <table className="dataTable">
             <thead>

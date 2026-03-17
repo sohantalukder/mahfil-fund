@@ -23,7 +23,7 @@ export default function CommunitiesPage() {
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const { toast } = useToast();
 
-  const { data, isLoading } = useCommunities({ page, pageSize: 20, search: debouncedSearch.trim() });
+  const { data, isLoading, error } = useCommunities({ page, pageSize: 20, search: debouncedSearch.trim() });
   const { data: statsData } = useCommunityCreationStats();
   const archive = useArchiveCommunity();
 
@@ -76,8 +76,13 @@ export default function CommunitiesPage() {
       <TableCard
         title="All Communities"
         badge={data ? `${data.communities.length} on page / ${data.total} total` : undefined}
-        empty={!isLoading && !data?.communities.length ? 'No communities found.' : undefined}
+        empty={!isLoading && !error && !data?.communities.length ? 'No communities found.' : undefined}
       >
+        {error && (
+          <div className="p-6 text-center text-red-500">
+            Failed to load communities: {error.message}
+          </div>
+        )}
         {(data?.communities.length ?? 0) > 0 && (
           <table className="dataTable">
             <thead>

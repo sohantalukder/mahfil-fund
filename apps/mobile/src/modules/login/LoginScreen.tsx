@@ -102,8 +102,8 @@ export default function LoginScreen() {
             <Image
               source={logo}
               height={rs(140)}
-              width={rs(140)}
-              borderRadius={50}
+              width={rs('wf') * 0.6}
+              resizeMode='contain'
             />
           </View>
         ) : null}

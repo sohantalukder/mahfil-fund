@@ -183,15 +183,17 @@ function ThemeProvider({ children }: Properties) {
   }, [variant, fullConfig.navigationColors]);
 
   // Memoized logo selection (direct require so Metro always bundles it; context can miss new files)
-  const logos = useMemo((): { logo: number } => {
-    const fromContext = images('./logo.png');
-    const logoSource =
-      typeof fromContext === 'number'
-        ? fromContext
-        : require('../../assets/images/logo.png');
-    return { logo: logoSource };
-  }, [images]);
-
+ // Memoized logo selection
+ const logos = useMemo(
+  () => ({
+    fullLogo: variant !== 'default' ? (images('./logo_black.png') as number) : (images('./logo_white.png') as number),
+    logo:
+      variant !== 'default'
+        ? (images('./logo_black.png') as number)
+        : (images('./logo_white.png') as number),
+  }),
+  [variant, images]
+);
   // Main theme object
   const theme = useMemo(
     () =>

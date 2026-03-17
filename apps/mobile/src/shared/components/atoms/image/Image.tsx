@@ -59,13 +59,14 @@ const Image: React.FC<Properties> = ({
     return !isEmpty(processedSource?.uri);
   }, [processedSource]);
 
-  const handleLoadStart = useCallback(() => setIsLoading(true), []);
+  const handleLoadStart = useCallback(() =>setIsLoading(true), []);
   const handleLoadEnd = useCallback(() => setIsLoading(false), []);
 
   const handleError = useCallback(() => setIsLoading(false), []);
   
   const fastImageSource = useMemo<Exclude<FastImageProps['source'], undefined>>(() => {
     if (typeof processedSource === 'number') {
+      setIsLoading(false);
       return processedSource;
     }
 
@@ -100,7 +101,7 @@ const Image: React.FC<Properties> = ({
             source={fastImageSource}
             style={[styles.image, { height, width, borderRadius }]}
             resizeMode={resizeMode}
-            onLoadStart={handleLoadStart}
+            onLoadStart={()=>{if(typeof source !=='number')handleLoadStart()}}
             onLoadEnd={handleLoadEnd}
             onError={handleError}
             testID="image-preview"

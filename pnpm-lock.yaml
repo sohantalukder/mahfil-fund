@@ -222,12 +222,6 @@ importers:
       '@gorhom/bottom-sheet':
         specifier: ^5.2.6
         version: 5.2.8(@types/react-native@0.73.0(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(@types/react@19.2.14)(react-native-gesture-handler@2.30.0(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native-reanimated@3.19.5(@babel/core@7.29.0)(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
-      '@mahfil/api-sdk':
-        specifier: workspace:*
-        version: link:../../packages/api-sdk
-      '@mahfil/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@react-native-clipboard/clipboard':
         specifier: ^1.15.0
         version: 1.16.3(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)

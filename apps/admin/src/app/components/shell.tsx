@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useLanguage, useCommunity } from '../providers';
 import { getApi } from '@/lib/api';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import styles from './shell.module.css';
 
 const shellHttp = axios.create({ baseURL: '/' });
@@ -183,6 +184,7 @@ export function PageShell({
   const { activeCommunity, communities, setActiveCommunity, setCommunities } = useCommunity();
   const [user, setUser] = useState<User>({ name: 'Admin', email: '', initials: 'AF' });
   const [searchValue, setSearchValue] = useState('');
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   useEffect(() => {
     shellHttp
@@ -292,7 +294,7 @@ export function PageShell({
         {/* Sign out */}
         <button
           type="button"
-          onClick={() => void handleSignOut()}
+          onClick={() => setShowSignOutModal(true)}
           className={styles.navLink}
         >
           <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
@@ -413,6 +415,16 @@ export function PageShell({
           {children}
         </div>
       </div>
+    <ConfirmDialog
+        open={showSignOutModal}
+        title="Sign Out"
+        description="Are you sure you want to sign out?"
+        confirmLabel="Sign Out"
+        variant="destructive"
+        loading={false}
+        onConfirm={() => { setShowSignOutModal(false); void handleSignOut(); }}
+        onCancel={() => setShowSignOutModal(false)}
+      />
     </div>
   );
 }

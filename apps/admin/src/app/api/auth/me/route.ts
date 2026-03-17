@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { callApi } from '@/lib/auth/server';
 
-type MeData = { user: { id: string; email: string; fullName?: string | null; roles: string[] } };
+type MeData = {
+  user: {
+    id: string;
+    email: string;
+    fullName?: string | null;
+    roles: string[];
+    communities?: Array<{ id: string; name: string; slug: string; role: string }>;
+  };
+};
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
