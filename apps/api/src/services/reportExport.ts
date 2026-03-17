@@ -15,8 +15,15 @@ const RobotoFont = _require('pdfmake/build/fonts/Roboto.js');
 // Register Roboto font once at startup.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 Object.entries(RobotoFont.vfs as Record<string, { data: number[] }>).forEach(([k, v]) => {
+  // pdfmake/build/fonts/Roboto.js can provide base64 strings (newer pdfmake)
+  // or number arrays (older). Support both.
+  const raw = v.data as unknown;
+  const buf =
+    typeof raw === 'string'
+      ? Buffer.from(raw, 'base64')
+      : Buffer.from(new Uint8Array((raw as number[]) ?? []));
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  pdfmake.virtualfs.writeFileSync(k, Buffer.from(new Uint8Array(v.data)));
+  pdfmake.virtualfs.writeFileSync(k, buf);
 });
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 pdfmake.addFonts(RobotoFont.fonts as Record<string, unknown>);

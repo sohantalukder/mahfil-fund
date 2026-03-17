@@ -6,7 +6,13 @@ import { PageShell } from '../components/shell';
 import { useToast } from '../components/toast';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useAllEvents } from '@/hooks/useEvents';
-import { useDonations, useCreateDonation, useUpdateDonation, useDeleteDonation } from '@/hooks/useDonations';
+import {
+  useDonations,
+  useCreateDonation,
+  useUpdateDonation,
+  useDeleteDonation,
+  triggerDonationsReportDownload,
+} from '@/hooks/useDonations';
 import { useAllDonors, useCreateDonor } from '@/hooks/useDonors';
 import { TableCard } from '@/components/shared/TableCard';
 import { UserAvatar } from '@/components/shared/UserAvatar';
@@ -20,6 +26,7 @@ import { fmtBDT, formatLabel } from '@/constants/payments';
 import type { Donation } from '@/types';
 import styles from './donations.module.css';
 import formStyles from '@/styles/form.module.css';
+import { Button } from '@/components/ui/button';
 
 export default function AdminDonationsPage() {
   const { t } = useTranslation();
@@ -195,6 +202,23 @@ export default function AdminDonationsPage() {
         title={t('donations.donations')}
         badge={donationsLoading ? t('admin.ui.loading') : t('admin.ui.onPageTotal', { onPage: donations.length, total })}
         badgeVariant="green"
+        actions={
+          eventId ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                void triggerDonationsReportDownload({
+                  eventId,
+                  search: debouncedSearch.trim() || undefined,
+                }).catch((err) =>
+                  toast(err instanceof Error ? err.message : 'Failed to download report PDF', 'error')
+                );
+              }}
+            >
+              Download report (PDF)
+            </Button>
+          ) : null
+        }
         empty={
           !donationsLoading && !eventId
             ? t('admin.forms.donationsPage.selectEventLoad')

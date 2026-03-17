@@ -122,8 +122,8 @@ export default function ReportsScreen() {
     queryFn: async () => {
       const api = getApi();
       const res = await api.get('/reports/community-summary');
-      if (res && typeof res === 'object' && 'data' in res) return res.data as CommunitySummary;
-      return res as CommunitySummary;
+      if (!res.success) throw new Error(res.error.message);
+      return res.data as CommunitySummary;
     },
     enabled: !!session && !!activeCommunity?.id,
   });
@@ -133,8 +133,9 @@ export default function ReportsScreen() {
     queryFn: async () => {
       const api = getApi();
       const res = await api.get('/donations?scope=community&limit=100');
-      if (res && typeof res === 'object' && 'data' in res) return (res.data as { items?: Donation[] }).items ?? (res.data as Donation[]);
-      return res as Donation[];
+      if (!res.success) throw new Error(res.error.message);
+      const d = res.data as { items?: Donation[] } | Donation[];
+      return Array.isArray(d) ? d : (d.items ?? []);
     },
     enabled: !!session && !!activeCommunity?.id,
   });

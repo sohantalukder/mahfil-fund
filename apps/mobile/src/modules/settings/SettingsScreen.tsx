@@ -21,7 +21,6 @@ import {
   ChevronRightIcon,
   CheckCircleIcon,
   CloseIcon,
-  CloudSyncIcon,
   CloudCheckIcon,
   CsvIcon,
   CurrencyIcon,
@@ -103,7 +102,7 @@ export default function SettingsScreen() {
   const styles = useMemo(() => getStyles(colors), [colors]);
   const navigation = useNavigation();
   const { session, signOut } = useAuth();
-  const { activeCommunity } = useCommunity();
+  useCommunity();
 
   const isDark = variant === 'dark';
   const storedLang = localStore.getSystemLanguage();
@@ -131,7 +130,7 @@ export default function SettingsScreen() {
   }
 
   function handleTheme(value: boolean) {
-    changeTheme(value ? 'dark' : 'light');
+    changeTheme(value ? 'dark' : 'default');
   }
 
   async function handleSync() {

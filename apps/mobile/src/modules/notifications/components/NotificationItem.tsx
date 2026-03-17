@@ -7,10 +7,9 @@ import type { NotificationItem as NotificationItemType } from '../types';
 import { getStyles } from '../styles';
 import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { ChartIcon, DonationIcon, ReceiptIcon } from '@/shared/components/atoms/svg-icons/AppSvgIcons';
+import type { TFunction } from 'i18next';
 
-const LOGO_BG = '#1A5C30';
-
-function timeAgo(iso: string, t: (key: string, opts?: object) => string): string {
+function timeAgo(iso: string, t: TFunction<'translation'>): string {
   const diff = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diff / 60_000);
   const hours = Math.floor(diff / 3_600_000);

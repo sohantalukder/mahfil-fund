@@ -82,3 +82,12 @@ export async function deleteDonation(api: ApiClient, id: string): Promise<void> 
   const res = await api.delete(`/donations/${id}`);
   if (!res.success) throw new Error(res.error.message);
 }
+
+export async function downloadDonationsReportPdf(
+  api: ApiClient,
+  params: { eventId: string; search?: string }
+): Promise<Blob> {
+  const qs = buildParams({ eventId: params.eventId, search: params.search });
+  const response = await api.http.get(`/donations/report/download?${qs}`, { responseType: 'blob' });
+  return response.data as Blob;
+}

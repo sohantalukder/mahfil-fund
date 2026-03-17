@@ -9,6 +9,7 @@ import {
   createDonation,
   updateDonation,
   deleteDonation,
+  downloadDonationsReportPdf,
   type DonationListParams,
   type CreateDonationInput,
   type UpdateDonationInput,
@@ -63,4 +64,19 @@ export function useDeleteDonation() {
       void queryClient.invalidateQueries({ queryKey: [DONATIONS_QUERY_KEY] });
     },
   });
+}
+
+export async function triggerDonationsReportDownload(params: {
+  eventId: string;
+  search?: string;
+  fileName?: string;
+}): Promise<void> {
+  const api = getApi();
+  const blob = await downloadDonationsReportPdf(api, { eventId: params.eventId, search: params.search });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = params.fileName ?? `donations-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

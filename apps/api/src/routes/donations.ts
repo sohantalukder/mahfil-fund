@@ -5,6 +5,9 @@ import { ok } from '../shared/http.js';
 import { parseWith } from '../shared/validate.js';
 import { writeAuditLog } from '../shared/audit.js';
 import { Errors } from '../shared/errors.js';
+import { fileURLToPath } from 'node:url';
+import { generateDonationsReportPdf, type DonationsReportPdfData } from '../services/pdfGenerator.js';
+import { ensureInvoiceForDonation } from '../shared/invoiceFromDonation.js';
 
 const DonationUpdateSchema = DonationCreateSchema.partial().extend({
   clientGeneratedId: z.string().uuid().optional()
@@ -62,6 +65,82 @@ export async function registerDonationRoutes(app: FastifyInstance) {
     );
   });
 
+  // Download donations report PDF (full list for current filters; ignores pagination)
+  app.get(
+    '/donations/report/download',
+    { preHandler: async (req) => app.requireCommunity(req) },
+    async (req, reply) => {
+      const query = parseWith(
+        z.object({
+          eventId: z.string().uuid(),
+          search: z.string().min(1).max(80).optional(),
+        }),
+        req.query
+      );
+
+      const communityId = req.communityId!;
+      const [community, donations] = await Promise.all([
+        app.prisma.community.findUnique({
+          where: { id: communityId },
+          select: { name: true, location: true },
+        }),
+        app.prisma.donation.findMany({
+          where: {
+            communityId,
+            status: 'ACTIVE' as const,
+            eventId: query.eventId,
+            OR: query.search
+              ? [
+                  { donorSnapshotName: { contains: query.search, mode: 'insensitive' as const } },
+                  { donorSnapshotPhone: { contains: query.search } },
+                ]
+              : undefined,
+          },
+          orderBy: [{ donationDate: 'desc' }, { createdAt: 'desc' }],
+        }),
+      ]);
+
+      if (!community) throw Errors.notFound('Community not found');
+
+      const logoPath = fileURLToPath(new URL('../assets/images/logo_black.png', import.meta.url));
+      const pdfData: DonationsReportPdfData = {
+        title: 'Donations report',
+        communityName: community.name,
+        communityLocation: community.location ?? undefined,
+        logoPath,
+        generatedAt: new Date(),
+        filters: { eventId: query.eventId, search: query.search },
+        rows: donations.map((d) => ({
+          donorSnapshotName: d.donorSnapshotName,
+          donorSnapshotPhone: d.donorSnapshotPhone,
+          amount: d.amount,
+          paymentMethod: d.paymentMethod,
+          donationDate: d.donationDate,
+          receiptNo: d.receiptNo ?? undefined,
+          transactionId: d.transactionId ?? undefined,
+        })),
+      };
+
+      const pdfBuffer = await generateDonationsReportPdf(pdfData);
+      const fileName = `donations-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      await writeAuditLog(app, req, {
+        entityType: 'report',
+        entityId: communityId,
+        communityId,
+        action: 'UPDATE',
+        after: { action: 'DONATIONS_REPORT_DOWNLOADED', filters: pdfData.filters, count: pdfData.rows.length },
+      });
+
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Length', pdfBuffer.length);
+
+      return reply.send(pdfBuffer);
+    }
+  );
+
   app.post('/donations', { preHandler: async (req) => app.requireCommunity(req) }, async (req) => {
     if (req.memberRole === 'viewer') throw Errors.forbidden('Viewers cannot add donations');
     const body = parseWith(DonationCreateSchema, req.body);
@@ -97,6 +176,11 @@ export async function registerDonationRoutes(app: FastifyInstance) {
         updatedByUserId: req.currentUser!.id,
         createdMetaId: metaId
       }
+    });
+
+    // Auto-create invoice (and generate/upload PDF in background)
+    ensureInvoiceForDonation(app, communityId, donation.id, req.currentUser!.id).catch((err) => {
+      app.log.error({ err, donationId: donation.id }, 'Failed to auto-create invoice for donation');
     });
 
     await writeAuditLog(app, req, { entityType: 'donation', entityId: donation.id, communityId, action: 'CREATE', after: donation });

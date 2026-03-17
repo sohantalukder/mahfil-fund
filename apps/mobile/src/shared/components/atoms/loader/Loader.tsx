@@ -1,17 +1,18 @@
-import React, { useLayoutEffect, useMemo } from 'react';
-import { useRef } from 'react';
+import React, { useEffect } from 'react';
 import type { StyleProp, ViewStyle, ColorValue } from 'react-native';
-import { Animated, Easing } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useTheme } from '@/theme';
 import { IconByVariant } from '@/shared/components/atoms';
 
-const ANIMATION_CONFIG = {
-  toValue: 1,
-  duration: 1000,
-  easing: Easing.linear,
-  useNativeDriver: true,
-};
+const DURATION_MS = 900;
 
 /**
  * Properties for the Loader component.
@@ -28,26 +29,25 @@ type Properties = {
 };
 
 const Loader: React.FC<Properties> = ({ style, color }) => {
-  const spinAnim = useRef(new Animated.Value(0));
   const { layout, colors } = useTheme();
-  const interpolateRotation = useMemo(
-    () =>
-      spinAnim.current.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-      }),
-    []
-  );
 
-  const animatedStyle = useMemo(
-    () => ({
-      transform: [{ rotate: interpolateRotation }],
-    }),
-    [interpolateRotation]
-  );
+  const rotate = useSharedValue(0);
 
-  useLayoutEffect(() => {
-    Animated.loop(Animated.timing(spinAnim.current, ANIMATION_CONFIG)).start();
+  useEffect(() => {
+    rotate.value = withRepeat(
+      withTiming(1, { duration: DURATION_MS, easing: Easing.linear }),
+      -1,
+      false
+    );
+    return () => {
+      cancelAnimation(rotate);
+    };
+  }, [rotate]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${rotate.value * 360}deg` }],
+    };
   }, []);
 
   return (

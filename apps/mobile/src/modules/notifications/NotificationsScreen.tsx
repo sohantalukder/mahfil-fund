@@ -18,7 +18,7 @@ const Tab = createMaterialTopTabNavigator();
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const { colors, gutters } = useTheme();
+  const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const navigation = useNavigation();
   const { notifications } = useNotifications();

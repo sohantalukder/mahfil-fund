@@ -94,7 +94,6 @@ export default function ProfileScreen() {
   const name =
     (session?.user.user_metadata as Record<string, string> | undefined)
       ?.full_name ?? session?.user.email ?? '';
-  const email = session?.user.email ?? '';
   const initials = name
     .split(' ')
     .slice(0, 2)
@@ -107,8 +106,8 @@ export default function ProfileScreen() {
     queryFn: async () => {
       const api = getApi();
       const res = await api.get('/reports/community-summary');
-      if (res && typeof res === 'object' && 'data' in res) return res.data as CommunitySummary;
-      return res as CommunitySummary;
+      if (!res.success) throw new Error(res.error.message);
+      return res.data as CommunitySummary;
     },
     enabled: !!session && !!activeCommunity?.id,
   });

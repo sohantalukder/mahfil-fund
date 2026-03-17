@@ -63,7 +63,7 @@ export const inputStyles = ({ colors }: Properties) => {
       color: colors.text,
       flex: 1,
       fontSize: FONT_SIZE,
-      fontWeight: fontWeight.semibold,
+      fontFamily: fontWeight.semibold,
       paddingVertical: INPUT_PADDING_VERTICAL,
     },
 
@@ -81,7 +81,7 @@ export const inputStyles = ({ colors }: Properties) => {
     phoneInput: {
       color: colors.text,
       fontSize: FONT_SIZE,
-      fontWeight: fontWeight.semibold,
+      fontFamily: fontWeight.semibold,
     },
   });
 };

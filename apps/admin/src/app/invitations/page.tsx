@@ -15,7 +15,6 @@ import {
   useResendInvitation,
 } from '@/hooks/useInvitations';
 import { TableCard } from '@/components/shared/TableCard';
-import { StatusBadge } from '@/components/shared/StatusBadge';
 import styles from './invitations.module.css';
 import formStyles from '@/styles/form.module.css';
 
@@ -182,7 +181,6 @@ function InvitationsContent() {
                   value={form.role}
                   onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                 >
-                  <option value="admin">Admin</option>
                   <option value="collector">Collector</option>
                   <option value="viewer">Viewer</option>
                 </select>

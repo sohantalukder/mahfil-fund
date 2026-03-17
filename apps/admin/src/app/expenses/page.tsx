@@ -6,7 +6,13 @@ import { PageShell } from '../components/shell';
 import { useToast } from '../components/toast';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useAllEvents } from '@/hooks/useEvents';
-import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense } from '@/hooks/useExpenses';
+import {
+  useExpenses,
+  useCreateExpense,
+  useUpdateExpense,
+  useDeleteExpense,
+  triggerExpensesReportDownload,
+} from '@/hooks/useExpenses';
 import { TableCard } from '@/components/shared/TableCard';
 import { StatGrid, StatCard } from '@/components/shared/StatGrid';
 import { ListToolbar } from '@/components/shared/ListToolbar';
@@ -17,6 +23,7 @@ import { ActionsMenu } from '@/components/shared/ActionsMenu';
 import { fmtBDT, formatLabel } from '@/constants/payments';
 import type { Expense } from '@/types';
 import styles from './expenses.module.css';
+import { Button } from '@/components/ui/button';
 
 export default function AdminExpensesPage() {
   const { t } = useTranslation();
@@ -135,6 +142,23 @@ export default function AdminExpensesPage() {
         title={t('expenses.expenses')}
         badge={expensesLoading ? t('admin.ui.loading') : t('admin.ui.onPageTotal', { onPage: expenses.length, total })}
         badgeVariant="blue"
+        actions={
+          eventId ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                void triggerExpensesReportDownload({
+                  eventId,
+                  search: debouncedSearch.trim() || undefined,
+                }).catch((err) =>
+                  toast(err instanceof Error ? err.message : 'Failed to download report PDF', 'error')
+                );
+              }}
+            >
+              Download report (PDF)
+            </Button>
+          ) : null
+        }
         empty={
           !expensesLoading && !eventId
             ? t('admin.forms.expensesPage.selectEventLoad')

@@ -17,7 +17,7 @@ const CreateInvitationSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(2).max(120),
   phoneNumber: z.string().max(20).optional(),
-  role: z.enum(['admin', 'collector', 'viewer']),
+  role: z.enum(['collector', 'viewer']),
   expiresInDays: z.coerce.number().int().min(1).max(30).default(INVITE_EXPIRY_DAYS),
   note: z.string().max(300).optional()
 });
@@ -309,6 +309,12 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
 
     if (invitation.community.status !== 'ACTIVE') {
       throw Errors.badRequest('This community is not active.');
+    }
+
+    // Admin invitations are not allowed for external verification.
+    // This prevents creating internal/admin-level users through an invite code.
+    if (invitation.role === 'admin') {
+      throw Errors.forbidden('Admin invitations are not allowed for external verification.');
     }
 
     // Find or create user

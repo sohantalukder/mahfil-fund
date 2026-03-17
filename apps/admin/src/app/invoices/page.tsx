@@ -8,7 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '../components/toast';
 import { useCommunity } from '../providers';
-import { useInvoices, useCreateInvoice, triggerInvoiceDownload } from '@/hooks/useInvoices';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
+import {
+  useInvoices,
+  useCreateInvoice,
+  triggerInvoiceDownload,
+  triggerInvoicesReportDownload,
+  triggerExcessInvoicesDownload,
+} from '@/hooks/useInvoices';
 import { TableCard } from '@/components/shared/TableCard';
 import { PaginationControls } from '@/components/shared/PaginationControls';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -39,6 +46,8 @@ export default function InvoicesPage() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [createdInvoiceNumber, setCreatedInvoiceNumber] = useState<string | null>(null);
@@ -49,6 +58,7 @@ export default function InvoicesPage() {
     communityId: activeCommunity?.id,
     status: statusFilter,
     invoiceType: typeFilter,
+    search: debouncedSearch.trim() || undefined,
     page,
     pageSize,
   });
@@ -107,6 +117,11 @@ export default function InvoicesPage() {
       }
     >
       <div className={formStyles.filterRow}>
+        <Input
+          placeholder="Search payer name…"
+          value={searchInput}
+          onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+        />
         <select
           className={formStyles.nativeSelect}
           value={statusFilter}
@@ -262,6 +277,44 @@ export default function InvoicesPage() {
       <TableCard
         title="Invoices"
         badge={data ? `${invoices.length} of ${data.total}` : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                void triggerInvoicesReportDownload({
+                  status: statusFilter || undefined,
+                  invoiceType: typeFilter || undefined,
+                }).catch((err) =>
+                  toast(err instanceof Error ? err.message : 'Failed to download report PDF', 'error')
+                );
+              }}
+            >
+              Download report (PDF)
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const raw = window.prompt('Excess threshold (min amount)', '10000');
+                if (raw === null) return;
+                const minAmount = Number.parseInt(raw, 10);
+                if (!Number.isFinite(minAmount) || minAmount <= 0) {
+                  toast('Min amount must be a positive number', 'error');
+                  return;
+                }
+                void triggerExcessInvoicesDownload({
+                  status: statusFilter || undefined,
+                  invoiceType: typeFilter || undefined,
+                  minAmount,
+                }).catch((err) =>
+                  toast(err instanceof Error ? err.message : 'Failed to download excess PDF', 'error')
+                );
+              }}
+            >
+              Download excess (PDF)
+            </Button>
+          </div>
+        }
         empty={!isLoading && invoices.length === 0 ? 'No invoices found.' : undefined}
       >
         {isLoading ? (

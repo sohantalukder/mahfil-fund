@@ -6,8 +6,13 @@ import { parseWith } from '../shared/validate.js';
 import { Errors } from '../shared/errors.js';
 import { writeAuditLog } from '../shared/audit.js';
 import { amountToWordsBangla } from '../shared/banglaUtils.js';
-import { generateInvoicePdfAsync, type InvoicePdfData } from '../services/pdfGenerator.js';
-import { uploadFile, buildStoragePath } from '../services/storage.js';
+import {
+  generateInvoicePdfAsync,
+  generateInvoicesReportPdf,
+  type InvoicePdfData,
+  type InvoicesReportPdfData,
+} from '../services/pdfGenerator.js';
+import { ensureInvoiceForDonation } from '../shared/invoiceFromDonation.js';
 
 const CreateInvoiceSchema = z.object({
   eventId: z.string().uuid().optional(),
@@ -53,6 +58,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
           donorId: z.string().uuid().optional(),
           status: z.enum(['DRAFT', 'ISSUED', 'CANCELLED']).optional(),
           invoiceType: z.enum(['DONATION_RECEIPT', 'SPONSOR_RECEIPT', 'MANUAL']).optional(),
+          search: z.string().min(1).max(80).optional(),
           page: z.coerce.number().int().min(1).default(1),
           pageSize: z.coerce.number().int().min(1).max(100).default(25)
         }),
@@ -66,7 +72,12 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
         ...(query.eventId ? { eventId: query.eventId } : {}),
         ...(query.donorId ? { donorId: query.donorId } : {}),
         ...(query.status ? { status: query.status as never } : {}),
-        ...(query.invoiceType ? { invoiceType: query.invoiceType as never } : {})
+        ...(query.invoiceType ? { invoiceType: query.invoiceType as never } : {}),
+        OR: query.search
+          ? [
+              { payerName: { contains: query.search, mode: 'insensitive' as const } },
+            ]
+          : undefined
       };
 
       const [invoices, total] = await Promise.all([
@@ -85,6 +96,169 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
         { invoices, page, pageSize, total, totalPages },
         { serverTime: new Date().toISOString(), requestId: req.requestId, pagination: { page: page as number, pageSize: pageSize as number, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 } }
       );
+    }
+  );
+
+  // Download invoices report PDF (full list for current filters; ignores pagination)
+  app.get(
+    '/invoices/report/download',
+    { preHandler: async (req) => app.requireCommunity(req) },
+    async (req, reply) => {
+      const query = parseWith(
+        z.object({
+          status: z.enum(['DRAFT', 'ISSUED', 'CANCELLED']).optional(),
+          invoiceType: z.enum(['DONATION_RECEIPT', 'SPONSOR_RECEIPT', 'MANUAL']).optional(),
+        }),
+        req.query
+      );
+
+      const communityId = req.communityId!;
+
+      const where = {
+        communityId,
+        ...(query.status ? { status: query.status as never } : {}),
+        ...(query.invoiceType ? { invoiceType: query.invoiceType as never } : {}),
+      };
+
+      const [community, invoices] = await Promise.all([
+        app.prisma.community.findUnique({
+          where: { id: communityId },
+          select: { name: true, location: true },
+        }),
+        app.prisma.invoice.findMany({
+          where,
+          include: { event: { select: { name: true } } },
+          orderBy: [{ issueDate: 'desc' }, { invoiceNumber: 'desc' }],
+        }),
+      ]);
+
+      if (!community) throw Errors.notFound('Community not found');
+
+      const logoPath = fileURLToPath(new URL('../assets/images/logo_black.png', import.meta.url));
+      const pdfData: InvoicesReportPdfData = {
+        title: 'Invoices report',
+        communityName: community.name,
+        communityLocation: community.location ?? undefined,
+        logoPath,
+        generatedAt: new Date(),
+        filters: {
+          status: query.status,
+          invoiceType: query.invoiceType,
+        },
+        rows: invoices.map((inv) => ({
+          invoiceNumber: inv.invoiceNumber,
+          issueDate: inv.issueDate,
+          payerName: inv.payerName,
+          payerPhone: inv.payerPhone ?? undefined,
+          invoiceType: inv.invoiceType,
+          status: inv.status,
+          eventName: inv.event?.name ?? undefined,
+          amount: inv.amount,
+        })),
+      };
+
+      const pdfBuffer = await generateInvoicesReportPdf(pdfData);
+      const fileName = `invoices-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      await writeAuditLog(app, req, {
+        entityType: 'invoice',
+        entityId: req.currentUser!.id,
+        communityId,
+        action: 'UPDATE',
+        after: { action: 'REPORT_DOWNLOADED', filters: pdfData.filters, count: pdfData.rows.length },
+      });
+
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Length', pdfBuffer.length);
+
+      return reply.send(pdfBuffer);
+    }
+  );
+
+  // Download excess invoices list PDF (amount >= minAmount; ignores pagination)
+  app.get(
+    '/invoices/excess/download',
+    { preHandler: async (req) => app.requireCommunity(req) },
+    async (req, reply) => {
+      const query = parseWith(
+        z.object({
+          status: z.enum(['DRAFT', 'ISSUED', 'CANCELLED']).optional(),
+          invoiceType: z.enum(['DONATION_RECEIPT', 'SPONSOR_RECEIPT', 'MANUAL']).optional(),
+          minAmount: z.coerce.number().int().min(1).default(10_000),
+        }),
+        req.query
+      );
+
+      const communityId = req.communityId!;
+
+      const where = {
+        communityId,
+        amount: { gte: query.minAmount },
+        ...(query.status ? { status: query.status as never } : {}),
+        ...(query.invoiceType ? { invoiceType: query.invoiceType as never } : {}),
+      };
+
+      const [community, invoices] = await Promise.all([
+        app.prisma.community.findUnique({
+          where: { id: communityId },
+          select: { name: true, location: true },
+        }),
+        app.prisma.invoice.findMany({
+          where,
+          include: { event: { select: { name: true } } },
+          orderBy: [{ issueDate: 'desc' }, { invoiceNumber: 'desc' }],
+        }),
+      ]);
+
+      if (!community) throw Errors.notFound('Community not found');
+
+      const logoPath = fileURLToPath(new URL('../assets/images/logo_black.png', import.meta.url));
+      const pdfData: InvoicesReportPdfData = {
+        title: 'Excess invoices',
+        communityName: community.name,
+        communityLocation: community.location ?? undefined,
+        logoPath,
+        generatedAt: new Date(),
+        filters: {
+          status: query.status,
+          invoiceType: query.invoiceType,
+          minAmount: query.minAmount,
+        },
+        rows: invoices.map((inv) => ({
+          invoiceNumber: inv.invoiceNumber,
+          issueDate: inv.issueDate,
+          payerName: inv.payerName,
+          payerPhone: inv.payerPhone ?? undefined,
+          invoiceType: inv.invoiceType,
+          status: inv.status,
+          eventName: inv.event?.name ?? undefined,
+          amount: inv.amount,
+        })),
+      };
+
+      const pdfBuffer = await generateInvoicesReportPdf(pdfData);
+      const fileName = `excess-invoices-${query.minAmount}-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      await writeAuditLog(app, req, {
+        entityType: 'invoice',
+        entityId: req.currentUser!.id,
+        communityId,
+        action: 'UPDATE',
+        after: {
+          action: 'EXCESS_REPORT_DOWNLOADED',
+          filters: pdfData.filters,
+          count: pdfData.rows.length,
+        },
+      });
+
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Length', pdfBuffer.length);
+
+      return reply.send(pdfBuffer);
     }
   );
 
@@ -164,101 +338,28 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
       const params = parseWith(z.object({ donationId: z.string().uuid() }), req.params);
       const communityId = req.communityId!;
-
-      const donation = await app.prisma.donation.findFirst({
-        where: { id: params.donationId, communityId, status: 'ACTIVE' },
-        include: {
-          donor: true,
-          event: { select: { name: true } },
-          invoices: { where: { status: { not: 'CANCELLED' } } }
-        }
-      });
-
-      if (!donation) throw Errors.notFound('Donation not found');
-      if (donation.invoices.length > 0) {
-        return ok(
-          { invoice: donation.invoices[0], message: 'Invoice already exists for this donation' },
-          { serverTime: new Date().toISOString(), requestId: req.requestId }
-        );
+      let invoiceId: string;
+      let invoiceNumber: string;
+      try {
+        ({ invoiceId, invoiceNumber } = await ensureInvoiceForDonation(
+          app,
+          communityId,
+          params.donationId,
+          req.currentUser!.id
+        ));
+      } catch {
+        throw Errors.notFound('Donation not found');
       }
 
-      const community = await app.prisma.community.findUnique({
-        where: { id: communityId },
-        select: { name: true, location: true }
-      });
-
-      const invoiceNumber = await generateInvoiceNumber(app, communityId);
-      const amountInWordsBangla = amountToWordsBangla(donation.amount);
-
-      const invoice = await app.prisma.invoice.create({
-        data: {
-          communityId,
-          eventId: donation.eventId,
-          donorId: donation.donorId,
-          donationId: donation.id,
-          invoiceNumber,
-          invoiceType: 'DONATION_RECEIPT',
-          issueDate: donation.donationDate,
-          payerName: donation.donorSnapshotName,
-          payerPhone: donation.donorSnapshotPhone,
-          payerAddress: donation.donor.address ?? null,
-          amount: donation.amount,
-          amountInWordsBangla,
-          paymentMethod: donation.paymentMethod,
-          referenceNumber: donation.receiptNo ?? donation.transactionId ?? null,
-          status: 'ISSUED',
-          createdByUserId: req.currentUser!.id,
-          updatedByUserId: req.currentUser!.id
-        }
-      });
-
-      // Generate PDF in background (non-blocking attempt)
-      generateInvoicePdfAsync({
-        invoiceNumber,
-        issueDate: donation.donationDate,
-        communityName: community?.name ?? 'Community',
-        communityLocation: community?.location ?? undefined,
-        payerName: donation.donorSnapshotName,
-        payerPhone: donation.donorSnapshotPhone,
-        payerAddress: donation.donor.address ?? undefined,
-        amount: donation.amount,
-        paymentMethod: donation.paymentMethod,
-        referenceNumber: donation.receiptNo ?? donation.transactionId ?? undefined,
-        invoiceType: 'DONATION_RECEIPT',
-        eventName: donation.event.name
-      }).then(async (pdfBuffer) => {
-        const fileName = `${invoiceNumber}.pdf`;
-        const objectPath = buildStoragePath('invoice_pdf', communityId, { fileName });
-        const { bucket, objectPath: storedPath } = await uploadFile(app.env, objectPath, pdfBuffer, 'application/pdf');
-
-        const attachment = await app.prisma.attachment.create({
-          data: {
-            communityId,
-            entityType: 'invoice',
-            entityId: invoice.id,
-            bucket,
-            objectPath: storedPath,
-            originalName: fileName,
-            mimeType: 'application/pdf',
-            sizeBytes: pdfBuffer.length,
-            uploadedByUserId: req.currentUser!.id
-          }
-        });
-
-        await app.prisma.invoice.update({
-          where: { id: invoice.id },
-          data: { pdfAttachmentId: attachment.id }
-        });
-      }).catch((err) => {
-        app.log.error({ err }, 'Failed to generate invoice PDF');
-      });
+      const invoice = await app.prisma.invoice.findFirst({ where: { id: invoiceId, communityId } });
+      if (!invoice) throw Errors.notFound('Invoice not found');
 
       await writeAuditLog(app, req, {
         entityType: 'invoice',
         entityId: invoice.id,
         communityId,
         action: 'CREATE',
-        after: invoice
+        after: { action: 'CREATED_FROM_DONATION', invoiceNumber }
       });
 
       return ok({ invoice }, { serverTime: new Date().toISOString(), requestId: req.requestId });

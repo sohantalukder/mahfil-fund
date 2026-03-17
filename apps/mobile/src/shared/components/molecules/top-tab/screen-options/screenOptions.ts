@@ -1,4 +1,4 @@
-import { fontFamily, fontWeight } from '@/theme/fonts';
+import { fontWeight } from '@/theme/fonts';
 import { Colors } from '@/theme/types/colors';
 import { MaterialTopTabNavigationOptions } from '@react-navigation/material-top-tabs';
 import { Platform } from 'react-native';
@@ -11,8 +11,8 @@ export const screenOptions = ({
   return {
     swipeEnabled: true,
     tabBarLabelStyle: {
-      fontFamily: fontFamily.medium,
-      fontWeight: fontWeight.medium,
+      fontFamily: fontWeight.medium,
+      fontWeight: '500',
       textTransform: 'none',
     },
     tabBarActiveTintColor: colors.text,

@@ -9,6 +9,7 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
+  downloadExpensesReportPdf,
   type ExpenseListParams,
   type CreateExpenseInput,
   type UpdateExpenseInput,
@@ -62,4 +63,19 @@ export function useDeleteExpense() {
       void queryClient.invalidateQueries({ queryKey: [EXPENSES_QUERY_KEY] });
     },
   });
+}
+
+export async function triggerExpensesReportDownload(params: {
+  eventId: string;
+  search?: string;
+  fileName?: string;
+}): Promise<void> {
+  const api = getApi();
+  const blob = await downloadExpensesReportPdf(api, { eventId: params.eventId, search: params.search });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = params.fileName ?? `expenses-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

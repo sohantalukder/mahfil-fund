@@ -24,7 +24,8 @@ const colorsLight = {
   info: '#00B8D9',
   placeholder: '#FFFFFF',
   placeholderBg: '#DDDDDE',
-  primary: '#4E4DD7',
+  // Brand primary (Mahfil green)
+  primary: '#1A5C30',
   purple: '#8A2BE2',
   ripple: '#000000',
   secondary: '#00CCCC',
@@ -37,7 +38,8 @@ const colorsLight = {
   success: '#22C55E',
   text: '#1B1D20',
   transparent: 'transparent',
-  warning: '#FFAB00',
+  // Brand accent (gold)
+  warning: '#E8A800',
   white: '#FFFFFF',
   black: '#000000',
 } as const;
@@ -59,7 +61,8 @@ const colorsDark = {
   info: '#00B8D9',
   placeholder: '#000000',
   placeholderBg: '#2C2D2F',
-  primary: '#4E4DD7',
+  // Brand primary (Mahfil green)
+  primary: '#1A5C30',
   purple: '#8A2BE2',
   ripple: '#FFFFFF',
   secondary: '#00CCCC',
@@ -72,7 +75,8 @@ const colorsDark = {
   success: '#22C55E',
   text: '#FFFFFF',
   transparent: 'transparent',
-  warning: '#FFAB00',
+  // Brand accent (gold)
+  warning: '#E8A800',
   white: '#FFFFFF',
   black: '#000000',
 } as const;

@@ -1,4 +1,5 @@
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
@@ -14,16 +15,7 @@ import { useCommunity } from '@/contexts/CommunityContext';
 import { bottomSheet } from '@/shared/contexts/bottom-sheet/manager';
 import NewDonationSheet from './NewDonationSheet';
 import routes from '@/navigation/routes';
-
-// ─── Brand colours ────────────────────────────────────────────────────────────
-const GOLD = '#E8A800';
-const LOGO_BG = '#1A5C30';
-const DARK_SCREEN_BG = '#0E2918';
-const DARK_CARD_BG = '#163D26';
-const DARK_CARD_BORDER = '#1E4D30';
-const DARK_LABEL = '#6B9980';
-const DARK_BTN_BORDER = '#2A5C3A';
-const DARK_HEADER_BTN = '#1E4D30';
+import withOpacity from '@/shared/utilities/withOpacity';
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 const fmtBDT = (n: number) =>
@@ -116,21 +108,28 @@ type Summary = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { colors, variant } = useTheme();
+  const { colors } = useTheme();
   const { session } = useAuth();
   const { activeCommunity } = useCommunity();
   const navigation = useNavigation();
 
-  const isDark = variant === 'dark';
-  const screenBg = isDark ? DARK_SCREEN_BG : colors.background;
-  const cardBg = isDark ? DARK_CARD_BG : colors.white;
-  const cardBorder = isDark ? DARK_CARD_BORDER : colors.gray8;
-  const labelColor = isDark ? DARK_LABEL : colors.gray4;
-  const btnBorder = isDark ? DARK_BTN_BORDER : colors.gray7;
-  const iconTintBg = isDark ? 'rgba(232,168,0,0.14)' : 'rgba(232,168,0,0.10)';
+  const screenBg = colors.background;
+  const cardBg = colors.gray10;
+  const cardBorder = colors.gray7;
+  const labelColor = colors.gray4;
+  const btnBorder = colors.gray7;
+  const iconTintBg = withOpacity(colors.warning, 0.12);
+
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   // ── Community summary ──────────────────────────────────────────────────────
-  const { data: summary, isLoading: sLoading } = useQuery<Summary>({
+  const {
+    data: summary,
+    isLoading: sLoading,
+    isError: sError,
+    error: sErr,
+    refetch: refetchSummary,
+  } = useQuery<Summary>({
     queryKey: ['community-summary', activeCommunity?.id],
     queryFn: async () => {
       const api = getApi();
@@ -162,7 +161,13 @@ export default function HomeScreen() {
   });
 
   // ── Recent activity (donations) ────────────────────────────────────────────
-  const { data: recent, isLoading: rLoading } = useQuery<ActivityItem[]>({
+  const {
+    data: recent,
+    isLoading: rLoading,
+    isError: rError,
+    error: rErr,
+    refetch: refetchRecent,
+  } = useQuery<ActivityItem[]>({
     queryKey: ['dashboard-recent', activeCommunity?.id],
     queryFn: async () => {
       const api = getApi();
@@ -201,44 +206,22 @@ export default function HomeScreen() {
   const budgetUtil = summary?.budgetUtilization ?? 0;
   const isPositiveTrend = !trend.startsWith('-');
 
-  const cardStyle = {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-  } as const;
-
-  const iconBadge = {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    backgroundColor: iconTintBg,
-  };
-
   return (
     <SafeScreen bgColor={screenBg}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 }}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+        <View style={styles.headerRow}>
           {/* App logo */}
           <View
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 14,
-              backgroundColor: LOGO_BG,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            style={[styles.appLogo, { backgroundColor: colors.primary }]}
           >
             <MosqueSVG />
           </View>
 
-          <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={styles.headerText}>
             <Text variant="heading3" weight="bold" numberOfLines={1}>
               Iftar Mahfil Manager
             </Text>
@@ -249,61 +232,65 @@ export default function HomeScreen() {
 
           {/* Notification bell */}
           <TouchableOpacity
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: isDark ? DARK_HEADER_BTN : colors.gray9,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            style={styles.headerIconButton}
             onPress={() => navigation.navigate(routes.notifications as never)}
+            activeOpacity={0.7}
           >
             <IconByVariant
               path="notification"
               width={20}
               height={20}
-              color={isDark ? colors.white : colors.text}
+              color={colors.text}
             />
           </TouchableOpacity>
         </View>
 
         {/* ── Stats cards ─────────────────────────────────────────────────── */}
         {sLoading ? (
-          <View style={{ paddingVertical: 48 }}>
+          <View style={styles.sectionLoading}>
             <Loader />
+          </View>
+        ) : sError ? (
+          <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text variant="body2" weight="semibold" style={styles.cardAmount}>
+              Couldn’t load summary
+            </Text>
+            <Text variant="body3" color="secondary" style={styles.cardAmount}>
+              {sErr instanceof Error ? sErr.message : 'Please try again.'}
+            </Text>
+            <TouchableOpacity onPress={() => void refetchSummary()} activeOpacity={0.7}>
+              <Text variant="body2" style={{ color: colors.primary }}>
+                Retry
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
             {/* Card 1 – Total Collection */}
             <View
               style={[
-                cardStyle,
-                { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 12 },
+                styles.card,
+                { backgroundColor: cardBg, borderColor: cardBorder },
+                styles.cardGap,
               ]}
             >
               <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 6,
-                }}
+                style={styles.cardHeaderRow}
               >
                 <Text
                   variant="body3"
-                  style={{ letterSpacing: 0.8, color: labelColor, textTransform: 'uppercase' }}
+                  style={[styles.cardLabel, { color: labelColor }]}
                 >
                   Total Collection
                 </Text>
-                <View style={iconBadge}>
-                  <IconByVariant path="cash" width={20} height={20} color={GOLD} />
+                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
+                  <IconByVariant path="cash" width={20} height={20} color={colors.warning} />
                 </View>
               </View>
-              <Text variant="heading2" weight="bold" style={{ marginBottom: 8 }}>
+              <Text variant="heading2" weight="bold" style={styles.cardAmount}>
                 {fmtBDT(totalCollection)}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={styles.inlineRow}>
                 {isPositiveTrend ? (
                   <TrendUpIcon color={colors.success} />
                 ) : (
@@ -311,10 +298,10 @@ export default function HomeScreen() {
                 )}
                 <Text
                   variant="body3"
-                  style={{
-                    color: isPositiveTrend ? colors.success : colors.error,
-                    marginLeft: 4,
-                  }}
+                  style={[
+                    styles.inlineTextGap,
+                    { color: isPositiveTrend ? colors.success : colors.error },
+                  ]}
                 >
                   {trend} from last week
                 </Text>
@@ -324,34 +311,28 @@ export default function HomeScreen() {
             {/* Card 2 – Total Expenses */}
             <View
               style={[
-                cardStyle,
-                { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 12 },
+                styles.card,
+                { backgroundColor: cardBg, borderColor: cardBorder },
+                styles.cardGap,
               ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 6,
-                }}
-              >
+              <View style={styles.cardHeaderRow}>
                 <Text
                   variant="body3"
-                  style={{ letterSpacing: 0.8, color: labelColor, textTransform: 'uppercase' }}
+                  style={[styles.cardLabel, { color: labelColor }]}
                 >
                   Total Expenses
                 </Text>
-                <View style={iconBadge}>
-                  <IconByVariant path="cart" width={20} height={20} color={GOLD} />
+                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
+                  <IconByVariant path="cart" width={20} height={20} color={colors.warning} />
                 </View>
               </View>
-              <Text variant="heading2" weight="bold" style={{ marginBottom: 8 }}>
+              <Text variant="heading2" weight="bold" style={styles.cardAmount}>
                 {fmtBDT(totalExpenses)}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={styles.inlineRow}>
                 <InfoCircleIcon color={labelColor} />
-                <Text variant="body3" color="secondary" style={{ marginLeft: 4 }}>
+                <Text variant="body3" color="secondary" style={styles.inlineTextGap}>
                   Budget utilization {budgetUtil}%
                 </Text>
               </View>
@@ -360,38 +341,32 @@ export default function HomeScreen() {
             {/* Card 3 – Remaining Balance */}
             <View
               style={[
-                cardStyle,
-                { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 28 },
+                styles.card,
+                { backgroundColor: cardBg, borderColor: cardBorder },
+                styles.sectionGap,
               ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 6,
-                }}
-              >
+              <View style={styles.cardHeaderRow}>
                 <Text
                   variant="body3"
-                  style={{ letterSpacing: 0.8, color: labelColor, textTransform: 'uppercase' }}
+                  style={[styles.cardLabel, { color: labelColor }]}
                 >
                   Remaining Balance
                 </Text>
-                <View style={iconBadge}>
-                  <IconByVariant path="wallet" width={20} height={20} color={GOLD} />
+                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
+                  <IconByVariant path="wallet" width={20} height={20} color={colors.warning} />
                 </View>
               </View>
               <Text
                 variant="heading2"
                 weight="bold"
-                style={{ marginBottom: 8, color: GOLD }}
+                style={[styles.cardAmount, { color: colors.warning }]}
               >
                 {fmtBDT(remainingBalance)}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ClockIcon color={GOLD} />
-                <Text variant="body3" style={{ color: GOLD, marginLeft: 4 }}>
+              <View style={styles.inlineRow}>
+                <ClockIcon color={colors.warning} />
+                <Text variant="body3" style={[styles.inlineTextGap, { color: colors.warning }]}>
                   Available for allocation
                 </Text>
               </View>
@@ -400,46 +375,30 @@ export default function HomeScreen() {
         )}
 
         {/* ── Quick Actions ───────────────────────────────────────────────── */}
-        <View style={{ marginBottom: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-            <BoltIcon color={GOLD} />
-            <Text variant="heading3" weight="bold" style={{ marginLeft: 6 }}>
+        <View style={styles.sectionGap}>
+          <View style={styles.sectionTitleRow}>
+            <BoltIcon color={colors.warning} />
+            <Text variant="heading3" weight="bold" style={styles.sectionTitleText}>
               Quick Actions
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+          <View style={styles.quickActionRow}>
             {/* Add Donation – filled green */}
             <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: LOGO_BG,
-                borderRadius: 14,
-                paddingVertical: 16,
-                paddingHorizontal: 10,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={[styles.quickActionPrimary, { backgroundColor: colors.primary }]}
               onPress={() =>
                 bottomSheet
                   .show({
                     component: NewDonationSheet,
-                    options: { snapPoints: ['90%'], enablePanDownToClose: true,  },
+                    options: { snapPoints: ['90%'], enablePanDownToClose: true },
                   })
                   .catch(() => {})
               }
+              activeOpacity={0.8}
             >
               <View
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 13,
-                  backgroundColor: 'rgba(255,255,255,0.25)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 8,
-                }}
+                style={styles.quickActionBadge}
               >
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', lineHeight: 24 }}>
                   +
@@ -452,32 +411,14 @@ export default function HomeScreen() {
 
             {/* Add Expense – outline */}
             <TouchableOpacity
-              style={{
-                flex: 1,
-                borderWidth: 1.5,
-                borderColor: btnBorder,
-                borderRadius: 14,
-                paddingVertical: 16,
-                paddingHorizontal: 10,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={[styles.quickActionOutline, { borderColor: btnBorder }]}
               onPress={() => navigation.navigate('MenuTab' as never)}
+              activeOpacity={0.8}
             >
               <View
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 13,
-                  borderWidth: 1.5,
-                  borderColor: GOLD,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 8,
-                }}
+                style={[styles.quickActionOutlineBadge, { borderColor: colors.warning }]}
               >
-                <Text style={{ color: GOLD, fontSize: 22, fontWeight: '700', lineHeight: 24 }}>
+                <Text style={{ color: colors.warning, fontSize: 22, fontWeight: '700', lineHeight: 24 }}>
                   -
                 </Text>
               </View>
@@ -489,24 +430,17 @@ export default function HomeScreen() {
 
           {/* View Donors – full width outline */}
           <TouchableOpacity
-            style={{
-              borderWidth: 1.5,
-              borderColor: btnBorder,
-              borderRadius: 14,
-              paddingVertical: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={[styles.quickActionFullOutline, { borderColor: btnBorder }]}
             onPress={() => navigation.navigate('CommunitiesTab' as never)}
+            activeOpacity={0.8}
           >
             <IconByVariant
               path="people"
               width={20}
               height={20}
-              color={isDark ? colors.gray0 : colors.text}
+              color={colors.text}
             />
-            <Text variant="body2" weight="semibold" style={{ marginLeft: 8 }}>
+            <Text variant="body2" weight="semibold" style={styles.inlineTextGap}>
               View Donors
             </Text>
           </TouchableOpacity>
@@ -514,22 +448,15 @@ export default function HomeScreen() {
 
         {/* ── Recent Activity ─────────────────────────────────────────────── */}
         <View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <HistoryIcon color={GOLD} />
-              <Text variant="heading3" weight="bold" style={{ marginLeft: 6 }}>
+          <View style={styles.sectionHeaderBetween}>
+            <View style={styles.sectionTitleRow}>
+              <HistoryIcon color={colors.warning} />
+              <Text variant="heading3" weight="bold" style={styles.sectionTitleText}>
                 Recent Activity
               </Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('MenuTab' as never)}>
-              <Text variant="body2" style={{ color: GOLD }}>
+            <TouchableOpacity onPress={() => navigation.navigate('MenuTab' as never)} activeOpacity={0.7}>
+              <Text variant="body2" style={{ color: colors.warning }}>
                 See All
               </Text>
             </TouchableOpacity>
@@ -537,6 +464,20 @@ export default function HomeScreen() {
 
           {rLoading ? (
             <Loader />
+          ) : rError ? (
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <Text variant="body2" weight="semibold" style={styles.cardAmount}>
+                Couldn’t load activity
+              </Text>
+              <Text variant="body3" color="secondary" style={styles.cardAmount}>
+                {rErr instanceof Error ? rErr.message : 'Please try again.'}
+              </Text>
+              <TouchableOpacity onPress={() => void refetchRecent()} activeOpacity={0.7}>
+                <Text variant="body2" style={{ color: colors.primary }}>
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
           ) : (recent ?? []).length === 0 ? (
             <Text color="secondary" style={{ textAlign: 'center', paddingVertical: 24 }}>
               No recent activity
@@ -548,41 +489,32 @@ export default function HomeScreen() {
               return (
                 <View
                   key={item.id}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 14,
-                    borderBottomWidth: isLast ? 0 : 1,
-                    borderBottomColor: cardBorder,
-                  }}
+                  style={[
+                    styles.activityRow,
+                    !isLast && { borderBottomWidth: 1, borderBottomColor: cardBorder },
+                  ]}
                 >
                   {/* Icon circle */}
                   <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 24,
-                      backgroundColor: isExpense
-                        ? 'rgba(232,168,0,0.16)'
-                        : 'rgba(34,197,94,0.16)',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
+                    style={[
+                      styles.activityIconCircle,
+                      { backgroundColor: withOpacity(isExpense ? colors.warning : colors.success, 0.16) },
+                    ]}
                   >
                     <IconByVariant
                       path={isExpense ? 'cart' : 'send'}
                       width={20}
                       height={20}
-                      color={isExpense ? GOLD : colors.success}
+                      color={isExpense ? colors.warning : colors.success}
                     />
                   </View>
 
                   {/* Text */}
-                  <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={styles.activityText}>
                     <Text variant="body2" weight="semibold" numberOfLines={1}>
                       {item.title}
                     </Text>
-                    <Text variant="body3" color="secondary" style={{ marginTop: 2 }}>
+                    <Text variant="body3" color="secondary" style={styles.activityMeta}>
                       {timeAgo(item.date)}
                     </Text>
                   </View>
@@ -605,3 +537,163 @@ export default function HomeScreen() {
     </SafeScreen>
   );
 }
+
+const getStyles = (colors: {
+  gray9: string;
+  text: string;
+}) =>
+  StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 40,
+      paddingTop: 16,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    appLogo: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerText: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    headerIconButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.gray9,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sectionLoading: {
+      paddingVertical: 48,
+    },
+    card: {
+      borderRadius: 16,
+      borderWidth: 1,
+      padding: 20,
+    },
+    cardGap: {
+      marginBottom: 12,
+    },
+    sectionGap: {
+      marginBottom: 28,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    cardLabel: {
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+    },
+    cardAmount: {
+      marginBottom: 8,
+    },
+    iconBadge: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    inlineRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    inlineTextGap: {
+      marginLeft: 8,
+    },
+    sectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitleText: {
+      marginLeft: 6,
+    },
+    quickActionRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 12,
+    },
+    quickActionPrimary: {
+      flex: 1,
+      borderRadius: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionOutline: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderRadius: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionFullOutline: {
+      borderWidth: 1.5,
+      borderRadius: 14,
+      paddingVertical: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionBadge: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    quickActionOutlineBadge: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: 1.5,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+    },
+    sectionHeaderBetween: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    activityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+    },
+    activityIconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    activityText: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    activityMeta: {
+      marginTop: 2,
+    },
+  });

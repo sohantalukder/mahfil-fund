@@ -7,6 +7,7 @@ export type InvoiceListParams = {
   pageSize?: number;
   status?: string;
   invoiceType?: string;
+  search?: string;
 };
 
 export type InvoiceListResponse = {
@@ -47,6 +48,7 @@ export async function listInvoices(
     pageSize: params.pageSize ?? 25,
     status: params.status,
     invoiceType: params.invoiceType,
+    search: params.search,
   });
   const res = await api.get<InvoiceListResponse>(`/invoices?${qs}`);
   if (!res.success) throw new Error(res.error.message);
@@ -64,6 +66,31 @@ export async function downloadInvoicePdf(
   const response = await api.http.get(`/invoices/${invoiceId}/download`, {
     responseType: 'blob',
   });
+  return response.data as Blob;
+}
+
+export async function downloadInvoicesReportPdf(
+  api: ApiClient,
+  params: Pick<InvoiceListParams, 'status' | 'invoiceType'> = {}
+): Promise<Blob> {
+  const qs = buildParams({
+    status: params.status,
+    invoiceType: params.invoiceType,
+  });
+  const response = await api.http.get(`/invoices/report/download?${qs}`, { responseType: 'blob' });
+  return response.data as Blob;
+}
+
+export async function downloadExcessInvoicesPdf(
+  api: ApiClient,
+  params: Pick<InvoiceListParams, 'status' | 'invoiceType'> & { minAmount: number }
+): Promise<Blob> {
+  const qs = buildParams({
+    status: params.status,
+    invoiceType: params.invoiceType,
+    minAmount: params.minAmount,
+  });
+  const response = await api.http.get(`/invoices/excess/download?${qs}`, { responseType: 'blob' });
   return response.data as Blob;
 }
 

@@ -5,6 +5,8 @@ import { ok } from '../shared/http.js';
 import { parseWith } from '../shared/validate.js';
 import { writeAuditLog } from '../shared/audit.js';
 import { Errors } from '../shared/errors.js';
+import { fileURLToPath } from 'node:url';
+import { generateExpensesReportPdf, type ExpensesReportPdfData } from '../services/pdfGenerator.js';
 
 const ExpenseUpdateSchema = ExpenseCreateSchema.partial().extend({
   clientGeneratedId: z.string().uuid().optional()
@@ -60,6 +62,82 @@ export async function registerExpenseRoutes(app: FastifyInstance) {
       { serverTime: new Date().toISOString(), requestId: req.requestId, pagination: { page: page as number, pageSize: pageSize as number, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 } }
     );
   });
+
+  // Download expenses report PDF (full list for current filters; ignores pagination)
+  app.get(
+    '/expenses/report/download',
+    { preHandler: async (req) => app.requireCommunity(req) },
+    async (req, reply) => {
+      const query = parseWith(
+        z.object({
+          eventId: z.string().uuid(),
+          search: z.string().min(1).max(80).optional(),
+        }),
+        req.query
+      );
+
+      const communityId = req.communityId!;
+      const [community, expenses] = await Promise.all([
+        app.prisma.community.findUnique({
+          where: { id: communityId },
+          select: { name: true, location: true },
+        }),
+        app.prisma.expense.findMany({
+          where: {
+            communityId,
+            status: 'ACTIVE' as const,
+            eventId: query.eventId,
+            OR: query.search
+              ? [
+                  { title: { contains: query.search, mode: 'insensitive' as const } },
+                  { category: { contains: query.search, mode: 'insensitive' as const } },
+                  { vendor: { contains: query.search, mode: 'insensitive' as const } },
+                ]
+              : undefined,
+          },
+          orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        }),
+      ]);
+
+      if (!community) throw Errors.notFound('Community not found');
+
+      const logoPath = fileURLToPath(new URL('../assets/images/logo_black.png', import.meta.url));
+      const pdfData: ExpensesReportPdfData = {
+        title: 'Expenses report',
+        communityName: community.name,
+        communityLocation: community.location ?? undefined,
+        logoPath,
+        generatedAt: new Date(),
+        filters: { eventId: query.eventId, search: query.search },
+        rows: expenses.map((e) => ({
+          title: e.title,
+          category: e.category,
+          vendor: e.vendor ?? undefined,
+          amount: e.amount,
+          paymentMethod: e.paymentMethod,
+          expenseDate: e.expenseDate,
+        })),
+      };
+
+      const pdfBuffer = await generateExpensesReportPdf(pdfData);
+      const fileName = `expenses-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      await writeAuditLog(app, req, {
+        entityType: 'report',
+        entityId: communityId,
+        communityId,
+        action: 'UPDATE',
+        after: { action: 'EXPENSES_REPORT_DOWNLOADED', filters: pdfData.filters, count: pdfData.rows.length },
+      });
+
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Length', pdfBuffer.length);
+
+      return reply.send(pdfBuffer);
+    }
+  );
 
   app.post('/expenses', { preHandler: async (req) => app.requireCommunity(req) }, async (req) => {
     if (req.memberRole === 'viewer') throw Errors.forbidden('Viewers cannot add expenses');

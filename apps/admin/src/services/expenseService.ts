@@ -80,3 +80,12 @@ export async function deleteExpense(api: ApiClient, id: string): Promise<void> {
   const res = await api.delete(`/expenses/${id}`);
   if (!res.success) throw new Error(res.error.message);
 }
+
+export async function downloadExpensesReportPdf(
+  api: ApiClient,
+  params: { eventId: string; search?: string }
+): Promise<Blob> {
+  const qs = buildParams({ eventId: params.eventId, search: params.search });
+  const response = await api.http.get(`/expenses/report/download?${qs}`, { responseType: 'blob' });
+  return response.data as Blob;
+}

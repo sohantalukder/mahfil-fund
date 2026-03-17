@@ -39,7 +39,8 @@ const AnimatedTextInput: React.FC<AnimatedSearchProps> = ({ onExpandChange, onSe
         fontSize: rf(16),
         lineHeight: rf(18),
         color: colors.text,
-        fontWeight: fontWeight.semibold,
+        fontFamily: fontWeight.semibold,
+        fontWeight: 600 as const,
       },
     ],
     [layout, colors.text]
