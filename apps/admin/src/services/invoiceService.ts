@@ -16,6 +16,20 @@ export type InvoiceListResponse = {
   totalPages: number;
 };
 
+export type CreateInvoiceInput = {
+  eventId?: string;
+  donorId?: string;
+  invoiceType: 'DONATION_RECEIPT' | 'SPONSOR_RECEIPT' | 'MANUAL';
+  issueDate: string | Date;
+  payerName: string;
+  payerPhone?: string;
+  payerAddress?: string;
+  amount: number;
+  paymentMethod?: 'CASH' | 'BKASH' | 'NAGAD' | 'BANK';
+  referenceNumber?: string;
+  note?: string;
+};
+
 function buildParams(params: Record<string, string | number | undefined>): string {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -51,4 +65,13 @@ export async function downloadInvoicePdf(
     responseType: 'blob',
   });
   return response.data as Blob;
+}
+
+export async function createInvoice(
+  api: ApiClient,
+  input: CreateInvoiceInput
+): Promise<{ invoice: Invoice }> {
+  const res = await api.post<{ invoice: Invoice }>('/invoices', input);
+  if (!res.success) throw new Error(res.error.message);
+  return res.data;
 }

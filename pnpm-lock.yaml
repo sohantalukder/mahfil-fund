@@ -146,6 +146,9 @@ importers:
       '@fastify/sensible':
         specifier: ^6.0.3
         version: 6.0.4
+      '@fontsource/noto-sans-bengali':
+        specifier: ^5.2.11
+        version: 5.2.11
       '@json2csv/plainjs':
         specifier: ^7.0.6
         version: 7.0.6
@@ -1539,6 +1542,9 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource/noto-sans-bengali@5.2.11':
+    resolution: {integrity: sha512-sDCKgC1u83/7JwulfgyvCDab97OkN375RDeGcXtvmI2Vx9ZY5mAcjb4qBtZbv53sL8i+jLawsWvZQVs4zCNkug==}
 
   '@gorhom/bottom-sheet@5.2.8':
     resolution: {integrity: sha512-+N27SMpbBxXZQ/IA2nlEV6RGxL/qSFHKfdFKcygvW+HqPG5jVNb1OqehLQsGfBP+Up42i0gW5ppI+DhpB7UCzA==}
@@ -8461,6 +8467,8 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@fontsource/noto-sans-bengali@5.2.11': {}
 
   '@gorhom/bottom-sheet@5.2.8(@types/react-native@0.73.0(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(@types/react@19.2.14)(react-native-gesture-handler@2.30.0(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native-reanimated@3.19.5(@babel/core@7.29.0)(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native@0.80.1(@babel/core@7.29.0)(@react-native-community/cli@15.0.0(typescript@5.9.3))(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)':
     dependencies:

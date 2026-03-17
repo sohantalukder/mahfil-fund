@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { fileURLToPath } from 'node:url';
 import { ok } from '../shared/http.js';
 import { parseWith } from '../shared/validate.js';
 import { Errors } from '../shared/errors.js';
@@ -283,11 +284,13 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
       if (!invoice) throw Errors.notFound('Invoice not found');
 
       // Generate fresh PDF
+      const logoPath = fileURLToPath(new URL('../assets/images/logo_black.png', import.meta.url));
       const pdfData: InvoicePdfData = {
         invoiceNumber: invoice.invoiceNumber,
         issueDate: invoice.issueDate,
         communityName: invoice.community.name,
         communityLocation: invoice.community.location ?? undefined,
+        logoPath,
         payerName: invoice.payerName,
         payerPhone: invoice.payerPhone ?? undefined,
         payerAddress: invoice.payerAddress ?? undefined,

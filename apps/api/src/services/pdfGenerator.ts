@@ -1,5 +1,11 @@
+/**
+ * invoicePdf.ts
+ * Clean, minimal white receipt design with logo support.
+ * Uses NotoSansBengali for full Bengali glyph rendering (no tofu boxes).
+ */
+import fs from 'node:fs';
 import { createRequire } from 'node:module';
-// pdfmake types may be incomplete; use any-cast where needed
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TDocumentDefinitions = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,37 +17,96 @@ const pdfmake = _require('pdfmake');
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const RobotoFont = _require('pdfmake/build/fonts/Roboto.js');
 
-// Register Roboto font once at startup.
+// ── Register Roboto ───────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-Object.entries(RobotoFont.vfs as Record<string, { data: number[] }>).forEach(([k, v]) => {
+Object.entries(RobotoFont.vfs as Record<string, { data: string | number[] }>).forEach(([k, v]) => {
+  const raw = v?.data;
+  const buf =
+    typeof raw === 'string'
+      ? Buffer.from(raw, 'base64')
+      : Buffer.from(new Uint8Array(raw ?? []));
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  pdfmake.virtualfs.writeFileSync(k, Buffer.from(new Uint8Array(v.data)));
+  pdfmake.virtualfs.writeFileSync(k, buf);
 });
+
+// ── Register NotoSansBengali (Regular + Bold) ─────────────────────────────────
+// CRITICAL: Both weights must be registered separately. Using only Regular for
+// bold causes pdfmake to fall back to Roboto, which has no Bengali glyphs → □□□.
+const NOTO_REGULAR = 'NotoSansBengali-Regular.ttf';
+const NOTO_BOLD    = 'NotoSansBengali-Bold.ttf';
+const fontsDir     = new URL('../assets/fonts/', import.meta.url);
+
+pdfmake.virtualfs.writeFileSync(
+  NOTO_REGULAR,
+  fs.readFileSync(new URL(NOTO_REGULAR, fontsDir)),
+);
+
+const boldPath = new URL(NOTO_BOLD, fontsDir);
+const boldFile = fs.existsSync(boldPath.pathname) ? NOTO_BOLD : NOTO_REGULAR;
+if (boldFile === NOTO_BOLD) {
+  pdfmake.virtualfs.writeFileSync(NOTO_BOLD, fs.readFileSync(boldPath));
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-pdfmake.addFonts(RobotoFont.fonts as Record<string, unknown>);
+pdfmake.addFonts({
+  ...(RobotoFont.fonts as Record<string, unknown>),
+  NotoSansBengali: {
+    normal:      NOTO_REGULAR,
+    bold:        boldFile,
+    italics:     NOTO_REGULAR,
+    bolditalics: boldFile,
+  },
+} as Record<string, unknown>);
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 pdfmake.setUrlAccessPolicy(() => ({ allowed: false }));
+
 import { amountToWordsBangla, toBanglaDigits } from '../shared/banglaUtils.js';
 import { formatDate } from '@mahfil/utils';
 
-
-const styles: StyleDictionary = {
-  header: { fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 4] },
-  subheader: { fontSize: 12, alignment: 'center', margin: [0, 0, 0, 20], color: '#4B5563' },
-  invoiceTitle: { fontSize: 22, bold: true, alignment: 'center', margin: [0, 0, 0, 8] },
-  sectionLabel: { fontSize: 9, color: '#6B7280', bold: false },
-  sectionValue: { fontSize: 11, bold: true, color: '#111827' },
-  tableHeader: { fontSize: 9, bold: true, fillColor: '#F3F4F6', color: '#374151' },
-  amountBox: { fontSize: 14, bold: true, color: '#0F7B53' },
-  amountWords: { fontSize: 10, italics: true, color: '#374151' },
-  footer: { fontSize: 8, color: '#9CA3AF', alignment: 'center' }
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary:  '#0D6E4F',
+  dark:     '#111827',
+  mid:      '#374151',
+  muted:    '#9CA3AF',
+  border:   '#E5E7EB',
+  borderLt: '#F3F4F6',
+  bg:       '#FAFAFA',
+  amber:    '#F59E0B',
+  amberBg:  '#FFFBEB',
+  amberTxt: '#92400E',
 };
 
+// ── Style dictionary ──────────────────────────────────────────────────────────
+const styles: StyleDictionary = {
+  orgName:     { fontSize: 15, bold: true,    color: C.dark },
+  orgLocation: { fontSize: 9,  color: C.muted, margin: [0, 2, 0, 0] },
+  communityName: { fontSize: 11, bold: true, color: C.dark },
+  badgeText:   { fontSize: 9,  bold: true,    color: '#FFFFFF' },
+  eventName:   { fontSize: 9,  italics: true, color: C.muted, alignment: 'center' },
+  metaLabel:   { fontSize: 8,  color: C.muted },
+  metaValue:   { fontSize: 11, bold: true,    color: C.dark },
+  detailLabel: { fontSize: 9,  color: C.muted },
+  detailValue: { fontSize: 10, bold: true,    color: C.dark },
+  amountLabel: { fontSize: 8,  color: C.muted },
+  amountValue: { fontSize: 22, bold: true,    color: C.primary },
+  amountWords: { fontSize: 9,  italics: true, color: C.mid },
+  noteText:    { fontSize: 8.5, color: C.amberTxt },
+  sigLabel:    { fontSize: 8,  color: C.muted },
+  footer:      { fontSize: 7.5, color: C.muted },
+};
+
+// ── Data interface ────────────────────────────────────────────────────────────
 export interface InvoicePdfData {
   invoiceNumber: string;
   issueDate: Date | string;
   communityName: string;
   communityLocation?: string;
+  /** Pass either a bare base64 string or a full data-URL (data:image/png;base64,...) */
+  logoBase64?: string;
+  /** Alternatively, provide an absolute file-system path to the logo PNG/JPEG */
+  logoPath?: string;
   payerName: string;
   payerPhone?: string;
   payerAddress?: string;
@@ -53,203 +118,301 @@ export interface InvoicePdfData {
   eventName?: string;
 }
 
-export async function generateInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
-  const amountBn = amountToWordsBangla(data.amount);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const PM_LABELS: Record<string, string> = {
+  CASH:  'নগদ অর্থ',
+  BKASH: 'বিকাশ',
+  NAGAD: 'নগদ (অ্যাপ)',
+  BANK:  'ব্যাংক ট্রান্সফার',
+};
+
+const INVOICE_TITLES: Record<string, string> = {
+  DONATION_RECEIPT: 'অনুদান রসিদ',
+  SPONSOR_RECEIPT:  'স্পনসর রসিদ',
+  MANUAL:           'ইনভয়েস',
+};
+
+function containsBangla(text: string): boolean {
+  return /[\u0980-\u09FF]/.test(text);
+}
+
+function fontFor(text: string): 'NotoSansBengali' | 'Roboto' {
+  return containsBangla(text) ? 'NotoSansBengali' : 'Roboto';
+}
+
+function txt<T extends Record<string, unknown>>(
+  text: string,
+  extra?: T
+): { text: string; font: 'NotoSansBengali' | 'Roboto' } & T {
+  return {
+    text,
+    font: fontFor(text),
+    ...(extra ?? ({} as T)),
+  };
+}
+
+/** Resolve logo data to a pdfmake image descriptor, or null if unavailable */
+function resolveLogoImage(data: InvoicePdfData): object | null {
+  try {
+    let dataUrl: string | undefined;
+
+    if (data.logoBase64) {
+      dataUrl = data.logoBase64.startsWith('data:')
+        ? data.logoBase64
+        : `data:image/png;base64,${data.logoBase64}`;
+    } else if (data.logoPath) {
+      const raw = fs.readFileSync(data.logoPath);
+      const ext = data.logoPath.split('.').pop()?.toLowerCase();
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+      dataUrl = `data:${mime};base64,${raw.toString('base64')}`;
+    }
+
+    if (!dataUrl) return null;
+
+    return {
+      image: dataUrl,
+      fit: [150, 40],   // more prominent for recognizability
+      margin: [0, 1, 10, 0],
+    };
+  } catch {
+    // Logo missing or unreadable — degrade gracefully, receipt still renders
+    return null;
+  }
+}
+
+// ── Document builder ──────────────────────────────────────────────────────────
+function buildDocDefinition(data: InvoicePdfData): TDocumentDefinitions {
+  const amountBn        = amountToWordsBangla(data.amount);
   const amountFormatted = `৳${data.amount.toLocaleString('bn-BD')}`;
-  const dateFormatted = formatDate(data.issueDate, 'bn-BD');
+  const dateFormatted   = formatDate(data.issueDate, 'bn-BD');
+  const invoiceTitle    = INVOICE_TITLES[data.invoiceType] ?? 'ইনভয়েস';
+  const pmLabel         = data.paymentMethod
+    ? (PM_LABELS[data.paymentMethod] ?? data.paymentMethod)
+    : null;
 
-  const invoiceTitle =
-    data.invoiceType === 'DONATION_RECEIPT'
-      ? 'অনুদান রসিদ'
-      : data.invoiceType === 'SPONSOR_RECEIPT'
-        ? 'স্পনসর রসিদ'
-        : 'ইনভয়েস';
+  const logo = resolveLogoImage(data);
 
-  const paymentMethodLabels: Record<string, string> = {
-    CASH: 'নগদ',
-    BKASH: 'বিকাশ',
-    NAGAD: 'নগদ (নগদ অ্যাপ)',
-    BANK: 'ব্যাংক ট্রান্সফার'
+  // ── Header: row1 (logo + brand), row2 (community + badge) ─────────────────
+  const brandRow = {
+    columns: [
+      ...(logo ? [{ ...logo, width: 'auto' }] : []),
+      {
+        stack: [
+          ...(data.communityLocation
+            ? [txt(data.communityLocation, { style: 'orgLocation' })]
+            : []),
+        ],
+        width: '*',
+      },
+    ],
+    columnGap: 8,
   };
 
-  const docDefinition: TDocumentDefinitions = {
+  const badge = {
+    table: {
+      widths: ['auto'],
+      body: [[{
+        ...txt(invoiceTitle),
+        style: 'badgeText',
+        fillColor: C.primary,
+        margin: [8, 3, 8, 3],
+        border: [false, false, false, false],
+      }]],
+    },
+    layout: { hLineWidth: () => 0, vLineWidth: () => 0 },
+    alignment: 'right' as const,
+    width: 'auto',
+  };
+
+  const metaRow = {
+    columns: [
+      txt(data.communityName, { style: 'communityName' }),
+      badge,
+    ],
+    columnGap: 8,
+    margin: [0, 6, 0, 0] as [number, number, number, number],
+  };
+
+  // ── Payer detail rows ─────────────────────────────────────────────────────
+  const detailRows: object[][] = [
+    [txt('নাম', { style: 'detailLabel' }),          txt(data.payerName || '—',    { style: 'detailValue' })],
+    [txt('মোবাইল নম্বর', { style: 'detailLabel' }), txt(data.payerPhone ?? '—',   { style: 'detailValue' })],
+    [txt('ঠিকানা', { style: 'detailLabel' }),       txt(data.payerAddress ?? '—', { style: 'detailValue' })],
+    ...(pmLabel
+      ? [[txt('পেমেন্ট পদ্ধতি', { style: 'detailLabel' }), txt(pmLabel, { style: 'detailValue' })]]
+      : []),
+    ...(data.referenceNumber
+      ? [[txt('রেফারেন্স নম্বর', { style: 'detailLabel' }), txt(data.referenceNumber, { style: 'detailValue' })]]
+      : []),
+  ];
+
+  return {
     pageSize: 'A5',
-    pageMargins: [30, 30, 30, 50],
-    defaultStyle: { font: 'Roboto', fontSize: 10 },
+    pageMargins: [28, 28, 28, 44],
+    defaultStyle: { font: 'Roboto', fontSize: 10, color: C.dark },
     styles,
+
     content: [
-      // Header
-      { text: data.communityName, style: 'header' },
-      { text: data.communityLocation ?? '', style: 'subheader' },
+
+      // ── 1. Header ──────────────────────────────────────────────────────────
+      { stack: [brandRow, metaRow], margin: [0, 0, 0, 0] },
+
+      // Separator
       {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 480, y2: 0, lineWidth: 1.5, lineColor: '#0F7B53' }],
-        margin: [0, 0, 0, 12]
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 455, h: 1, color: C.borderLt }],
+        margin: [0, 10, 0, 10],
       },
 
-      // Invoice title
-      { text: invoiceTitle, style: 'invoiceTitle' },
-      ...(data.eventName ? [{ text: data.eventName, style: 'subheader' }] : []),
+      // ── 2. Invoice # and Date ──────────────────────────────────────────────
       {
         columns: [
-          { text: [{ text: 'রসিদ নম্বর: ', style: 'sectionLabel' }, { text: data.invoiceNumber, style: 'sectionValue' }] },
-          { text: [{ text: 'তারিখ: ', style: 'sectionLabel' }, { text: dateFormatted, style: 'sectionValue' }], alignment: 'right' }
+          {
+            stack: [
+              txt('রসিদ নম্বর', { style: 'metaLabel' }),
+              txt(data.invoiceNumber, { style: 'metaValue', margin: [0, 2, 0, 0] }),
+            ],
+          },
+          {
+            stack: [
+              txt('তারিখ', { style: 'metaLabel', alignment: 'right' }),
+              txt(dateFormatted, { style: 'metaValue', alignment: 'right', margin: [0, 2, 0, 0] }),
+            ],
+          },
         ],
-        margin: [0, 0, 0, 16]
+        margin: [0, 0, 0, 12],
       },
 
-      // Divider
+      // Separator
       {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 480, y2: 0, lineWidth: 0.5, lineColor: '#E5E7EB' }],
-        margin: [0, 0, 0, 12]
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 455, h: 1, color: C.borderLt }],
+        margin: [0, 0, 0, 10],
       },
 
-      // Payer details
+      // ── 3. Event name (optional) ───────────────────────────────────────────
+      ...(data.eventName
+        ? [txt(data.eventName, { style: 'eventName', margin: [0, 0, 0, 10] as [number,number,number,number] })]
+        : []
+      ),
+
+      // ── 4. Payer details ───────────────────────────────────────────────────
       {
         table: {
-          widths: ['35%', '65%'],
-          body: [
-            [{ text: 'নাম', style: 'sectionLabel' }, { text: data.payerName, style: 'sectionValue' }],
-            [{ text: 'মোবাইল নম্বর', style: 'sectionLabel' }, { text: data.payerPhone ?? '—', style: 'sectionValue' }],
-            [{ text: 'ঠিকানা', style: 'sectionLabel' }, { text: data.payerAddress ?? '—', style: 'sectionValue' }],
-            ...(data.paymentMethod ? [
-              [{ text: 'পেমেন্ট পদ্ধতি', style: 'sectionLabel' }, { text: paymentMethodLabels[data.paymentMethod] ?? data.paymentMethod, style: 'sectionValue' }]
-            ] : []),
-            ...(data.referenceNumber ? [
-              [{ text: 'রেফারেন্স নম্বর', style: 'sectionLabel' }, { text: data.referenceNumber, style: 'sectionValue' }]
-            ] : [])
-          ]
+          widths: ['36%', '64%'],
+          body: detailRows.map(row =>
+            row.map(cell => ({ ...cell, border: [false, false, false, false], margin: [0, 4, 0, 4] }))
+          ),
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 14],
       },
 
-      // Amount box
+      // ── 5. Amount box ──────────────────────────────────────────────────────
       {
         table: {
           widths: ['*'],
           body: [[{
-            stack: [
-              { text: 'টাকার পরিমাণ', style: 'sectionLabel', alignment: 'center' },
-              { text: amountFormatted, style: 'amountBox', alignment: 'center', margin: [0, 4, 0, 4] },
-              { text: `(${amountBn})`, style: 'amountWords', alignment: 'center' }
+            columns: [
+              {
+                stack: [
+                  txt('টাকার পরিমাণ', { style: 'amountLabel', margin: [0, 0, 0, 5] }),
+                  txt(`(${amountBn})`, { style: 'amountWords' }),
+                ],
+                width: '*',
+              },
+              {
+                ...txt(amountFormatted),
+                style: 'amountValue',
+                alignment: 'right',
+                width: 'auto',
+              },
             ],
-            fillColor: '#F0FDF4',
-            margin: [10, 12, 10, 12]
-          }]]
+            margin: [14, 12, 14, 12],
+            fillColor: C.bg,
+            border: [true, true, true, true],
+          }]],
         },
-        layout: { hLineColor: () => '#16A34A', vLineColor: () => '#16A34A' },
-        margin: [0, 0, 0, 20]
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => C.border,
+          vLineColor: () => C.border,
+        },
+        margin: [0, 0, 0, 14],
       },
 
-      ...(data.note ? [{ text: `টীকা: ${data.note}`, fontSize: 9, color: '#6B7280', margin: [0, 0, 0, 20] as [number, number, number, number] }] : []),
+      // ── 6. Note (optional) ─────────────────────────────────────────────────
+      ...(data.note
+        ? [{
+            table: {
+              widths: ['*'],
+              body: [[{
+                ...txt(`টীকা: ${data.note}`),
+                style: 'noteText',
+                fillColor: C.amberBg,
+                margin: [10, 7, 10, 7],
+                border: [true, true, true, true],
+              }]],
+            },
+            layout: {
+              hLineWidth: () => 1,
+              vLineWidth: (i: number) => (i === 0 ? 3 : 0),
+              hLineColor: () => C.border,
+              vLineColor: (i: number) => (i === 0 ? C.amber : 'transparent'),
+            },
+            margin: [0, 0, 0, 14],
+          }]
+        : []
+      ),
 
-      // Signature area
+      // ── 7. Signatures ──────────────────────────────────────────────────────
+      {
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 455, h: 1, color: C.borderLt }],
+        margin: [0, 0, 0, 14],
+      },
       {
         columns: [
           {
             stack: [
-              { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.5, lineColor: '#9CA3AF' }] },
-              { text: 'গ্রহীতার স্বাক্ষর', style: 'sectionLabel', margin: [0, 4, 0, 0] }
-            ]
+              { text: ' ', margin: [0, 0, 0, 16] }, // extra gap before signature line
+              { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 100, y2: 0, lineWidth: 1, lineColor: C.border }] },
+              txt('গ্রহীতার স্বাক্ষর', { style: 'sigLabel', margin: [0, 4, 0, 0] }),
+            ],
+            width: '*',
           },
           {
             stack: [
-              { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.5, lineColor: '#9CA3AF' }] },
-              { text: 'কমিটির স্বাক্ষর', style: 'sectionLabel', margin: [0, 4, 0, 0] }
+              { text: ' ', margin: [0, 0, 0, 16] }, // extra gap before signature line
+              { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 100, y2: 0, lineWidth: 1, lineColor: C.border }] },
+              txt('কমিটির স্বাক্ষর', { style: 'sigLabel', alignment: 'right', margin: [0, 4, 0, 0] }),
             ],
-            alignment: 'right'
-          }
+            width: '*',
+            alignment: 'right',
+          },
         ],
-        margin: [0, 10, 0, 0]
-      }
+        columnGap: 120,
+      },
     ],
-    footer: (page: number, pages: number) => ({
-      text: `পৃষ্ঠা ${toBanglaDigits(page)} / ${toBanglaDigits(pages)} — ${data.communityName}`,
-      style: 'footer',
-      margin: [30, 0]
-    })
-  };
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  return Buffer.from(await pdfmake.createPdf(docDefinition).getBuffer() as Uint8Array);
+    // ── Footer ───────────────────────────────────────────────────────────────
+    footer: (page: number, pages: number) => ({
+      columns: [
+        txt(data.communityName, { style: 'footer', alignment: 'left' }),
+        {
+          ...txt(`পৃষ্ঠা ${toBanglaDigits(page)} / ${toBanglaDigits(pages)}`),
+          style: 'footer',
+          alignment: 'right',
+        },
+      ],
+      margin: [28, 12],
+    }),
+  };
 }
 
-export async function generateInvoicePdfAsync(data: InvoicePdfData): Promise<Buffer> {
+// ── Public API ────────────────────────────────────────────────────────────────
+export async function generateInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   return Buffer.from(await pdfmake.createPdf(buildDocDefinition(data)).getBuffer() as Uint8Array);
 }
 
-function buildDocDefinition(data: InvoicePdfData): TDocumentDefinitions {
-  const amountBn = amountToWordsBangla(data.amount);
-  const amountFormatted = `৳${data.amount.toLocaleString('en-US')}`;
-  const dateFormatted = new Date(data.issueDate).toLocaleDateString('bn-BD');
-
-  const invoiceTitle =
-    data.invoiceType === 'DONATION_RECEIPT' ? 'অনুদান রসিদ'
-      : data.invoiceType === 'SPONSOR_RECEIPT' ? 'স্পনসর রসিদ'
-        : 'ইনভয়েস';
-
-  const paymentMethodLabels: Record<string, string> = {
-    CASH: 'নগদ', BKASH: 'বিকাশ', NAGAD: 'নগদ', BANK: 'ব্যাংক'
-  };
-
-  return {
-    pageSize: 'A5',
-    pageMargins: [30, 30, 30, 50],
-    defaultStyle: { font: 'Roboto', fontSize: 10 },
-    styles,
-    content: [
-      { text: data.communityName, style: 'header' },
-      { text: data.communityLocation ?? '', style: 'subheader' },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 480, y2: 0, lineWidth: 1.5, lineColor: '#0F7B53' }], margin: [0, 0, 0, 12] },
-      { text: invoiceTitle, style: 'invoiceTitle' },
-      ...(data.eventName ? [{ text: data.eventName, style: 'subheader' as const }] : []),
-      {
-        columns: [
-          { text: [{ text: 'রসিদ নম্বর: ', style: 'sectionLabel' }, { text: data.invoiceNumber, style: 'sectionValue' }] },
-          { text: [{ text: 'তারিখ: ', style: 'sectionLabel' }, { text: dateFormatted, style: 'sectionValue' }], alignment: 'right' }
-        ],
-        margin: [0, 0, 0, 16]
-      },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 480, y2: 0, lineWidth: 0.5, lineColor: '#E5E7EB' }], margin: [0, 0, 0, 12] },
-      {
-        table: {
-          widths: ['35%', '65%'],
-          body: [
-            [{ text: 'নাম', style: 'sectionLabel' }, { text: data.payerName, style: 'sectionValue' }],
-            [{ text: 'মোবাইল নম্বর', style: 'sectionLabel' }, { text: data.payerPhone ?? '—', style: 'sectionValue' }],
-            [{ text: 'ঠিকানা', style: 'sectionLabel' }, { text: data.payerAddress ?? '—', style: 'sectionValue' }],
-            ...(data.paymentMethod ? [[{ text: 'পেমেন্ট পদ্ধতি', style: 'sectionLabel' }, { text: paymentMethodLabels[data.paymentMethod] ?? data.paymentMethod, style: 'sectionValue' }]] : []),
-          ]
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 20]
-      },
-      {
-        table: {
-          widths: ['*'],
-          body: [[{
-            stack: [
-              { text: 'টাকার পরিমাণ', style: 'sectionLabel', alignment: 'center' },
-              { text: amountFormatted, style: 'amountBox', alignment: 'center', margin: [0, 4, 0, 4] },
-              { text: `(${amountBn})`, style: 'amountWords', alignment: 'center' }
-            ],
-            fillColor: '#F0FDF4',
-            margin: [10, 12, 10, 12]
-          }]]
-        },
-        layout: { hLineColor: () => '#16A34A', vLineColor: () => '#16A34A' },
-        margin: [0, 0, 0, 20]
-      },
-      ...(data.note ? [{ text: `টীকা: ${data.note}`, fontSize: 9, color: '#6B7280', margin: [0, 0, 0, 20] as [number, number, number, number] }] : []),
-      {
-        columns: [
-          { stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.5, lineColor: '#9CA3AF' }] }, { text: 'গ্রহীতার স্বাক্ষর', style: 'sectionLabel', margin: [0, 4, 0, 0] }] },
-          { stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.5, lineColor: '#9CA3AF' }] }, { text: 'কমিটির স্বাক্ষর', style: 'sectionLabel', margin: [0, 4, 0, 0] }], alignment: 'right' }
-        ],
-        margin: [0, 10, 0, 0]
-      }
-    ],
-    footer: (page: number, pages: number) => ({ text: `${data.communityName} — পৃষ্ঠা ${page}/${pages}`, style: 'footer', margin: [30, 0] })
-  };
-}
+// Alias kept for backwards compatibility
+export const generateInvoicePdfAsync = generateInvoicePdf;

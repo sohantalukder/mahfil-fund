@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/copy-assets.mjs",
     "start": "node dist/server.js",
     "typecheck": "tsc -b --pretty false",
     "lint": "echo \"(lint handled at repo root)\"",
@@ -22,6 +22,7 @@
     "@fastify/multipart": "^9.4.0",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/sensible": "^6.0.3",
+    "@fontsource/noto-sans-bengali": "^5.2.11",
     "@json2csv/plainjs": "^7.0.6",
     "@mahfil/schemas": "workspace:*",
     "@mahfil/types": "workspace:*",

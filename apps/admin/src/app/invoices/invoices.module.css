@@ -63,3 +63,39 @@
 .downloadBtn:hover {
   background: var(--color-surface-muted);
 }
+
+.createCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.createTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.createdBanner {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.createdLabel {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 4px;
+  color: var(--color-text-primary);
+}
+
+.createdNumber {
+  font-size: 18px;
+  font-family: var(--font-mono, monospace);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
