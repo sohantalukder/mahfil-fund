@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { PageShell } from '../components/shell';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '../components/toast';
 import { useCommunity } from '../providers';
+import { useUsers } from '@/hooks/useUsers';
 import {
   useInvitations,
   useCreateInvitation,
@@ -23,10 +24,6 @@ const STATUS_COLORS: Record<string, string> = {
   USED: 'var(--color-success)',
   EXPIRED: 'var(--color-text-muted)',
   CANCELLED: 'var(--color-danger)',
-};
-
-const BLANK = {
-  email: '', fullName: '', phoneNumber: '', role: 'collector', note: '', expiresInDays: '7',
 };
 
 export default function InvitationsPage() {
@@ -45,7 +42,13 @@ function InvitationsContent() {
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...BLANK });
+
+  // Simple flow: select external users -> expiry -> note
+  const [userSearch, setUserSearch] = useState('');
+  const [userToAddId, setUserToAddId] = useState<string>('');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [expiresInDays, setExpiresInDays] = useState<string>('7');
+  const [note, setNote] = useState<string>('');
 
   const { data, isLoading } = useInvitations({ communityId, status: statusFilter });
   const createInvitation = useCreateInvitation(communityId);
@@ -54,19 +57,72 @@ function InvitationsContent() {
 
   const invitations = data?.invitations ?? [];
 
+  const { data: usersData } = useUsers({
+    page: 1,
+    pageSize: 50,
+    search: userSearch,
+  });
+  const users = usersData?.users ?? [];
+
+  const selectedUsers = useMemo(() => {
+    const map = new Map(users.map((u) => [u.id, u]));
+    return selectedUserIds.map((id) => map.get(id)).filter(Boolean) as typeof users;
+  }, [users, selectedUserIds]);
+
+  const selectedUserEmails = useMemo(
+    () =>
+      selectedUsers.map((u) => ({
+        id: u.id,
+        email: u.email ?? '',
+        fullName: u.fullName ?? '',
+      })),
+    [selectedUsers]
+  );
+
+  async function handleAddSelectedUser() {
+    if (!userToAddId) return;
+    setSelectedUserIds((ids) => (ids.includes(userToAddId) ? ids : [...ids, userToAddId]));
+    setUserToAddId('');
+  }
+
   async function handleCreate() {
     try {
-      const result = await createInvitation.mutateAsync({
-        email: form.email,
-        fullName: form.fullName,
-        phoneNumber: form.phoneNumber || undefined,
-        role: form.role,
-        note: form.note || undefined,
-        expiresInDays: parseInt(form.expiresInDays),
-      });
-      setCreatedCode(result.invitation.inviteCode ?? null);
+      if (selectedUserEmails.length === 0) {
+        toast('Select at least one user', 'error');
+        return;
+      }
+
+      const expires = parseInt(expiresInDays);
+      if (!Number.isFinite(expires) || expires < 1 || expires > 30) {
+        toast('Expires in (days) must be between 1 and 30', 'error');
+        return;
+      }
+
+      const missing = selectedUserEmails.find((u) => !u.email);
+      if (missing) {
+        toast('Selected user is missing email', 'error');
+        return;
+      }
+
+      // Backend creates 1 invitation per email. External user role is `viewer`.
+      const promises = selectedUserEmails.map((u) =>
+        createInvitation.mutateAsync({
+          email: u.email,
+          fullName: u.fullName || u.email,
+          role: 'viewer',
+          note: note.trim() ? note.trim() : undefined,
+          expiresInDays: expires,
+        })
+      );
+
+      const results = await Promise.all(promises);
+      const last = results[results.length - 1];
+      setCreatedCode(last.invitation.inviteCode ?? null);
       setShowCreate(false);
-      setForm({ ...BLANK });
+      setSelectedUserIds([]);
+      setUserToAddId('');
+      setExpiresInDays('7');
+      setNote('');
       toast('Invitation created!', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to create invitation', 'error');
@@ -149,60 +205,79 @@ function InvitationsContent() {
           <div className={formStyles.formGrid}>
             <div className={formStyles.formRow}>
               <div className={formStyles.field}>
-                <label className={formStyles.label}>Full Name *</label>
+                <label className={formStyles.label}>External Users *</label>
                 <Input
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                  required
+                  placeholder="Search users by name/email"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
                 />
-              </div>
-              <div className={formStyles.field}>
-                <label className={formStyles.label}>Email *</label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  required
-                />
+
+                <div className="mt-2 flex items-center gap-2">
+                  <select
+                    className={formStyles.nativeSelect}
+                    value={userToAddId}
+                    onChange={(e) => setUserToAddId(e.target.value)}
+                    disabled={!communityId}
+                  >
+                    <option value="">Select a user</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {(u.fullName?.trim() || u.email) ?? u.id}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!userToAddId || selectedUserIds.includes(userToAddId)}
+                    onClick={() => void handleAddSelectedUser()}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {selectedUserIds.length > 0 && (
+                  <div className="mt-3 text-sm text-muted-foreground">
+                    <div className="mb-2">Selected:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUserIds.map((id) => {
+                        const u = users.find((x) => x.id === id);
+                        const label = u?.fullName?.trim() || u?.email || id;
+                        return (
+                          <div
+                            key={id}
+                            className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1"
+                          >
+                            <span>{label}</span>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                              onClick={() => setSelectedUserIds((ids) => ids.filter((x) => x !== id))}
+                            >
+                              remove
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className={formStyles.formRow}>
               <div className={formStyles.field}>
-                <label className={formStyles.label}>Phone</label>
-                <Input
-                  value={form.phoneNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
-                />
-              </div>
-              <div className={formStyles.field}>
-                <label className={formStyles.label}>Role</label>
-                <select
-                  className={formStyles.nativeSelect}
-                  value={form.role}
-                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                >
-                  <option value="collector">Collector</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              </div>
-            </div>
-            <div className={formStyles.formRow}>
-              <div className={formStyles.field}>
-                <label className={formStyles.label}>Expires in (days)</label>
+                <label className={formStyles.label}>Expires in (days) *</label>
                 <Input
                   type="number"
                   min={1}
                   max={30}
-                  value={form.expiresInDays}
-                  onChange={(e) => setForm((f) => ({ ...f, expiresInDays: e.target.value }))}
+                  value={expiresInDays}
+                  onChange={(e) => setExpiresInDays(e.target.value)}
                 />
               </div>
               <div className={formStyles.field}>
                 <label className={formStyles.label}>Note</label>
-                <Input
-                  value={form.note}
-                  onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-                />
+                <Input value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
             </div>
           </div>
@@ -210,7 +285,10 @@ function InvitationsContent() {
             <Button variant="outline" onClick={() => setShowCreate(false)}>
               Cancel
             </Button>
-            <Button onClick={() => void handleCreate()} disabled={createInvitation.isPending}>
+            <Button
+              onClick={() => void handleCreate()}
+              disabled={createInvitation.isPending || selectedUserIds.length === 0}
+            >
               {createInvitation.isPending ? 'Creating…' : 'Create Invitation'}
             </Button>
           </div>

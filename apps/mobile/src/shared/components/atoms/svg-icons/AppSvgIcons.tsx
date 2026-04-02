@@ -227,5 +227,62 @@ export const ChartIcon = ({ color, size = 20 }: IconProps) => (
   </Svg>
 );
 
+export const PlusIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path fill={color} d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+  </Svg>
+);
+
+export const TrashIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill={color}
+      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+    />
+  </Svg>
+);
+
+export const UsersIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill={color}
+      d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+    />
+  </Svg>
+);
+
+export const InvoiceIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill={color}
+      d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+    />
+  </Svg>
+);
+
+export const LinkIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill={color}
+      d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"
+    />
+  </Svg>
+);
+
+export const CopyIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill={color}
+      d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+    />
+  </Svg>
+);
+
+export const FilterIcon = ({ color, size = 20 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path fill={color} d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+  </Svg>
+);
+
 // Unused but exported for future use
 export { Circle, Rect };

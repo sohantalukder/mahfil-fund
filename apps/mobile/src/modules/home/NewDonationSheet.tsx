@@ -17,8 +17,6 @@ import { bottomSheet } from '@/shared/contexts/bottom-sheet/manager';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import rs from '@/shared/utilities/responsiveSize';
 
-const LOGO_BG = '#1A5C30';
-
 const PAYMENT_METHODS = [
   { value: 'CASH', label: 'Cash' },
   { value: 'BKASH', label: 'bKash' },
@@ -149,7 +147,7 @@ export default function NewDonationSheet() {
       >
         {/* Title */}
         <View style={styles.titleRow}>
-          <View style={[styles.titleAccent, { backgroundColor: LOGO_BG }]} />
+          <View style={[styles.titleAccent, { backgroundColor: colors.primary }]} />
           <Text variant="heading3" weight="bold">
             New Donation
           </Text>
@@ -178,8 +176,8 @@ export default function NewDonationSheet() {
               styles.tab,
               {
                 backgroundColor:
-                  donorMode === 'existing' ? LOGO_BG : colors.background,
-                borderColor: donorMode === 'existing' ? LOGO_BG : colors.gray7,
+                  donorMode === 'existing' ? colors.primary : colors.background,
+                borderColor: donorMode === 'existing' ? colors.primary : colors.gray7,
               },
             ]}
             activeOpacity={0.8}
@@ -199,8 +197,8 @@ export default function NewDonationSheet() {
               styles.tab,
               {
                 backgroundColor:
-                  donorMode === 'new' ? LOGO_BG : colors.background,
-                borderColor: donorMode === 'new' ? LOGO_BG : colors.gray7,
+                  donorMode === 'new' ? colors.primary : colors.background,
+                borderColor: donorMode === 'new' ? colors.primary : colors.gray7,
               },
             ]}
             activeOpacity={0.8}
@@ -272,8 +270,8 @@ export default function NewDonationSheet() {
                 style={[
                   styles.paymentCard,
                   {
-                    borderColor: isSelected ? LOGO_BG : colors.gray7,
-                    backgroundColor: isSelected ? LOGO_BG : colors.background,
+                    borderColor: isSelected ? colors.primary : colors.gray7,
+                    backgroundColor: isSelected ? colors.primary : colors.background,
                   },
                 ]}
               >
@@ -312,7 +310,7 @@ export default function NewDonationSheet() {
         {/* Save Button */}
         <Button
           text="Save Donation"
-          bgColor={LOGO_BG}
+          bgColor={colors.primary}
           textColor={colors.white}
           isLoading={isPending}
           onPress={() => mutate()}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useTranslation } from 'react-i18next';
@@ -9,10 +9,8 @@ import Text from '@/shared/components/atoms/text/Text';
 import { useTheme } from '@/theme';
 import { ArrowBackIcon } from '@/shared/components/atoms/svg-icons/AppSvgIcons';
 import { NotificationsList } from './tabs/NotificationsList';
-import { useNotifications, markAllAsRead } from './useNotifications';
+import { useNotifications } from './useNotifications';
 import { getStyles } from './styles';
-
-const LOGO_BG = '#1A5C30';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -21,13 +19,11 @@ export default function NotificationsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const navigation = useNavigation();
-  const { notifications } = useNotifications();
-  const [, forceUpdate] = useState(0);
+  // markAllAsRead now comes from the hook and updates React state properly
+  const { notifications, markAllAsRead } = useNotifications();
 
   function handleMarkAllRead() {
-    const ids = notifications.map((n) => n.id);
-    markAllAsRead(ids);
-    forceUpdate((n) => n + 1);
+    markAllAsRead(notifications.map((n) => n.id));
   }
 
   // Tab screens as closures so they can access notifications
@@ -69,19 +65,19 @@ export default function NotificationsScreen() {
               {t('notifications.title')}
             </Text>
           </View>
-          {unreadCount > 0 && (
+          {unreadCount > 0 ? (
             <TouchableOpacity onPress={handleMarkAllRead} activeOpacity={0.7}>
               <Text variant="body2" weight="semibold" style={styles.markAllText}>
                 {t('notifications.mark_all_read')}
               </Text>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
 
         {/* Tabs */}
         <Tab.Navigator
           screenOptions={{
-            tabBarActiveTintColor: LOGO_BG,
+            tabBarActiveTintColor: colors.primary,
             tabBarInactiveTintColor: colors.gray4,
             tabBarStyle: {
               backgroundColor: colors.background,
@@ -91,7 +87,7 @@ export default function NotificationsScreen() {
               borderBottomColor: colors.gray8,
             },
             tabBarIndicatorStyle: {
-              backgroundColor: LOGO_BG,
+              backgroundColor: colors.primary,
               height: 2,
             },
             tabBarLabelStyle: {

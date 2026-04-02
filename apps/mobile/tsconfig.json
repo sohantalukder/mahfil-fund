@@ -10,7 +10,9 @@
     "lib": ["es2017", "es2018", "es2019", "es2020", "es2021", "dom"],
     "target": "es2017",
     "jsx": "react-jsx",
-    "moduleResolution": "node",
+    // TS 5.9 removed the old `node10` resolution mode; use a modern option for Metro.
+    "moduleResolution": "bundler",
+    "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

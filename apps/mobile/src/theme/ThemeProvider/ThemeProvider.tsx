@@ -188,7 +188,7 @@ function ThemeProvider({ children }: Properties) {
   () => ({
     fullLogo: variant !== 'default' ? (images('./logo_black.png') as number) : (images('./logo_white.png') as number),
     logo:
-      variant !== 'default'
+      variant === 'default'
         ? (images('./logo_black.png') as number)
         : (images('./logo_white.png') as number),
   }),

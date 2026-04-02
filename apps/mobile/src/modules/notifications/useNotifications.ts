@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getApi } from '@/api/client';
@@ -10,15 +10,21 @@ import type { NotificationItem } from './types';
 const notifStore = new MMKV({ id: 'mahfil-notifications' });
 const READ_IDS_KEY = 'readNotificationIds';
 
-function getReadIds(): Set<string> {
+function loadReadIds(): Set<string> {
   const raw = notifStore.getString(READ_IDS_KEY);
-  return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  try {
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
 }
 
-export function markAllAsRead(ids: string[]) {
-  const current = getReadIds();
+/** Persist read IDs and return the updated set. */
+function persistReadIds(ids: string[]): Set<string> {
+  const current = loadReadIds();
   ids.forEach((id) => current.add(id));
   notifStore.set(READ_IDS_KEY, JSON.stringify([...current]));
+  return current;
 }
 
 const fmtBDT = (n: number) =>
@@ -41,22 +47,43 @@ type Expense = {
   createdAt: string;
 };
 
+/** Parse the various shapes the API might return for list responses. */
+function parseList<T>(res: unknown): T[] {
+  if (!res || typeof res !== 'object') return [];
+  if ('data' in (res as object)) {
+    const d = (res as { data: unknown }).data;
+    if (Array.isArray(d)) return d as T[];
+    if (d && typeof d === 'object') {
+      const obj = d as Record<string, unknown>;
+      return (obj.items ?? obj.donations ?? obj.expenses ?? []) as T[];
+    }
+  }
+  if ('success' in (res as object) && 'data' in (res as object)) {
+    const r = res as { success: boolean; data: unknown };
+    if (Array.isArray(r.data)) return r.data as T[];
+  }
+  return [];
+}
+
 export function useNotifications() {
   const { t } = useTranslation();
   const { session } = useAuth();
   const { activeCommunity } = useCommunity();
-  const readIds = getReadIds();
+
+  // Track read IDs in React state so marking-as-read triggers a re-render
+  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds);
+
+  const markAllAsRead = useCallback((ids: string[]) => {
+    const updated = persistReadIds(ids);
+    setReadIds(new Set(updated));
+  }, []);
 
   const { data: donations, isLoading: loadingDonations } = useQuery<Donation[]>({
     queryKey: ['notifications-donations', activeCommunity?.id],
     queryFn: async () => {
       const api = getApi();
       const res = await api.get('/donations?scope=community&limit=20');
-      if (res && typeof res === 'object' && 'data' in res) {
-        const d = res.data as { items?: Donation[] } | Donation[];
-        return Array.isArray(d) ? d : (d.items ?? []);
-      }
-      return Array.isArray(res) ? (res as Donation[]) : [];
+      return parseList<Donation>(res);
     },
     enabled: !!session && !!activeCommunity?.id,
   });
@@ -66,11 +93,7 @@ export function useNotifications() {
     queryFn: async () => {
       const api = getApi();
       const res = await api.get('/expenses?limit=20');
-      if (res && typeof res === 'object' && 'data' in res) {
-        const d = res.data as { items?: Expense[] } | Expense[];
-        return Array.isArray(d) ? d : (d.items ?? []);
-      }
-      return Array.isArray(res) ? (res as Expense[]) : [];
+      return parseList<Expense>(res);
     },
     enabled: !!session && !!activeCommunity?.id,
   });
@@ -80,12 +103,13 @@ export function useNotifications() {
 
     (donations ?? []).forEach((d) => {
       const id = `donation-${d.id}`;
-      const donorName = d.donorSnapshotName ?? d.donorName ?? t('notifications.donation_received').split(' ')[0] ?? 'Anonymous';
+      const donorName =
+        d.donorSnapshotName ?? d.donorName ?? 'Anonymous';
       items.push({
         id,
         type: 'donation',
         title: t('notifications.donation_received'),
-        body: `${donorName} ${t('common.currency_symbol')}${fmtBDT(d.amount).replace('৳', '')}.`,
+        body: `${donorName} — ${fmtBDT(d.amount)}`,
         createdAt: d.donationDate || d.createdAt,
         isRead: readIds.has(id),
       });
@@ -97,17 +121,13 @@ export function useNotifications() {
         id,
         type: 'expense',
         title: t('notifications.expense_logged'),
-        body: `${e.title} — ${fmtBDT(e.amount)}.`,
+        body: `${e.title} — ${fmtBDT(e.amount)}`,
         createdAt: e.expenseDate || e.createdAt,
         isRead: readIds.has(id),
       });
     });
 
-    // Sort by date descending
-    items.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return items;
   }, [donations, expenses, readIds, t]);
@@ -115,6 +135,7 @@ export function useNotifications() {
   return {
     notifications,
     isLoading: loadingDonations || loadingExpenses,
+    markAllAsRead,
   };
 }
 
@@ -124,9 +145,8 @@ export function groupByDay(
 ): { title: string; data: NotificationItem[] }[] {
   const today = new Date().toDateString();
   const yesterday = new Date(Date.now() - 86_400_000).toDateString();
-  const todayItems = items.filter(
-    (n) => new Date(n.createdAt).toDateString() === today,
-  );
+
+  const todayItems = items.filter((n) => new Date(n.createdAt).toDateString() === today);
   const yesterdayItems = items.filter(
     (n) => new Date(n.createdAt).toDateString() === yesterday,
   );
@@ -134,9 +154,11 @@ export function groupByDay(
     const d = new Date(n.createdAt).toDateString();
     return d !== today && d !== yesterday;
   });
+
   const sections: { title: string; data: NotificationItem[] }[] = [];
   if (todayItems.length) sections.push({ title: t('notifications.section_today'), data: todayItems });
-  if (yesterdayItems.length) sections.push({ title: t('notifications.section_yesterday'), data: yesterdayItems });
+  if (yesterdayItems.length)
+    sections.push({ title: t('notifications.section_yesterday'), data: yesterdayItems });
   if (older.length) sections.push({ title: t('common.earlier'), data: older });
   return sections;
 }

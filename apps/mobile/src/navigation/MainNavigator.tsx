@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { useTheme } from '@/theme';
 import routes from './routes';
+
+// Core screens
 import HomeScreen from '@/modules/home/HomeScreen';
 import CommunitiesScreen from '@/modules/communities/CommunitiesScreen';
 import JoinScreen from '@/modules/join/JoinScreen';
@@ -13,12 +15,35 @@ import EventsScreen from '@/modules/events/EventsScreen';
 import DonationsScreen from '@/modules/donations/DonationsScreen';
 import ReportsScreen from '@/modules/reports/ReportsScreen';
 import ProfileScreen from '@/modules/profile/ProfileScreen';
+import NotificationsScreen from '@/modules/notifications/NotificationsScreen';
+import SettingsScreen from '@/modules/settings/SettingsScreen';
+
+// Expenses
+import ExpensesScreen from '@/modules/expenses/ExpensesScreen';
+import AddExpenseScreen from '@/modules/expenses/AddExpenseScreen';
+
+// Admin screens
 import AdminHubScreen from '@/modules/admin/AdminHubScreen';
 import AdminEventsScreen from '@/modules/admin/AdminEventsScreen';
 import AdminDonationsScreen from '@/modules/admin/AdminDonationsScreen';
-import NotificationsScreen from '@/modules/notifications/NotificationsScreen';
-import SettingsScreen from '@/modules/settings/SettingsScreen';
-import AddExpenseScreen from '@/modules/expenses/AddExpenseScreen';
+import AdminExpensesScreen from '@/modules/admin/AdminExpensesScreen';
+
+// Donors
+import DonorsScreen from '@/modules/donors/DonorsScreen';
+import AddDonorScreen from '@/modules/donors/AddDonorScreen';
+import DonorDonationsScreen from '@/modules/donors/DonorDonationsScreen';
+
+// Invoices
+import InvoicesScreen from '@/modules/invoices/InvoicesScreen';
+import AddInvoiceScreen from '@/modules/invoices/AddInvoiceScreen';
+
+// Users & Invitations
+import UsersScreen from '@/modules/users/UsersScreen';
+import InvitationsScreen from '@/modules/invitations/InvitationsScreen';
+
+// Audit Logs
+import AuditLogsScreen from '@/modules/audit-logs/AuditLogsScreen';
+
 import { useCommunity } from '@/contexts/CommunityContext';
 import { useMe } from '@/hooks/useMe';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,30 +82,73 @@ function CommunitiesStackNav() {
         headerTintColor: navigationTheme.colors.text,
       }}
     >
-      <CommunitiesStack.Screen name={routes.communities} component={CommunitiesScreen} options={{ title: 'Communities' }} />
-      <CommunitiesStack.Screen name={routes.join} component={JoinScreen} options={{ title: 'Join' }} />
+      <CommunitiesStack.Screen
+        name={routes.communities}
+        component={CommunitiesScreen}
+        options={{ title: 'Communities' }}
+      />
+      <CommunitiesStack.Screen
+        name={routes.join}
+        component={JoinScreen}
+        options={{ title: 'Join Community' }}
+      />
     </CommunitiesStack.Navigator>
   );
 }
 
 function MenuStackNav() {
   const { navigationTheme } = useTheme();
+  const screenOptions = {
+    headerStyle: { backgroundColor: navigationTheme.colors.card },
+    headerTintColor: navigationTheme.colors.text,
+  };
+
   return (
     <MenuStack.Navigator
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: navigationTheme.colors.card },
-        headerTintColor: navigationTheme.colors.text,
+        ...screenOptions,
       }}
     >
+      {/* Hub */}
       <MenuStack.Screen name="MenuHub" component={MenuHubScreen} options={{ title: 'Menu' }} />
+
+      {/* Member features */}
       <MenuStack.Screen name={routes.events} component={EventsScreen} options={{ title: 'Events' }} />
-      <MenuStack.Screen name={routes.donations} component={DonationsScreen} options={{ title: 'Donations' }} />
+      <MenuStack.Screen name={routes.donations} component={DonationsScreen} options={{ title: 'My Donations' }} />
       <MenuStack.Screen name={routes.reports} component={ReportsScreen} options={{ title: 'Reports' }} />
-      <MenuStack.Screen name={routes.admin} component={AdminHubScreen} options={{ title: 'Admin' }} />
-      <MenuStack.Screen name={routes.adminEvents} component={AdminEventsScreen} options={{ title: 'Admin events' }} />
-      <MenuStack.Screen name={routes.adminDonations} component={AdminDonationsScreen} options={{ title: 'Admin donations' }} />
+
+      {/* Expenses (member view) */}
+      <MenuStack.Screen name={routes.expenses} component={ExpensesScreen} options={{ title: 'Expenses' }} />
       <MenuStack.Screen name={routes.addExpense} component={AddExpenseScreen} options={{ headerShown: false }} />
+
+      {/* Admin hub */}
+      <MenuStack.Screen name={routes.admin} component={AdminHubScreen} options={{ title: 'Admin' }} />
+
+      {/* Admin — Events */}
+      <MenuStack.Screen name={routes.adminEvents} component={AdminEventsScreen} options={{ title: 'Manage Events' }} />
+
+      {/* Admin — Donations */}
+      <MenuStack.Screen name={routes.adminDonations} component={AdminDonationsScreen} options={{ title: 'Manage Donations' }} />
+
+      {/* Admin — Expenses */}
+      <MenuStack.Screen name={routes.adminExpenses} component={AdminExpensesScreen} options={{ title: 'Manage Expenses' }} />
+
+      {/* Admin — Donors */}
+      <MenuStack.Screen name={routes.adminDonors} component={DonorsScreen} options={{ title: 'Donors' }} />
+      <MenuStack.Screen name={routes.adminAddDonor} component={AddDonorScreen} options={{ title: 'Add Donor' }} />
+      <MenuStack.Screen name={routes.adminDonorDonations} component={DonorDonationsScreen} options={{ title: 'Donor Donations' }} />
+
+      {/* Admin — Invoices */}
+      <MenuStack.Screen name={routes.adminInvoices} component={InvoicesScreen} options={{ title: 'Invoices' }} />
+      <MenuStack.Screen name={routes.adminAddInvoice} component={AddInvoiceScreen} options={{ title: 'Create Invoice' }} />
+
+      {/* Admin — Users & Invitations */}
+      <MenuStack.Screen name={routes.adminUsers} component={UsersScreen} options={{ title: 'Manage Users' }} />
+      <MenuStack.Screen name={routes.adminInvitations} component={InvitationsScreen} options={{ title: 'Invitations' }} />
+
+      {/* Admin — Audit Logs */}
+      <MenuStack.Screen name={routes.adminAuditLogs} component={AuditLogsScreen} options={{ title: 'Audit Logs' }} />
     </MenuStack.Navigator>
   );
 }

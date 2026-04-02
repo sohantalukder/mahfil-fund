@@ -28,7 +28,6 @@ import {
 import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { getStyles } from './styles';
 
-const LOGO_BG = '#1A5C30';
 const fmtBDT = (n: number) =>
   `৳${new Intl.NumberFormat('en-BD', { maximumFractionDigits: 0 }).format(n)}`;
 
@@ -256,7 +255,7 @@ export default function ProfileScreen() {
               rightElement={
                 <Switch
                   value={notificationsEnabled}
-                  activeColor={LOGO_BG}
+                  activeColor={colors.primary}
                   onPress={(value) => setNotificationsEnabled(value)}
                 />
               }

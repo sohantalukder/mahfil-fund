@@ -8,3 +8,4 @@ export { default as NoInternet } from './no-internet/NoInternet';
 export { default as TopTabBar } from './top-tab/TopTabBar';
 export { default as MultiSelect } from './multi-select';
 export { default as SelectList } from './select-list/SelectList';
+export { default as AnimatedTextInput } from './animated-text-input/AnimatedTextInput';

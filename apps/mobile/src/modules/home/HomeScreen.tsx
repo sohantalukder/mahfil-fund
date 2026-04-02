@@ -2,20 +2,29 @@ import { useMemo } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
 
 import { SafeScreen } from '@/shared/components/templates';
 import Text from '@/shared/components/atoms/text/Text';
-import { Loader } from '@/shared/components/atoms';
-import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
+import { Card, Badge, Skeleton, Divider, IconButton, IconByVariant } from '@/shared/components/atoms';
 import { useTheme } from '@/theme';
 import { getApi } from '@/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommunity } from '@/contexts/CommunityContext';
+import { useMe } from '@/hooks/useMe';
 import { bottomSheet } from '@/shared/contexts/bottom-sheet/manager';
 import NewDonationSheet from './NewDonationSheet';
 import routes from '@/navigation/routes';
 import withOpacity from '@/shared/utilities/withOpacity';
+import rs from '@/shared/utilities/responsiveSize';
+import {
+  TrendUpIcon,
+  TrendDownIcon,
+  CalendarIcon,
+  DonationIcon,
+  ReceiptIcon,
+  PlusIcon,
+  ChartIcon,
+} from '@/shared/components/atoms/svg-icons/AppSvgIcons';
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 const fmtBDT = (n: number) =>
@@ -23,72 +32,15 @@ const fmtBDT = (n: number) =>
 
 const timeAgo = (iso: string): string => {
   const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
   const h = Math.floor(diff / 3_600_000);
   const d = Math.floor(diff / 86_400_000);
-  if (h < 1) return 'Just now';
-  if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`;
+  if (m < 2) return 'Just now';
+  if (h < 1) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
   if (d === 1) return 'Yesterday';
-  return `${d} days ago`;
+  return `${d}d ago`;
 };
-
-// ─── Inline SVG helpers ───────────────────────────────────────────────────────
-const TrendUpIcon = ({ color }: { color: string }) => (
-  <Svg width={13} height={13} viewBox="0 0 24 24">
-    <Path fill={color} d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
-  </Svg>
-);
-
-const TrendDownIcon = ({ color }: { color: string }) => (
-  <Svg width={13} height={13} viewBox="0 0 24 24">
-    <Path fill={color} d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z" />
-  </Svg>
-);
-
-const BoltIcon = ({ color }: { color: string }) => (
-  <Svg width={20} height={20} viewBox="0 0 24 24">
-    <Path fill={color} d="M7 2v11h3v9l7-12h-4l4-8z" />
-  </Svg>
-);
-
-const HistoryIcon = ({ color }: { color: string }) => (
-  <Svg width={20} height={20} viewBox="0 0 24 24">
-    <Path
-      fill={color}
-      d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"
-    />
-  </Svg>
-);
-
-const InfoCircleIcon = ({ color }: { color: string }) => (
-  <Svg width={13} height={13} viewBox="0 0 24 24">
-    <Path fill={color} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-  </Svg>
-);
-
-const ClockIcon = ({ color }: { color: string }) => (
-  <Svg width={13} height={13} viewBox="0 0 24 24">
-    <Path
-      fill={color}
-      d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"
-    />
-  </Svg>
-);
-
-// Simple mosque silhouette for the app logo
-const MosqueSVG = () => (
-  <Svg width={28} height={26} viewBox="0 0 28 26">
-    {/* Left minaret */}
-    <Path fill="white" d="M1 26V14l2-2v14H1zm2-14v-5l1-1 1 1v5H3z" />
-    {/* Right minaret */}
-    <Path fill="white" d="M24 26V12l2 2v12h-2zm2-14v-5l-1-1-1 1v5h2z" />
-    {/* Dome + building */}
-    <Path fill="white" d="M6 26V15c0-4.42 3.58-8 8-8s8 3.58 8 8v11H6zm2-11c0 0 0 0 0 0v9h12v-9c0-3.31-2.69-6-6-6s-6 2.69-6 6z" />
-    {/* Door arch */}
-    <Path fill="white" d="M11 26v-6c0-1.66 1.34-3 3-3s3 1.34 3 3v6h-6z" />
-    {/* Crescent cap */}
-    <Path fill="white" d="M14 5c-.83 0-1.5-.67-1.5-1.5S13.17 2 14 2s1.5.67 1.5 1.5S14.83 5 14 5zm0 2c-1.66 0-3-1.34-3-3h6c0 1.66-1.34 3-3 3z" />
-  </Svg>
-);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ActivityItem = {
@@ -106,23 +58,69 @@ type Summary = {
   budgetUtilization: number;
 };
 
+// ─── Skeleton cards ───────────────────────────────────────────────────────────
+function StatCardSkeleton() {
+  const { gutters, colors } = useTheme();
+  return (
+    <Card variant="outlined" borderRadius={18} padding={20} shadow={false} style={gutters.marginBottom_12}>
+      <Skeleton width="50%" height={12} borderRadius={6} style={gutters.marginBottom_12} />
+      <Skeleton width="70%" height={28} borderRadius={8} style={gutters.marginBottom_10} />
+      <Skeleton width="40%" height={10} borderRadius={5} />
+    </Card>
+  );
+}
+
+function ActivityRowSkeleton() {
+  const { gutters, colors } = useTheme();
+  return (
+    <View style={[skeletonStyles.activityRow, { borderBottomColor: colors.gray7 }]}>
+      <Skeleton width={44} height={44} borderRadius={22} />
+      <View style={[gutters.marginLeft_12, skeletonStyles.activityTextBlock]}>
+        <Skeleton width="60%" height={12} borderRadius={6} style={gutters.marginBottom_8} />
+        <Skeleton width="35%" height={10} borderRadius={5} />
+      </View>
+      <Skeleton width={60} height={12} borderRadius={6} />
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  activityTextBlock: { flex: 1 },
+});
+
+// ─── Greeting helper ──────────────────────────────────────────────────────────
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { colors } = useTheme();
+  const { colors, gutters, layout } = useTheme();
   const { session } = useAuth();
   const { activeCommunity } = useCommunity();
   const navigation = useNavigation();
+  const { user } = useMe(!!session);
 
-  const screenBg = colors.background;
-  const cardBg = colors.gray10;
-  const cardBorder = colors.gray7;
-  const labelColor = colors.gray4;
-  const btnBorder = colors.gray7;
-  const iconTintBg = withOpacity(colors.warning, 0.12);
+  // derive display name from email
+  const displayName = useMemo(() => {
+    const email = (session?.user?.email ?? '');
+    if (!email) return 'there';
+    const local = email.split('@')[0] ?? '';
+    return local.charAt(0).toUpperCase() + local.slice(1).replace(/[._-]/g, ' ');
+  }, [session]);
 
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  // ── Community summary ──────────────────────────────────────────────────────
+  // ── Summary ────────────────────────────────────────────────────────────────
   const {
     data: summary,
     isLoading: sLoading,
@@ -133,7 +131,6 @@ export default function HomeScreen() {
     queryKey: ['community-summary', activeCommunity?.id],
     queryFn: async () => {
       const api = getApi();
-      // Try community-level summary first, fall back to user summary
       const res = await api.get<Record<string, unknown>>('/reports/community-summary');
       if (res.success) {
         const raw = res.data as Record<string, unknown>;
@@ -147,11 +144,10 @@ export default function HomeScreen() {
         };
       }
       const fallback = await api.get<Record<string, unknown>>('/reports/user-summary');
-      if (!fallback.success) throw new Error((fallback as { error: { message: string } }).error.message);
+      if (!fallback.success) throw new Error('Failed to load summary');
       const raw = fallback.data as Record<string, unknown>;
-      const totalCol = Number(raw.totalDonated ?? 0);
       return {
-        totalCollection: totalCol,
+        totalCollection: Number(raw.totalDonated ?? 0),
         totalExpenses: 0,
         trend: '+0%',
         budgetUtilization: 0,
@@ -160,30 +156,27 @@ export default function HomeScreen() {
     enabled: !!session,
   });
 
-  // ── Recent activity (donations) ────────────────────────────────────────────
+  // ── Recent activity ────────────────────────────────────────────────────────
   const {
     data: recent,
     isLoading: rLoading,
     isError: rError,
-    error: rErr,
     refetch: refetchRecent,
   } = useQuery<ActivityItem[]>({
     queryKey: ['dashboard-recent', activeCommunity?.id],
     queryFn: async () => {
       const api = getApi();
-      const res = await api.get<{ donations?: unknown[] } | unknown[]>(
-        '/donations?scope=me&limit=5',
-      );
-      if (!res.success) throw new Error((res as { error: { message: string } }).error.message);
+      const res = await api.get<{ donations?: unknown[] } | unknown[]>('/donations?scope=me&limit=5');
+      if (!res.success) throw new Error('Failed to load activity');
       const d = res.data as { donations?: unknown[] } | unknown[];
       const arr: Record<string, unknown>[] = Array.isArray(d)
         ? (d as Record<string, unknown>[])
-        : ((d as { donations?: unknown[] }).donations ?? []) as Record<string, unknown>[];
+        : (((d as { donations?: unknown[] }).donations ?? []) as Record<string, unknown>[]);
       return arr.slice(0, 5).map((item) => {
         const donor = item.donorName ?? item.fullName;
         const event = item.eventName ?? item.eventSnapshotName;
         const title = donor
-          ? `Donation from ${String(donor)}`
+          ? `From ${String(donor)}`
           : event
           ? String(event)
           : 'Donation';
@@ -201,499 +194,390 @@ export default function HomeScreen() {
 
   const totalCollection = summary?.totalCollection ?? 0;
   const totalExpenses = summary?.totalExpenses ?? 0;
-  const remainingBalance = totalCollection - totalExpenses;
+  const balance = totalCollection - totalExpenses;
   const trend = summary?.trend ?? '+0%';
   const budgetUtil = summary?.budgetUtilization ?? 0;
   const isPositiveTrend = !trend.startsWith('-');
 
+  const openDonationSheet = () => {
+    bottomSheet
+      .show({
+        component: NewDonationSheet,
+        options: { snapPoints: ['90%'], enablePanDownToClose: true },
+      })
+      .catch(() => {});
+  };
+
   return (
-    <SafeScreen bgColor={screenBg}>
+    <SafeScreen>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <View style={styles.headerRow}>
-          {/* App logo */}
-          <View
-            style={[styles.appLogo, { backgroundColor: colors.primary }]}
-          >
-            <MosqueSVG />
-          </View>
-
-          <View style={styles.headerText}>
-            <Text variant="heading3" weight="bold" numberOfLines={1}>
-              Iftar Mahfil Manager
-            </Text>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
             <Text variant="body3" color="secondary">
-              Donation &amp; Expense Tracker
+              {getGreeting()} 👋
+            </Text>
+            <Text variant="heading3" weight="bold" numberOfLines={1} style={gutters.marginTop_4}>
+              {activeCommunity?.name ?? 'Mahfil Fund'}
             </Text>
           </View>
 
-          {/* Notification bell */}
-          <TouchableOpacity
-            style={styles.headerIconButton}
+          <IconButton
+            icon="notification"
+            bgColor={colors.gray9}
+            iconColor={colors.text}
+            iconSize={20}
+            size="medium"
             onPress={() => navigation.navigate(routes.notifications as never)}
-            activeOpacity={0.7}
-          >
-            <IconByVariant
-              path="notification"
-              width={20}
-              height={20}
-              color={colors.text}
-            />
-          </TouchableOpacity>
+          />
         </View>
 
-        {/* ── Stats cards ─────────────────────────────────────────────────── */}
-        {sLoading ? (
-          <View style={styles.sectionLoading}>
-            <Loader />
-          </View>
-        ) : sError ? (
-          <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-            <Text variant="body2" weight="semibold" style={styles.cardAmount}>
-              Couldn’t load summary
+        {/* ── Balance hero card ───────────────────────────────────────────── */}
+        <Card
+          variant="filled"
+          backgroundColor={colors.primary}
+          borderRadius={22}
+          padding={24}
+          shadow={false}
+          style={gutters.marginBottom_20}
+        >
+          <Text variant="body3" style={styles.heroLabel}>
+            REMAINING BALANCE
+          </Text>
+          {sLoading ? (
+            <Skeleton width="55%" height={36} borderRadius={8} bgColor="rgba(255,255,255,0.25)" style={gutters.marginTop_8} />
+          ) : (
+            <Text variant="heading1" weight="bold" style={styles.heroAmount}>
+              {fmtBDT(balance)}
             </Text>
-            <Text variant="body3" color="secondary" style={styles.cardAmount}>
-              {sErr instanceof Error ? sErr.message : 'Please try again.'}
-            </Text>
-            <TouchableOpacity onPress={() => void refetchSummary()} activeOpacity={0.7}>
-              <Text variant="body2" style={{ color: colors.primary }}>
-                Retry
+          )}
+          <Divider color="rgba(255,255,255,0.2)" style={gutters.marginVertical_16} />
+          <View style={styles.heroRow}>
+            <View style={styles.heroStat}>
+              <Text variant="body3" style={styles.heroStatLabel}>
+                Collected
               </Text>
-            </TouchableOpacity>
+              {sLoading ? (
+                <Skeleton width={70} height={14} borderRadius={4} bgColor="rgba(255,255,255,0.25)" style={gutters.marginTop_4} />
+              ) : (
+                <Text variant="body2" weight="semibold" style={styles.heroStatValue}>
+                  {fmtBDT(totalCollection)}
+                </Text>
+              )}
+            </View>
+            <View style={[styles.heroDivider, { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+            <View style={styles.heroStat}>
+              <Text variant="body3" style={styles.heroStatLabel}>
+                Spent
+              </Text>
+              {sLoading ? (
+                <Skeleton width={60} height={14} borderRadius={4} bgColor="rgba(255,255,255,0.25)" style={gutters.marginTop_4} />
+              ) : (
+                <Text variant="body2" weight="semibold" style={styles.heroStatValue}>
+                  {fmtBDT(totalExpenses)}
+                </Text>
+              )}
+            </View>
+            <View style={[styles.heroDivider, { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+            <View style={styles.heroStat}>
+              <Text variant="body3" style={styles.heroStatLabel}>
+                Budget
+              </Text>
+              {sLoading ? (
+                <Skeleton width={45} height={14} borderRadius={4} bgColor="rgba(255,255,255,0.25)" style={gutters.marginTop_4} />
+              ) : (
+                <Text variant="body2" weight="semibold" style={styles.heroStatValue}>
+                  {budgetUtil}%
+                </Text>
+              )}
+            </View>
           </View>
-        ) : (
-          <>
-            {/* Card 1 – Total Collection */}
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-                styles.cardGap,
-              ]}
-            >
-              <View
-                style={styles.cardHeaderRow}
-              >
-                <Text
-                  variant="body3"
-                  style={[styles.cardLabel, { color: labelColor }]}
-                >
-                  Total Collection
-                </Text>
-                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
-                  <IconByVariant path="cash" width={20} height={20} color={colors.warning} />
-                </View>
-              </View>
-              <Text variant="heading2" weight="bold" style={styles.cardAmount}>
-                {fmtBDT(totalCollection)}
-              </Text>
-              <View style={styles.inlineRow}>
-                {isPositiveTrend ? (
-                  <TrendUpIcon color={colors.success} />
-                ) : (
-                  <TrendDownIcon color={colors.error} />
-                )}
-                <Text
-                  variant="body3"
-                  style={[
-                    styles.inlineTextGap,
-                    { color: isPositiveTrend ? colors.success : colors.error },
-                  ]}
-                >
-                  {trend} from last week
-                </Text>
-              </View>
-            </View>
+        </Card>
 
-            {/* Card 2 – Total Expenses */}
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-                styles.cardGap,
-              ]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <Text
-                  variant="body3"
-                  style={[styles.cardLabel, { color: labelColor }]}
-                >
-                  Total Expenses
-                </Text>
-                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
-                  <IconByVariant path="cart" width={20} height={20} color={colors.warning} />
-                </View>
-              </View>
-              <Text variant="heading2" weight="bold" style={styles.cardAmount}>
-                {fmtBDT(totalExpenses)}
-              </Text>
-              <View style={styles.inlineRow}>
-                <InfoCircleIcon color={labelColor} />
-                <Text variant="body3" color="secondary" style={styles.inlineTextGap}>
-                  Budget utilization {budgetUtil}%
-                </Text>
-              </View>
-            </View>
-
-            {/* Card 3 – Remaining Balance */}
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-                styles.sectionGap,
-              ]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <Text
-                  variant="body3"
-                  style={[styles.cardLabel, { color: labelColor }]}
-                >
-                  Remaining Balance
-                </Text>
-                <View style={[styles.iconBadge, { backgroundColor: iconTintBg }]}>
-                  <IconByVariant path="wallet" width={20} height={20} color={colors.warning} />
-                </View>
-              </View>
+        {/* ── Trend badge ─────────────────────────────────────────────────── */}
+        {!sLoading && !sError && (
+          <View style={[styles.trendRow, gutters.marginBottom_24]}>
+            <View style={[
+              styles.trendBadge,
+              { backgroundColor: isPositiveTrend ? withOpacity(colors.success, 0.12) : withOpacity(colors.error, 0.12) },
+            ]}>
+              {isPositiveTrend
+                ? <TrendUpIcon color={colors.success} size={12} />
+                : <TrendDownIcon color={colors.error} size={12} />}
               <Text
-                variant="heading2"
-                weight="bold"
-                style={[styles.cardAmount, { color: colors.warning }]}
+                variant="body3"
+                weight="medium"
+                style={[styles.trendText, { color: isPositiveTrend ? colors.success : colors.error }]}
               >
-                {fmtBDT(remainingBalance)}
+                {trend} vs last week
               </Text>
-              <View style={styles.inlineRow}>
-                <ClockIcon color={colors.warning} />
-                <Text variant="body3" style={[styles.inlineTextGap, { color: colors.warning }]}>
-                  Available for allocation
-                </Text>
-              </View>
             </View>
-          </>
+          </View>
         )}
 
         {/* ── Quick Actions ───────────────────────────────────────────────── */}
-        <View style={styles.sectionGap}>
-          <View style={styles.sectionTitleRow}>
-            <BoltIcon color={colors.warning} />
-            <Text variant="heading3" weight="bold" style={styles.sectionTitleText}>
-              Quick Actions
-            </Text>
-          </View>
+        <View style={gutters.marginBottom_24}>
+          <Text variant="body2" weight="semibold" style={gutters.marginBottom_12}>
+            Quick Actions
+          </Text>
 
-          <View style={styles.quickActionRow}>
-            {/* Add Donation – filled green */}
+          <View style={styles.quickActionsGrid}>
+            {/* Add Donation */}
             <TouchableOpacity
-              style={[styles.quickActionPrimary, { backgroundColor: colors.primary }]}
-              onPress={() =>
-                bottomSheet
-                  .show({
-                    component: NewDonationSheet,
-                    options: { snapPoints: ['90%'], enablePanDownToClose: true },
-                  })
-                  .catch(() => {})
-              }
-              activeOpacity={0.8}
+              style={[styles.quickActionCard, { backgroundColor: colors.primary }]}
+              onPress={openDonationSheet}
+              activeOpacity={0.82}
             >
-              <View
-                style={styles.quickActionBadge}
-              >
-                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', lineHeight: 24 }}>
-                  +
-                </Text>
+              <View style={[styles.quickActionIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <PlusIcon color={colors.white} size={20} />
               </View>
-              <Text variant="body2" weight="semibold" color="white">
+              <Text variant="body3" weight="semibold" style={{ color: colors.white, marginTop: 8 }}>
                 Add Donation
               </Text>
             </TouchableOpacity>
 
-            {/* Add Expense – outline */}
+            {/* Add Expense */}
             <TouchableOpacity
-              style={[styles.quickActionOutline, { borderColor: btnBorder }]}
-              onPress={() => navigation.navigate('MenuTab' as never)}
-              activeOpacity={0.8}
+              style={[styles.quickActionCard, { backgroundColor: colors.gray9, borderColor: colors.gray7, borderWidth: StyleSheet.hairlineWidth }]}
+              onPress={() => navigation.navigate(routes.addExpense as never)}
+              activeOpacity={0.82}
             >
-              <View
-                style={[styles.quickActionOutlineBadge, { borderColor: colors.warning }]}
-              >
-                <Text style={{ color: colors.warning, fontSize: 22, fontWeight: '700', lineHeight: 24 }}>
-                  -
-                </Text>
+              <View style={[styles.quickActionIcon, { backgroundColor: withOpacity(colors.warning, 0.15) }]}>
+                <ReceiptIcon color={colors.warning} size={20} />
               </View>
-              <Text variant="body2" weight="semibold">
+              <Text variant="body3" weight="semibold" style={[{ marginTop: 8 }, { color: colors.text }]}>
                 Add Expense
               </Text>
             </TouchableOpacity>
-          </View>
 
-          {/* View Donors – full width outline */}
-          <TouchableOpacity
-            style={[styles.quickActionFullOutline, { borderColor: btnBorder }]}
-            onPress={() => navigation.navigate('CommunitiesTab' as never)}
-            activeOpacity={0.8}
-          >
-            <IconByVariant
-              path="people"
-              width={20}
-              height={20}
-              color={colors.text}
-            />
-            <Text variant="body2" weight="semibold" style={styles.inlineTextGap}>
-              View Donors
-            </Text>
-          </TouchableOpacity>
+            {/* Events */}
+            <TouchableOpacity
+              style={[styles.quickActionCard, { backgroundColor: colors.gray9, borderColor: colors.gray7, borderWidth: StyleSheet.hairlineWidth }]}
+              onPress={() => navigation.navigate(routes.events as never)}
+              activeOpacity={0.82}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: withOpacity(colors.info, 0.15) }]}>
+                <CalendarIcon color={colors.info} size={20} />
+              </View>
+              <Text variant="body3" weight="semibold" style={[{ marginTop: 8 }, { color: colors.text }]}>
+                Events
+              </Text>
+            </TouchableOpacity>
+
+            {/* Reports */}
+            <TouchableOpacity
+              style={[styles.quickActionCard, { backgroundColor: colors.gray9, borderColor: colors.gray7, borderWidth: StyleSheet.hairlineWidth }]}
+              onPress={() => navigation.navigate(routes.reports as never)}
+              activeOpacity={0.82}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: withOpacity(colors.success, 0.15) }]}>
+                <ChartIcon color={colors.success} size={20} />
+              </View>
+              <Text variant="body3" weight="semibold" style={[{ marginTop: 8 }, { color: colors.text }]}>
+                Reports
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Recent Activity ─────────────────────────────────────────────── */}
-        <View>
-          <View style={styles.sectionHeaderBetween}>
-            <View style={styles.sectionTitleRow}>
-              <HistoryIcon color={colors.warning} />
-              <Text variant="heading3" weight="bold" style={styles.sectionTitleText}>
-                Recent Activity
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => navigation.navigate('MenuTab' as never)} activeOpacity={0.7}>
-              <Text variant="body2" style={{ color: colors.warning }}>
-                See All
+        <View style={gutters.marginBottom_12}>
+          {/* Section header */}
+          <View style={[layout.row, layout.justifyBetween, layout.itemsCenter, gutters.marginBottom_16]}>
+            <Text variant="body2" weight="semibold">
+              Recent Activity
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(routes.donations as never)}
+              activeOpacity={0.7}
+            >
+              <Text variant="body3" color="primary" weight="medium">
+                See all
               </Text>
             </TouchableOpacity>
           </View>
 
-          {rLoading ? (
-            <Loader />
-          ) : rError ? (
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <Text variant="body2" weight="semibold" style={styles.cardAmount}>
-                Couldn’t load activity
-              </Text>
-              <Text variant="body3" color="secondary" style={styles.cardAmount}>
-                {rErr instanceof Error ? rErr.message : 'Please try again.'}
-              </Text>
-              <TouchableOpacity onPress={() => void refetchRecent()} activeOpacity={0.7}>
-                <Text variant="body2" style={{ color: colors.primary }}>
-                  Retry
+          <Card variant="outlined" borderRadius={18} padding={0} shadow={false}>
+            {rLoading ? (
+              <View style={{ paddingHorizontal: 16 }}>
+                {[0, 1, 2].map((i) => <ActivityRowSkeleton key={i} />)}
+              </View>
+            ) : rError ? (
+              <View style={styles.activityEmpty}>
+                <Text variant="body3" color="secondary">
+                  Couldn't load activity
                 </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (recent ?? []).length === 0 ? (
-            <Text color="secondary" style={{ textAlign: 'center', paddingVertical: 24 }}>
-              No recent activity
-            </Text>
-          ) : (
-            (recent ?? []).map((item, index) => {
-              const isExpense = item.type === 'expense';
-              const isLast = index === (recent?.length ?? 0) - 1;
-              return (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.activityRow,
-                    !isLast && { borderBottomWidth: 1, borderBottomColor: cardBorder },
-                  ]}
-                >
-                  {/* Icon circle */}
-                  <View
-                    style={[
-                      styles.activityIconCircle,
-                      { backgroundColor: withOpacity(isExpense ? colors.warning : colors.success, 0.16) },
-                    ]}
-                  >
-                    <IconByVariant
-                      path={isExpense ? 'cart' : 'send'}
-                      width={20}
-                      height={20}
-                      color={isExpense ? colors.warning : colors.success}
-                    />
-                  </View>
-
-                  {/* Text */}
-                  <View style={styles.activityText}>
-                    <Text variant="body2" weight="semibold" numberOfLines={1}>
-                      {item.title}
-                    </Text>
-                    <Text variant="body3" color="secondary" style={styles.activityMeta}>
-                      {timeAgo(item.date)}
-                    </Text>
-                  </View>
-
-                  {/* Amount */}
-                  <Text
-                    variant="body2"
-                    weight="semibold"
-                    style={{ color: isExpense ? colors.error : colors.success }}
-                  >
-                    {isExpense ? '-' : '+'}
-                    {fmtBDT(item.amount)}
+                <TouchableOpacity onPress={() => void refetchRecent()} style={gutters.marginTop_8}>
+                  <Text variant="body3" color="primary" weight="medium">
+                    Retry
                   </Text>
-                </View>
-              );
-            })
-          )}
+                </TouchableOpacity>
+              </View>
+            ) : (recent ?? []).length === 0 ? (
+              <View style={styles.activityEmpty}>
+                <DonationIcon color={colors.gray6} size={32} />
+                <Text variant="body3" color="secondary" style={gutters.marginTop_10}>
+                  No recent activity yet
+                </Text>
+                <TouchableOpacity
+                  style={[styles.emptyActionBtn, { backgroundColor: colors.primary, marginTop: 12 }]}
+                  onPress={openDonationSheet}
+                  activeOpacity={0.8}
+                >
+                  <Text variant="body3" weight="semibold" style={{ color: colors.white }}>
+                    + Record first donation
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              (recent ?? []).map((item, index) => {
+                const isExpense = item.type === 'expense';
+                const isLast = index === (recent?.length ?? 0) - 1;
+                const accentColor = isExpense ? colors.error : colors.success;
+                return (
+                  <View key={item.id}>
+                    <View style={styles.activityRow}>
+                      {/* Icon */}
+                      <View style={[styles.activityIcon, { backgroundColor: withOpacity(accentColor, 0.12) }]}>
+                        <IconByVariant
+                          path={isExpense ? 'cart' : 'send'}
+                          width={18}
+                          height={18}
+                          color={accentColor}
+                        />
+                      </View>
+
+                      {/* Labels */}
+                      <View style={styles.activityInfo}>
+                        <Text variant="body2" weight="medium" numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                        <Text variant="body3" color="secondary" style={gutters.marginTop_2}>
+                          {timeAgo(item.date)}
+                        </Text>
+                      </View>
+
+                      {/* Amount + badge */}
+                      <View style={styles.activityRight}>
+                        <Text
+                          variant="body2"
+                          weight="semibold"
+                          style={{ color: accentColor }}
+                        >
+                          {isExpense ? '-' : '+'}{fmtBDT(item.amount)}
+                        </Text>
+                        <Badge
+                          text={isExpense ? 'Expense' : 'Donation'}
+                          bgColor={withOpacity(accentColor, 0.12)}
+                          textColor={accentColor}
+                          size="small"
+                          style={{ marginTop: 4 }}
+                        />
+                      </View>
+                    </View>
+                    {!isLast && <Divider />}
+                  </View>
+                );
+              })
+            )}
+          </Card>
         </View>
       </ScrollView>
     </SafeScreen>
   );
 }
 
-const getStyles = (colors: {
-  gray9: string;
-  text: string;
-}) =>
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const getStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     scrollContent: {
-      paddingHorizontal: 20,
+      paddingHorizontal: 16,
       paddingBottom: 40,
       paddingTop: 16,
     },
-    headerRow: {
+    // Header
+    header: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 24,
+      justifyContent: 'space-between',
+      marginBottom: 20,
     },
-    appLogo: {
-      width: 52,
-      height: 52,
-      borderRadius: 14,
-      justifyContent: 'center',
+    headerLeft: { flex: 1, marginRight: 12 },
+    // Hero card
+    heroLabel: {
+      color: 'rgba(255,255,255,0.75)',
+      letterSpacing: 1,
+      fontSize: 10,
+    },
+    heroAmount: {
+      color: colors.white,
+      marginTop: 6,
+    },
+    heroRow: {
+      flexDirection: 'row',
       alignItems: 'center',
     },
-    headerText: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    headerIconButton: {
-      width: 40,
-      height: 40,
+    heroStat: { flex: 1, alignItems: 'center' },
+    heroStatLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11 },
+    heroStatValue: { color: colors.white, marginTop: 4 },
+    heroDivider: { width: 1, height: 32 },
+    // Trend
+    trendRow: { flexDirection: 'row' },
+    trendBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
       borderRadius: 20,
-      backgroundColor: colors.gray9,
-      justifyContent: 'center',
-      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      gap: 4,
     },
-    sectionLoading: {
-      paddingVertical: 48,
+    trendText: { fontSize: rs(12) },
+    // Quick actions 2×2 grid
+    quickActionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
     },
-    card: {
+    quickActionCard: {
+      width: '47.5%',
       borderRadius: 16,
-      borderWidth: 1,
-      padding: 20,
+      padding: 16,
     },
-    cardGap: {
-      marginBottom: 12,
-    },
-    sectionGap: {
-      marginBottom: 28,
-    },
-    cardHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 6,
-    },
-    cardLabel: {
-      letterSpacing: 0.8,
-      textTransform: 'uppercase',
-    },
-    cardAmount: {
-      marginBottom: 8,
-    },
-    iconBadge: {
-      width: 38,
-      height: 38,
-      borderRadius: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    inlineRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    inlineTextGap: {
-      marginLeft: 8,
-    },
-    sectionTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    sectionTitleText: {
-      marginLeft: 6,
-    },
-    quickActionRow: {
-      flexDirection: 'row',
-      gap: 12,
-      marginBottom: 12,
-    },
-    quickActionPrimary: {
-      flex: 1,
-      borderRadius: 14,
-      paddingVertical: 16,
-      paddingHorizontal: 10,
-      flexDirection: 'row',
+    quickActionIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    quickActionOutline: {
-      flex: 1,
-      borderWidth: 1.5,
-      borderRadius: 14,
-      paddingVertical: 16,
-      paddingHorizontal: 10,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    quickActionFullOutline: {
-      borderWidth: 1.5,
-      borderRadius: 14,
-      paddingVertical: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    quickActionBadge: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
-      backgroundColor: 'rgba(255,255,255,0.25)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 8,
-    },
-    quickActionOutlineBadge: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
-      borderWidth: 1.5,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 8,
-    },
-    sectionHeaderBetween: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
+    // Activity
     activityRow: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 14,
+      paddingHorizontal: 16,
+      gap: 12,
     },
-    activityIconCircle: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      justifyContent: 'center',
+    activityIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
+      justifyContent: 'center',
     },
-    activityText: {
-      flex: 1,
-      marginLeft: 12,
+    activityInfo: { flex: 1 },
+    activityRight: { alignItems: 'flex-end' },
+    activityEmpty: {
+      alignItems: 'center',
+      paddingVertical: 36,
+      paddingHorizontal: 24,
     },
-    activityMeta: {
-      marginTop: 2,
+    emptyActionBtn: {
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
     },
   });

@@ -3,6 +3,8 @@ import routes from './routes';
 export type RootStackParamList = {
   [routes.splash]: undefined;
   [routes.login]: undefined;
+  [routes.signup]: undefined;
+  [routes.forgotPassword]: undefined;
   [routes.main]: undefined;
 };
 

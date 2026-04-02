@@ -28,7 +28,6 @@ import { DonationSourceGrid } from './components/DonationSourceGrid';
 import { getStyles } from './styles';
 
 const GOLD = '#E8A800';
-const LOGO_BG = '#1A5C30';
 
 const CATEGORY_COLORS: Record<string, string> = {
   CATERING: '#4E4DD7',
@@ -400,7 +399,7 @@ export default function ReportsScreen() {
         {/* Download Button */}
         <Button
           text={downloading ? t('common.loading') : t('reports.download_pdf')}
-          bgColor={LOGO_BG}
+          bgColor={colors.primary}
           wrapStyle={[styles.downloadBtn, gutters.marginTop_16]}
           onPress={() => void downloadPdf()}
           isLoading={downloading}

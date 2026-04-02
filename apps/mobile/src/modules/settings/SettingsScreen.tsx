@@ -32,8 +32,6 @@ import {
 import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { getStyles } from './styles';
 
-const LOGO_BG = '#1A5C30';
-
 type SettingsRowProps = {
   leftIcon: React.ReactNode;
   title: string;
@@ -171,12 +169,12 @@ export default function SettingsScreen() {
         {/* Success bar */}
         {showSuccess && (
           <View style={styles.successBar}>
-            <CheckCircleIcon color={LOGO_BG} size={18} />
+            <CheckCircleIcon color={colors.primary} size={18} />
             <Text variant="body2" style={styles.successText}>
               {t('settings.success_import')}
             </Text>
             <TouchableOpacity style={styles.successClose} activeOpacity={0.7}>
-              <CloseIcon color={LOGO_BG} size={16} />
+              <CloseIcon color={colors.primary} size={16} />
             </TouchableOpacity>
           </View>
         )}
@@ -244,7 +242,7 @@ export default function SettingsScreen() {
         <SettingsSection title={t('settings.section_cloud')}>
           <View style={styles.cloudSyncRow}>
             <View style={styles.rowIconBox}>
-              <CloudCheckIcon color={LOGO_BG} size={18} />
+              <CloudCheckIcon color={colors.primary} size={18} />
             </View>
             <View style={styles.cloudSyncContent}>
               <Text variant="body2" weight="medium">
@@ -337,7 +335,7 @@ export default function SettingsScreen() {
             rightElement={
               <Switch
                 value={isDark}
-                activeColor={LOGO_BG}
+                activeColor={colors.primary}
                 onPress={(value) => handleTheme(value)}
               />
             }

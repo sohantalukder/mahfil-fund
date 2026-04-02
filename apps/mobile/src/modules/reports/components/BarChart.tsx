@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Rect, Text as SvgText, G } from 'react-native-svg';
 
-const LOGO_BG = '#1A5C30';
+const DEFAULT_BAR_COLOR = '#1A5C30';
 const GOLD = '#E8A800';
 
 interface BarChartProps {
@@ -63,7 +63,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             const isHighlighted = index === computedHighlight;
             const fill = isHighlighted
               ? highlightColor
-              : (barColor ?? LOGO_BG);
+              : (barColor ?? DEFAULT_BAR_COLOR);
             const rx = 5;
 
             return (

@@ -1,180 +1,237 @@
-import { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { navigationRef } from '@/navigation/navigationRef';
 import { SafeScreen } from '@/shared/components/templates';
 import Text from '@/shared/components/atoms/text/Text';
-import Button from '@/shared/components/atoms/buttons/Button';
+import { Button, Card, Divider, Image } from '@/shared/components/atoms';
 import TextInput from '@/shared/components/atoms/text-input/TextInput';
-import { Image } from '@/shared/components/atoms';
+import { PasswordInput } from '@/shared/components/molecules';
 import { useTheme } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { isEnvConfigured } from '@/config/env';
 import { useAuth } from '@/contexts/AuthContext';
 import routes from '@/navigation/routes';
-import EyeOnIcon from '@/assets/icons/EyeOn.icon';
-import EyeOffIcon from '@/assets/icons/EyeOff.icon';
 import rs from '@/shared/utilities/responsiveSize';
 
 export default function LoginScreen() {
   const { session } = useAuth();
   const { gutters, colors, layout, logo } = useTheme();
+  const navigation = useNavigation();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (session) {
       navigationRef.reset({ index: 0, routes: [{ name: routes.main, key: routes.main }] });
     }
   }, [session]);
 
-  async function onSubmit() {
+  const onSubmit = useCallback(async () => {
     setError(null);
-    if (!email.trim()) {
-      setError('Enter your email');
-      return;
-    }
-    if (!password) {
-      setError('Enter your password');
-      return;
-    }
-    if (!isEnvConfigured()) {
-      setError('Configure API_URL, SUPABASE_URL, SUPABASE_ANON_KEY in .env');
-      return;
-    }
+    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!password) { setError('Please enter your password.'); return; }
+    if (!isEnvConfigured()) { setError('App is not configured. Contact support.'); return; }
+
     setLoading(true);
     try {
       const { error: e } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-      if (e) {
-        setError(e.message);
-        return;
-      }
+      if (e) setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, password]);
 
-  async function onForgotPassword() {
-    setError(null);
-    setForgotSent(false);
-    if (!email.trim()) {
-      setError('Enter your email above, then tap Forgot password.');
-      return;
-    }
-    if (!isEnvConfigured()) {
-      setError('Configure API_URL, SUPABASE_URL, SUPABASE_ANON_KEY in .env');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error: e } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'mahfil://login-callback',
-      });
-      if (e) {
-        setError(e.message);
-        return;
-      }
-      setForgotSent(true);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const clearError = useCallback(() => setError(null), []);
 
   return (
     <SafeScreen>
-      <ScrollView
-        contentContainerStyle={[
-          gutters.paddingHorizontal_24,
-          gutters.paddingTop_32,
-          gutters.paddingBottom_32,
-          layout.flexGrow_1,
-        ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={true}
+      <KeyboardAvoidingView
+        style={layout.flex_1}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {logo != null ? (
-          <View style={[layout.itemsCenter, gutters.marginBottom_24]}>
-            <Image
-              source={logo}
-              height={rs(140)}
-              width={rs('wf') * 0.6}
-              resizeMode='contain'
-            />
-          </View>
-        ) : null}
-        <Text variant="heading1" style={gutters.marginBottom_8}>
-          Mahfil Fund
-        </Text>
-        <Text color="secondary" style={gutters.marginBottom_32}>
-          Sign in with your email and password.
-        </Text>
-        {!isEnvConfigured() ? (
-          <View
-            style={[
-              gutters.padding_16,
-              { backgroundColor: colors.warning + '22', borderRadius: rs(8) },
-            ]}
-          >
-            <Text color="warning">Add .env in apps/mobile (see .env.example)</Text>
-          </View>
-        ) : null}
-        <TextInput
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={(v) => setEmail(v)}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          wrapperStyle={gutters.marginBottom_16}
-        />
-        <TextInput
-          label="Password"
-          placeholder="••••••••"
-          value={password}
-          onChangeText={(v) => setPassword(v)}
-          secureTextEntry={!showPassword}
-          rightIcon={
-            showPassword ? (
-              <EyeOnIcon width={22} height={22} />
-            ) : (
-              <EyeOffIcon width={22} height={22} />
-            )
-          }
-          rightHandler={() => setShowPassword((p) => !p)}
-          wrapperStyle={gutters.marginBottom_8}
-        />
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() =>  onForgotPassword()}
-          disabled={loading}
-          style={gutters.marginBottom_16}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-            <Text color="primary" style={{ fontSize: rs(14) }}>
-            Forgot password?
-          </Text>
-        </TouchableOpacity>
-        {error ? (
-          <Text color="error" style={gutters.marginBottom_12}>
-            {error}
-          </Text>
-        ) : null}
-        {forgotSent ? (
-          <Text color="success" style={gutters.marginBottom_16}>
-            Check your email for the password reset link.
-          </Text>
-        ) : null}
-        <Button
-          text={loading ? 'Signing in…' : 'Sign in'}
-          onPress={ onSubmit}
-          disabled={loading}
-          isLoading={loading}
-        />
-      </ScrollView>
+          {/* ── Brand area ─────────────────────────────────────────────── */}
+          <View style={styles.brandArea}>
+            {logo != null ? (
+              <View style={styles.logoWrap}>
+                <Image
+                  source={logo}
+                  height={rs(72)}
+                  width={rs(72)}
+                  resizeMode="contain"
+                />
+              </View>
+            ) : (
+              <View style={[styles.logoWrap, styles.logoFallback, { backgroundColor: colors.primary }]}>
+                <Text style={styles.logoEmoji}>🕌</Text>
+              </View>
+            )}
+            <Text variant="heading2" weight="bold" style={gutters.marginTop_16}>
+              Mahfil Fund
+            </Text>
+            <Text variant="body2" color="secondary" style={gutters.marginTop_4}>
+              Sign in to your account
+            </Text>
+          </View>
+
+          {/* ── Env warning ────────────────────────────────────────────── */}
+          {!isEnvConfigured() && (
+            <Card
+              variant="outlined"
+              borderColor={colors.warning}
+              backgroundColor={colors.warning + '18'}
+              padding={14}
+              borderRadius={12}
+              shadow={false}
+              style={gutters.marginBottom_16}
+            >
+              <Text variant="body3" style={{ color: colors.warning }}>
+                ⚠️  Add .env in apps/mobile (see .env.example)
+              </Text>
+            </Card>
+          )}
+
+          {/* ── Form card ──────────────────────────────────────────────── */}
+          <View>
+            {/* Email */}
+            <TextInput
+              label="Email address"
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={(v) => { setEmail(v); clearError(); }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              wrapperStyle={gutters.marginBottom_16}
+            />
+
+            {/* Password */}
+            <PasswordInput
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={(v) => { setPassword(v); clearError(); }}
+              wrapperStyle={gutters.marginBottom_8}
+            />
+
+            {/* Forgot password link */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(routes.forgotPassword as never)}
+              style={[gutters.marginBottom_20, layout.itemsEnd]}
+            >
+              <Text variant="body3" color="primary" weight="medium">
+                Forgot password?
+              </Text>
+            </TouchableOpacity>
+
+            {/* Error */}
+            {error ? (
+              <Card
+                variant="outlined"
+                borderColor={colors.error}
+                backgroundColor={colors.error + '12'}
+                padding={12}
+                borderRadius={10}
+                shadow={false}
+                style={gutters.marginBottom_16}
+              >
+                <Text variant="body3" color="error">
+                  {error}
+                </Text>
+              </Card>
+            ) : null}
+
+            {/* Primary action button */}
+            <Button
+              text={loading ? 'Signing in…' : 'Sign in'}
+              onPress={onSubmit}
+              disabled={loading}
+              isLoading={loading}
+              borderRadius={12}
+            />
+
+            <Divider style={gutters.marginVertical_20} />
+            <View style={styles.signupRow}>
+              <Text variant="body3" color="secondary">Don't have an account? </Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate(routes.signup as never)}
+              >
+                <Text variant="body3" color="primary" weight="semibold">Create one</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ── Footer ─────────────────────────────────────────────────── */}
+          <View style={styles.footer}>
+            <Text variant="body3" color="secondary" style={styles.footerText}>
+              Iftar Mahfil Fund Manager · Powered by Mahfil
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  brandArea: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  footerText: {
+    textAlign: 'center',
+  },
+  formCard: {
+    marginBottom: 24,
+  },
+  logoEmoji: {
+    fontSize: rs(40),
+  },
+  logoFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoWrap: {
+    alignItems: 'center',
+    borderRadius: rs(22),
+    height: rs(88),
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: rs(88),
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+  },
+  signupRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+});

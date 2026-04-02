@@ -8,6 +8,7 @@ import { writeAuditLog } from '../shared/audit.js';
 import { generateInviteCode, normalizeInviteCode } from '../services/inviteCode.js';
 import { logError } from '../services/errorLogger.js';
 import { signAccessToken, createRefreshToken } from '../services/token.js';
+import { sendInvitationEmail } from '../services/mail.js';
 
 const INVITE_EXPIRY_DAYS = 7;
 const MAX_VERIFICATION_ATTEMPTS = 5;
@@ -78,6 +79,28 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
         }
       });
 
+      // Send invite code to the external user.
+      // If email delivery fails, we still keep the invitation created.
+      let emailStatus: 'sent' | 'failed' = 'sent';
+      try {
+        await sendInvitationEmail({
+          to: invitation.email,
+          inviteCode: display,
+          expiresAt: invitation.expiresAt,
+          from: app.env.MAIL_FROM,
+        });
+      } catch (e) {
+        emailStatus = 'failed';
+        await logError(app, {
+          level: 'WARNING',
+          source: 'API',
+          message: 'Failed to send invitation email',
+          errorCode: 'INVITATION_EMAIL_FAILED',
+          metadata: { email: invitation.email, communityId: params.communityId },
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+
       await writeAuditLog(app, req, {
         entityType: 'community_invitation',
         entityId: invitation.id,
@@ -97,7 +120,8 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
             expiresAt: invitation.expiresAt,
             inviteCode: display, // Show display format to admin
             createdAt: invitation.createdAt
-          }
+          },
+          emailStatus
         },
         { serverTime: new Date().toISOString(), requestId: req.requestId }
       );
@@ -209,6 +233,27 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
         }
       });
 
+      // Send invite code email on resend.
+      let emailStatus: 'sent' | 'failed' = 'sent';
+      try {
+        await sendInvitationEmail({
+          to: updated.email,
+          inviteCode: display,
+          expiresAt: updated.expiresAt,
+          from: app.env.MAIL_FROM,
+        });
+      } catch (e) {
+        emailStatus = 'failed';
+        await logError(app, {
+          level: 'WARNING',
+          source: 'API',
+          message: 'Failed to send invitation email on resend',
+          errorCode: 'INVITATION_EMAIL_FAILED',
+          metadata: { email: updated.email, invitationId: updated.id },
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+
       await writeAuditLog(app, req, {
         entityType: 'community_invitation',
         entityId: updated.id,
@@ -218,7 +263,7 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
       });
 
       return ok(
-        { invitation: { id: updated.id, inviteCode: display, expiresAt: updated.expiresAt } },
+        { invitation: { id: updated.id, inviteCode: display, expiresAt: updated.expiresAt }, emailStatus },
         { serverTime: new Date().toISOString(), requestId: req.requestId }
       );
     }

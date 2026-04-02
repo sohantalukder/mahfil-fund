@@ -1,4 +1,4 @@
-import { View, Pressable } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { SafeScreen } from '@/shared/components/templates';
 import Text from '@/shared/components/atoms/text/Text';
 import Button from '@/shared/components/atoms/buttons/Button';
@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import routes from '@/navigation/routes';
 
 export default function CommunitiesScreen() {
-  const { gutters } = useTheme();
+  const { gutters, colors } = useTheme();
   const { communities, activeCommunity, setActiveCommunity } = useCommunity();
   const navigation = useNavigation();
 
@@ -25,7 +25,7 @@ export default function CommunitiesScreen() {
           onPress={() => navigation.navigate(routes.join as never)}
         />
         {communities.length === 0 ? (
-          <Text color="secondary">No communities yet. Join with an invite code.</Text>
+          <Text color="secondary">No communities yet. Join one with an invite code.</Text>
         ) : (
           communities.map((c) => {
             const active = activeCommunity?.id === c.id;
@@ -33,26 +33,32 @@ export default function CommunitiesScreen() {
               <Pressable
                 key={c.id}
                 onPress={() => setActiveCommunity(c)}
-                style={{
-                  padding: 16,
-                  marginBottom: 12,
-                  borderRadius: 12,
-                  borderWidth: 2,
-                  borderColor: active ? '#22c55e' : '#333',
-                }}
+                style={[
+                  styles.card,
+                  {
+                    borderColor: active ? colors.success : colors.gray6,
+                    backgroundColor: active
+                      ? colors.success + '11'
+                      : colors.background,
+                  },
+                ]}
               >
-                <Text variant="heading2">{c.name}</Text>
+                <View style={styles.cardHeader}>
+                  <Text variant="body1" weight="semibold">
+                    {c.name}
+                  </Text>
+                  {active ? (
+                    <Text variant="body3" color="success" weight="semibold">
+                      Active
+                    </Text>
+                  ) : null}
+                </View>
                 <Text variant="body3" color="secondary">
                   /{c.slug}
                 </Text>
                 {c.role ? (
                   <Text variant="body3" style={gutters.marginTop_8}>
                     Role: {c.role}
-                  </Text>
-                ) : null}
-                {active ? (
-                  <Text color="success" style={gutters.marginTop_8}>
-                    Active
                   </Text>
                 ) : null}
               </Pressable>
@@ -63,3 +69,18 @@ export default function CommunitiesScreen() {
     </SafeScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+});

@@ -45,13 +45,14 @@ export default function AddExpenseScreen() {
   const [note, setNote] = useState('');
   const [titleError, setTitleError] = useState('');
   const [amountError, setAmountError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => {
       const api = getApi();
       return api.post('/expenses', {
         title: title.trim(),
-        amount: parseFloat(amount) || 0,
+        amount: parseFloat(amount),
         category,
         expenseDate: new Date().toISOString().slice(0, 10),
         note: note.trim() || null,
@@ -59,7 +60,12 @@ export default function AddExpenseScreen() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['community-summary'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications-expenses'] });
       navigation.goBack();
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to save expense';
+      setSaveError(msg);
     },
   });
 
@@ -81,7 +87,11 @@ export default function AddExpenseScreen() {
   }
 
   function handleSave() {
-    if (!activeCommunity?.id) return;
+    setSaveError('');
+    if (!activeCommunity?.id) {
+      setSaveError('Select a community first.');
+      return;
+    }
     if (!validate()) return;
     mutate();
   }
@@ -191,12 +201,19 @@ export default function AddExpenseScreen() {
             containerStyle={[gutters.marginTop_8, borders.rounded_8]}
           />
 
+          {/* Save error */}
+          {saveError ? (
+            <Text color="error" style={gutters.marginBottom_12}>
+              {saveError}
+            </Text>
+          ) : null}
+
           {/* Save Button */}
           <Button
             text={t('expenses.save_button')}
             icon={<SaveIcon color={colors.white} size={18} />}
             iconPosition="left"
-            bgColor="#1A5C30"
+            bgColor={colors.primary}
             wrapStyle={styles.saveBtn}
             onPress={handleSave}
             isLoading={isPending}

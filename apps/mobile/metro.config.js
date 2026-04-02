@@ -3,6 +3,8 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 const path = require('path');
 
+const workspaceRoot = path.resolve(__dirname, '../..');
+
 const defaultConfig = getDefaultConfig(__dirname);
 const { assetExts, sourceExts } = defaultConfig.resolver;
 
@@ -18,8 +20,13 @@ const config = {
     sourceExts: [...sourceExts, 'svg'],
     // Fix for duplicate dependency resolution
     unstable_enablePackageExports: true,
+    // pnpm uses symlinks into the workspace root node_modules/.pnpm store
+    unstable_enableSymlinks: true,
     // Resolve node_modules dependencies properly
-    nodeModulesPaths: [path.resolve(__dirname, 'node_modules')],
+    nodeModulesPaths: [
+      path.resolve(__dirname, 'node_modules'),
+      path.resolve(workspaceRoot, 'node_modules'),
+    ],
     // Block problematic nested node_modules
     blockList: [
       // Block nested @react-native packages that cause conflicts
@@ -31,7 +38,10 @@ const config = {
     unstable_allowRequireContext: true,
   },
   // Ensure proper watching of node_modules
-  watchFolders: [path.resolve(__dirname, 'node_modules')],
+  watchFolders: [
+    path.resolve(__dirname, 'node_modules'),
+    path.resolve(workspaceRoot, 'node_modules'),
+  ],
 };
 
 module.exports = mergeConfig(defaultConfig, config);
