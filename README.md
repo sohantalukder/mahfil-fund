@@ -2,42 +2,47 @@
 
 Multi-platform donation management system for annual Mahfil / Iftar fund collection in Bangladesh.
 
-## Workspace
+## Applications
 
-- `apps/api`: Node.js (Fastify) REST API, TypeScript, Prisma, Supabase Postgres/Auth
-- `apps/web`: Next.js web app
-- `apps/admin`: Next.js admin portal
-- `apps/mobile`: React Native mobile app (offline-first)
-- `packages/*`: shared types, schemas, sdk, i18n, theme, utils
+Each deployable application has an explicit top-level boundary:
 
-## Scripts
+- `api`: Fastify REST API, Prisma, and server-only integrations
+- `web`: unified Next.js portal; customer routes live at `/` and administration routes at `/admin`
+- `mobile`: React Native application
 
-- `npx pnpm install`
-- `npx pnpm dev`
-- `npx pnpm build`
-- `npx pnpm lint`
-- `npx pnpm typecheck`
+Each application owns its contracts, validation, API client, dependencies, lockfile,
+and runtime code. There is no root package, root `node_modules`, workspace package,
+or Turborepo dependency.
+
+## Install and run
+
+Run commands from the application you are working on:
+
+```bash
+cd api && pnpm install && pnpm check
+cd web && pnpm install && pnpm check
+cd mobile && pnpm install && pnpm check
+```
 
 ## Local setup (quick)
 
 ### API
 
-- Copy `[apps/api/.env.example](apps/api/.env.example)` to `apps/api/.env` and fill in Supabase + Postgres values.
+- Copy [`api/.env.example`](api/.env.example) to `api/.env` and fill in Supabase + Postgres values.
 - Generate Prisma client:
-  - `npx pnpm --filter @mahfil/api run prisma:generate`
+  - `cd api && pnpm prisma:generate`
 - (After DB is reachable) run migrations + seed roles:
-  - `npx pnpm --filter @mahfil/api run prisma:migrate`
-  - `npx pnpm --filter @mahfil/api exec prisma db seed`
+  - `cd api && pnpm prisma:migrate`
+  - `cd api && pnpm exec prisma db seed`
 
-### Web/Admin
+### Web
 
 - Set env vars:
-  - `apps/web/.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`
-  - `apps/admin/.env.local`: same as above
+  - `web/.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`
+- Run `cd web && pnpm dev`, then use `/` for the customer portal or `/admin` for administration.
 
 ### Mobile
 
-- Copy `[apps/mobile/.env.example](apps/mobile/.env.example)` to `apps/mobile/.env` and set API + Supabase values.
+- Copy [`mobile/.env.example`](mobile/.env.example) to `mobile/.env` and set API + Supabase values.
 - Run:
-  - `npx pnpm --filter @mahfil/mobile run ios` or `npx pnpm --filter @mahfil/mobile run android`
-
+  - `cd mobile && pnpm ios` or `cd mobile && pnpm android`

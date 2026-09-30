@@ -9,52 +9,45 @@ Mahfil Fund is a multi-tenant, SaaS-ready donation and community fund management
 ## Prerequisites
 
 - Node.js 20+
-- pnpm 9+
+- pnpm 10.32+
 - PostgreSQL (via Supabase)
 - Supabase project with Storage enabled
-- Expo EAS CLI (for mobile builds)
+- Android Studio/JDK and Xcode/CocoaPods for mobile release builds
 
 ---
 
-## Monorepo Structure
+## Repository Structure
 
 ```
-apps/
-  api/       → Fastify REST API (Node.js, TypeScript)
-  web/       → Next.js user portal
-  admin/     → Next.js admin portal
-  mobile/    → React Native (Expo) mobile app
-
-packages/
-  types/     → Shared TypeScript types
-  schemas/   → Zod validation schemas
-  i18n/      → Translations (en, bn)
-  theme/     → Design tokens and fonts
-  api-sdk/   → HTTP client used by all frontends
-  ui/        → Shared UI components
-  config/    → Shared config
-  utils/     → Shared utilities
+api/             → Fastify REST API (Node.js, TypeScript)
+web/             → Unified Next.js customer and admin portal
+mobile/          → React Native mobile app
 ```
+
+There is no central package manager state or shared runtime package. Each deployable
+owns its `package.json`, `pnpm-lock.yaml`, `node_modules`, contracts, API client,
+validation, translations, and runtime code.
 
 ---
 
 ## 1. Install Dependencies
 
 ```bash
-pnpm install
+cd api && pnpm install
+cd ../web && pnpm install
+cd ../mobile && pnpm install
 ```
 
 ---
 
 ## 2. Environment Variables
 
-### `apps/api/.env`
+### `api/.env`
 
 ```env
 DATABASE_URL="postgresql://USER:PASS@HOST:5432/mahfil_fund"
 
 JWT_SECRET="your-very-long-secret-here"
-JWT_REFRESH_SECRET="another-very-long-secret-here"
 JWT_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="7d"
 
@@ -62,13 +55,19 @@ SUPABASE_URL="https://xxxxx.supabase.co"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 SUPABASE_STORAGE_BUCKET="mahfil-uploads"
 
+MAILTRAP_HOST="smtp.example.com"
+MAILTRAP_PORT="2525"
+MAILTRAP_USER="your-smtp-user"
+MAILTRAP_PASS="your-smtp-password"
+MAIL_FROM="noreply@mahfilfund.com"
+
 ADMIN_COMMUNITY_LIMIT=10
 
 PORT=4000
 NODE_ENV=production
 ```
 
-### `apps/web/.env.local`
+### `web/.env.local`
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
@@ -76,18 +75,12 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-### `apps/admin/.env.local`
+### `mobile/.env`
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### `apps/mobile/.env`
-
-```env
-API_BASE_URL=http://localhost:4000
+API_URL=http://localhost:4000
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ---
@@ -95,25 +88,24 @@ API_BASE_URL=http://localhost:4000
 ## 3. Database Migration
 
 ```bash
-# From workspace root
-pnpm --filter api prisma migrate dev --name init
+cd api
+pnpm exec prisma migrate dev --name init
 
 # After adding communityId to existing tables:
-pnpm --filter api prisma migrate dev --name add_community_tenant
+pnpm exec prisma migrate dev --name add_community_tenant
 ```
 
 ---
 
 ## 4. Seed Data
 
-The seed creates:
-- A default community (for existing data backfill)
-- A super admin user (`super@mahfil.fund` / `SuperAdmin@123`)
-- A sample community and community admin
-- All UserRole records
+The seed creates the role records, a default community for existing-data
+backfill, and one super admin from `SEED_ADMIN_EMAIL` and
+`SEED_ADMIN_PASSWORD`. It does not create demo users or print passwords.
 
 ```bash
-pnpm --filter api prisma db seed
+SEED_ADMIN_EMAIL=admin@example.com SEED_ADMIN_PASSWORD='<long-random-password>' \
+  pnpm exec prisma db seed
 ```
 
 ---
@@ -129,14 +121,9 @@ pnpm --filter api prisma db seed
 ## 6. Development
 
 ```bash
-# Start all services
-pnpm dev
-
-# Or start individually
-pnpm --filter api dev          # API on :4000
-pnpm --filter web dev          # Web portal on :3001
-pnpm --filter admin dev        # Admin portal on :3000
-pnpm --filter mobile start     # Metro bundler
+cd api && pnpm dev                    # API on :4000
+cd web && pnpm dev                    # Customer at /, admin at /admin
+cd mobile && pnpm start               # Metro bundler
 ```
 
 ---
@@ -144,21 +131,17 @@ pnpm --filter mobile start     # Metro bundler
 ## 7. Production Build
 
 ```bash
-# Build all packages first
-pnpm build:packages
-
-# Build apps
-pnpm --filter api build
-pnpm --filter web build
-pnpm --filter admin build
+cd api && pnpm check
+cd web && pnpm check
+cd mobile && pnpm check
 ```
 
-### Mobile Production Build (EAS)
+### Mobile Production Build
 
 ```bash
-cd apps/mobile
-eas build --platform android --profile production
-eas build --platform ios --profile production
+cd mobile
+pnpm build:android:bundle
+pnpm build:ios
 ```
 
 ---
@@ -166,16 +149,19 @@ eas build --platform ios --profile production
 ## 8. API Deployment
 
 The API is a Node.js/Fastify app. Deploy via:
-- **Railway** / **Render** / **Fly.io**: Point to `apps/api`, set `start` command to `node dist/server.js`
-- **Docker**: `docker build -f apps/api/Dockerfile .`
+
+- **Railway** / **Render** / **Fly.io**: set the service root to `api`, build with `pnpm install --frozen-lockfile && pnpm build`, then start with `node dist/server.js`
 
 ---
 
 ## 9. Frontend Deployment
 
-Both `apps/web` and `apps/admin` are Next.js apps. Deploy via:
-- **Vercel**: Link repo, set root to `apps/web` or `apps/admin`, add env vars
+`web` is one Next.js app serving both portals. Deploy via:
+
+- **Vercel**: Link the repo, set the project root to `web`, and add the web environment variables
 - **Netlify**: Similar setup with `next build` command
+
+The canonical customer URL is `/`; the canonical administration URL is `/admin`.
 
 ---
 
@@ -190,12 +176,12 @@ Both `apps/web` and `apps/admin` are Next.js apps. Deploy via:
 
 ## 11. User Roles
 
-| Role | Read | Write | Delete | Admin |
-|------|------|-------|--------|-------|
-| `super_admin` | ✓ | ✓ | ✓ | ✓ |
-| `admin` | ✓ | ✓ | ✓ | — |
-| `collector` | ✓ | ✓ | — | — |
-| `viewer` | ✓ | — | — | — |
+| Role          | Read | Write | Delete | Admin |
+| ------------- | ---- | ----- | ------ | ----- |
+| `super_admin` | ✓    | ✓     | ✓      | ✓     |
+| `admin`       | ✓    | ✓     | ✓      | —     |
+| `collector`   | ✓    | ✓     | —      | —     |
+| `viewer`      | ✓    | —     | —      | —     |
 
 ---
 
@@ -216,20 +202,12 @@ Both `apps/web` and `apps/admin` are Next.js apps. Deploy via:
 
 ---
 
-## 14. Offline Sync (Mobile)
-
-1. All mutations (create/update/delete) are stored locally in WatermelonDB
-2. On reconnect, `runSync()` pushes pending operations to `/sync/push`
-3. The API applies changes atomically and returns results
-4. Local records are updated with server IDs and sync status
-
----
-
-## 15. PDF/Export Generation
+## 14. PDF/Export Generation
 
 Reports and invoices are generated server-side using:
+
 - `pdfmake` for PDF (with Hind Siliguri Bangla font)
 - `exceljs` for XLSX
 - `@json2csv/plainjs` for CSV
 
-Fonts are embedded in `apps/api/src/assets/fonts/`.
+Fonts are embedded in `api/src/assets/fonts/`.

@@ -5,17 +5,17 @@ services:
     plan: starter          # change to: free | starter | standard | pro
     region: singapore      # change to: oregon | ohio | frankfurt | singapore
     branch: main
-    rootDir: .
+    rootDir: api
 
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter=@mahfil/api exec prisma generate && pnpm turbo build --filter=@mahfil/api...
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
 
     # Runs migrations before the new version goes live (zero-downtime deploy)
-    preDeployCommand: pnpm --filter=@mahfil/api exec prisma migrate deploy
+    preDeployCommand: pnpm exec prisma migrate deploy
 
-    startCommand: node apps/api/dist/server.js
+    startCommand: node dist/server.js
 
     # Render exposes PORT automatically; Fastify should read process.env.PORT
-    healthCheckPath: /health   # add GET /health → { status: "ok" } to your API
+    healthCheckPath: /health
 
     autoDeploy: false          # GitHub Actions controls deployments
 
@@ -32,18 +32,46 @@ services:
       - key: SUPABASE_URL
         sync: false            # Set manually in Render dashboard
 
-      - key: SUPABASE_ANON_KEY
-        sync: false
-
-      - key: SUPABASE_JWT_SECRET
-        sync: false
-
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+
+      - key: SUPABASE_STORAGE_BUCKET
+        value: mahfil-uploads
 
       # ── Database ──────────────────────────────────────────────────────────────
       - key: DATABASE_URL
         sync: false            # Use Supabase "Transaction" or "Session" pooler URL
+
+      # ── Authentication and email ─────────────────────────────────────────────
+      - key: JWT_SECRET
+        sync: false
+
+      - key: JWT_EXPIRES_IN
+        value: 15m
+
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+
+      - key: MAILTRAP_HOST
+        sync: false
+
+      - key: MAILTRAP_PORT
+        value: "2525"
+
+      - key: MAILTRAP_USER
+        sync: false
+
+      - key: MAILTRAP_PASS
+        sync: false
+
+      - key: MAIL_FROM
+        sync: false
+
+      - key: OTP_EXPIRY_MINUTES
+        value: "10"
+
+      - key: ADMIN_COMMUNITY_LIMIT
+        value: "10"
 
       # ── CORS ──────────────────────────────────────────────────────────────────
       - key: CORS_ORIGIN
