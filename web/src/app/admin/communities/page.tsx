@@ -15,6 +15,7 @@ import { PaginationControls } from '@/components/shared/PaginationControls';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { CommunityWithCounts } from '@/services/communityService';
 import styles from './communities.module.css';
+import { useCurrentUser } from '@/app/providers';
 
 export default function CommunitiesPage() {
   const { t } = useTranslation();
@@ -22,6 +23,8 @@ export default function CommunitiesPage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const { toast } = useToast();
+  const { user } = useCurrentUser();
+  const canManagePlatform = Boolean(user?.isSuperAdmin);
 
   const { data, isLoading, error } = useCommunities({ page, pageSize: 20, search: debouncedSearch.trim() });
   const { data: statsData } = useCommunityCreationStats();
@@ -57,7 +60,7 @@ export default function CommunitiesPage() {
                 : `${stats.created} created`}
             </span>
           )}
-          {atLimit ? (
+          {!canManagePlatform ? null : atLimit ? (
             <Button disabled variant="secondary">+ New Community</Button>
           ) : (
             <Button>
@@ -115,19 +118,19 @@ export default function CommunitiesPage() {
                   <td>
                     <div className={styles.actionRow}>
                       <Link
-                        href={`/admin/invitations?communityId=${c.id}`}
+                        href="/admin/users"
                         className={styles.actionLink}
                       >
-                        Invite
+                        Members
                       </Link>
-                      <button
+                      {canManagePlatform ? <button
                         type="button"
                         className={styles.archiveBtn}
                         onClick={() => setArchiveTarget(c)}
                         disabled={c.status === 'ARCHIVED'}
                       >
                         Archive
-                      </button>
+                      </button> : null}
                     </div>
                   </td>
                 </tr>

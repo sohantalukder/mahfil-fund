@@ -11,7 +11,6 @@ import type {
   AxiosError,
 } from 'axios';
 import axios from 'axios';
-import localStore from '@/services/storage/localStore.service';
 import NetInfo from '@react-native-community/netinfo';
 import { NETWORK_ERROR } from '@/assets/constants/network.constant';
 import { logger } from '@/ignoreWarnings';
@@ -21,7 +20,7 @@ export const CONTENT_TYPE = {
   applicationJson: 'application/json',
 };
 
-/** Optional token getter for API clients that use a different auth source (e.g. Supabase). */
+/** Optional token getter for API clients backed by the application session store. */
 export type GetAccessToken = () => Promise<string | null> | string | null;
 
 export interface HttpConstructorOptions {
@@ -80,26 +79,11 @@ export class Http {
     // Add request interceptors
     this.axiosInstance.interceptors.request.use(
      async (config: InternalAxiosRequestConfig) => {
-        // Log request
-        if (__DEV__) {
-          console.warn('🚀 Request:', {
-            method: config.method?.toUpperCase(),
-            url: this.axiosInstance.defaults.baseURL + '/' + (config.url || ''),
-            headers: config.headers,
-            data: config.data,
-            params: config.params,
-          });
-        }
-
-
         const isNetwork = await NetInfo.fetch();
         if (!isNetwork.isConnected) {
           return Promise.reject(new Error(NETWORK_ERROR.noInternet));
         }
-        // Add authentication token (custom getter or localStore)
-        const token = this.getAccessToken
-          ? await Promise.resolve(this.getAccessToken())
-          : localStore.getApiToken();
+        const token = this.getAccessToken ? await Promise.resolve(this.getAccessToken()) : null;
 
         if (token) {
           config.headers.set('Authorization', `Bearer ${token}`);
@@ -113,17 +97,7 @@ export class Http {
     // Add response interceptors
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
-        // Log response
-       logger.warn('✅ Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            url:
-              this.axiosInstance.defaults.baseURL +
-              '/' +
-              (response.config?.url || ''),
-            headers: response.headers,
-            data: response.data,
-          });
+        if (__DEV__) logger.warn('HTTP response', { status: response.status, url: response.config?.url });
         
         return response;
       },
@@ -131,19 +105,10 @@ export class Http {
         // Log error
       
           if (axios.isAxiosError(error)) {
-            logger.warn('❌ Error:', {
+            if (__DEV__) logger.warn('HTTP error', {
               status: error.response?.status,
-              statusText: error.response?.statusText,
-              url:
-                this.axiosInstance.defaults.baseURL +
-                '/' +
-                (error.config?.url || ''),
-              headers: error.response?.headers,
-              data: error.response?.data,
-              message: error.message,
+              url: error.config?.url,
             });
-          } else {
-            logger.warn('❌ Error:', error);
           }
         
 

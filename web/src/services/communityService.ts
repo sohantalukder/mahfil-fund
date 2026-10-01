@@ -70,6 +70,6 @@ export async function createCommunity(
 }
 
 export async function archiveCommunity(api: ApiClient, id: string): Promise<void> {
-  const res = await api.delete(`/communities/${id}`);
+  const res = await api.patch(`/platform/communities/${id}/status`, { status: 'ARCHIVED' });
   if (!res.success) throw new Error(res.error.message);
 }

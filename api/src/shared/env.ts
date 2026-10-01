@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  JWT_ISSUER: z.string().default('mahfil-fund-api'),
+  JWT_AUDIENCE: z.string().default('mahfil-fund-clients'),
 
   // Prisma
   DATABASE_URL: z.string().min(10),
@@ -31,11 +33,22 @@ const EnvSchema = z.object({
   ADMIN_COMMUNITY_LIMIT: z.coerce.number().int().min(1).default(10),
 
   // Network
-  CORS_ORIGIN: z.string().default('*'),
-  TRUST_PROXY: z.coerce.boolean().default(true)
+  CORS_ORIGIN: z.string().min(1),
+  TRUST_PROXY: z.string().default('false')
+}).superRefine((value, ctx) => {
+  if (value.NODE_ENV === 'production' && value.TRUST_PROXY.trim().toLowerCase() === 'true') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['TRUST_PROXY'], message: 'Production must use explicit trusted proxy addresses or named ranges' });
+  }
 });
 
 export type Env = z.infer<typeof EnvSchema>;
+
+export function parseTrustProxy(value: string): boolean | string[] {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'false' || normalized === '') return false;
+  if (normalized === 'true') return true;
+  return value.split(',').map((item) => item.trim()).filter(Boolean);
+}
 
 export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
   const nodeEnv = raw.NODE_ENV ?? 'development';

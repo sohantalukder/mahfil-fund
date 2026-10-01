@@ -19,7 +19,6 @@ import {
   ChartIcon,
   ReceiptIcon,
   UsersIcon,
-  LinkIcon,
   CsvIcon,
   PencilIcon,
 } from '@/shared/components/atoms/svg-icons/AppSvgIcons';
@@ -48,10 +47,10 @@ export default function AdminHubScreen() {
   const { activeCommunity } = useCommunity();
   const navigation = useNavigation();
   const { session } = useAuth();
-  const { globalRoles } = useMe(!!session);
+  useMe(!!session);
   const role = activeCommunityRole(activeCommunity);
-  const isAdmin = canAccessAdminArea(role, globalRoles);
-  const isManager = canManageUsers(role, globalRoles);
+  const isAdmin = canAccessAdminArea(role);
+  const isManager = canManageUsers(role);
 
   const { data: summary, isLoading } = useQuery<CommunitySummary>({
     queryKey: ['admin-summary', activeCommunity?.id],
@@ -107,13 +106,6 @@ export default function AdminHubScreen() {
         label: 'Users',
         subtitle: 'Manage members & roles',
         route: routes.adminUsers,
-        adminOnly: true,
-      },
-      {
-        icon: <LinkIcon color={colors.warning} size={22} />,
-        label: 'Invitations',
-        subtitle: 'Invite & manage members',
-        route: routes.adminInvitations,
         adminOnly: true,
       },
     ],

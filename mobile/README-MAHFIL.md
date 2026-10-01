@@ -4,10 +4,11 @@
 
 Copy `.env.example` to `.env` in `mobile`:
 
-- `API_URL` — same base as `NEXT_PUBLIC_API_URL` (no trailing slash required).
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY` — same Supabase project as web.
+- `API_URL` — API origin used by the native client (no trailing slash required).
 
-Magic link redirect: add scheme `mahfil://` in iOS URL types and Android intent filter; set Supabase redirect URL accordingly.
+Authentication is API-owned. Access and rotating refresh tokens are stored in the native Keychain/Keystore.
+
+Android release builds require `MAHFIL_UPLOAD_STORE_FILE`, `MAHFIL_UPLOAD_STORE_PASSWORD`, `MAHFIL_UPLOAD_KEY_ALIAS`, and `MAHFIL_UPLOAD_KEY_PASSWORD`. Release builds never fall back to the debug keystore.
 
 ## Native
 

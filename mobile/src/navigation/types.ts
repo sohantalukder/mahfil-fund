@@ -3,7 +3,6 @@ import routes from './routes';
 export type RootStackParamList = {
   [routes.splash]: undefined;
   [routes.login]: undefined;
-  [routes.signup]: undefined;
   [routes.forgotPassword]: undefined;
   [routes.main]: undefined;
 };
@@ -35,8 +34,8 @@ export type MenuStackParamList = {
   [routes.adminInvoices]: undefined;
   [routes.adminAddInvoice]: undefined;
   [routes.adminUsers]: undefined;
-  [routes.adminInvitations]: undefined;
   [routes.adminAuditLogs]: undefined;
+  [routes.platformUsers]: undefined;
 };
 
 export type NavigationProp = import('@react-navigation/stack').StackNavigationProp<

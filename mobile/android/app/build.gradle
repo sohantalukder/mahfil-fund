@@ -76,6 +76,12 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def releaseStoreFilePath = providers.gradleProperty('MAHFIL_UPLOAD_STORE_FILE').orNull ?: System.getenv('MAHFIL_UPLOAD_STORE_FILE')
+def releaseStorePassword = providers.gradleProperty('MAHFIL_UPLOAD_STORE_PASSWORD').orNull ?: System.getenv('MAHFIL_UPLOAD_STORE_PASSWORD')
+def releaseKeyAlias = providers.gradleProperty('MAHFIL_UPLOAD_KEY_ALIAS').orNull ?: System.getenv('MAHFIL_UPLOAD_KEY_ALIAS')
+def releaseKeyPassword = providers.gradleProperty('MAHFIL_UPLOAD_KEY_PASSWORD').orNull ?: System.getenv('MAHFIL_UPLOAD_KEY_PASSWORD')
+def hasReleaseSigning = [releaseStoreFilePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -98,18 +104,35 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFilePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def buildsRelease = graph.allTasks.any { task ->
+        task.path == ':app:assembleRelease' || task.path == ':app:bundleRelease'
+    }
+    if (buildsRelease && !hasReleaseSigning) {
+        throw new GradleException('Release signing is not configured. Set MAHFIL_UPLOAD_STORE_FILE, MAHFIL_UPLOAD_STORE_PASSWORD, MAHFIL_UPLOAD_KEY_ALIAS, and MAHFIL_UPLOAD_KEY_PASSWORD.')
     }
 }
 

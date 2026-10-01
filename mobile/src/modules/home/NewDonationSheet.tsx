@@ -71,9 +71,7 @@ export default function NewDonationSheet() {
     queryFn: async () => {
       if (!activeCommunity?.id) return [];
       const api = getApi();
-      const res = await api.get<{ events?: Event[] }>('/events', {
-        headers: { 'X-Community-Id': activeCommunity.id },
-      });
+      const res = await api.get<{ events?: Event[] }>('/events');
       if (!res.success) return [];
       return (res.data as { events?: Event[] }).events ?? [];
     },

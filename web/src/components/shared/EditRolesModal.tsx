@@ -57,7 +57,7 @@ export function EditRolesModal({
               >
                 {/* width/height + accentColor are dynamic — kept as inline */}
                 <input
-                  type="checkbox"
+                  type="radio"
                   checked={checked}
                   onChange={() => onToggleRole(role)}
                   className="w-4 h-4"

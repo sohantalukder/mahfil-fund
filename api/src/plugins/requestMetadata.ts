@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
+import { createHmac } from 'node:crypto';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -14,6 +15,10 @@ function detectDeviceType(userAgent?: string): string | undefined {
   return 'web';
 }
 
+function boundedHeader(value: string | string[] | undefined, max: number): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value.slice(0, max) : undefined;
+}
+
 export const requestMetadataPlugin: FastifyPluginAsync = fp(async (app) => {
   app.addHook('onRequest', async (req) => {
     let metaId: string | undefined;
@@ -21,9 +26,12 @@ export const requestMetadataPlugin: FastifyPluginAsync = fp(async (app) => {
     req.getOrCreateRequestMetaId = async () => {
       if (metaId) return metaId;
 
-      const userAgent = req.headers['user-agent'];
-      const client = typeof req.headers['x-client'] === 'string' ? req.headers['x-client'] : undefined;
-      const deviceId = typeof req.headers['x-device-id'] === 'string' ? req.headers['x-device-id'] : undefined;
+      const userAgent = boundedHeader(req.headers['user-agent'], 500);
+      const client = boundedHeader(req.headers['x-client'], 32);
+      const rawDeviceId = boundedHeader(req.headers['x-device-id'], 200);
+      const deviceId = rawDeviceId
+        ? createHmac('sha256', app.env.JWT_SECRET).update(rawDeviceId).digest('hex')
+        : undefined;
 
       // Fastify's req.ip respects trustProxy; this is the canonical source here.
       const ip = req.ip;
@@ -43,4 +51,3 @@ export const requestMetadataPlugin: FastifyPluginAsync = fp(async (app) => {
     };
   });
 });
-

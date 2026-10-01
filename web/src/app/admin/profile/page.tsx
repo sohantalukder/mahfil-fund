@@ -64,7 +64,7 @@ export default function AdminProfilePage() {
   }
 
   const displayName = profile?.fullName || profile?.email?.split('@')[0] || 'Admin';
-  const role = profile?.roles?.[0] ?? 'admin';
+  const role = profile?.isSuperAdmin ? 'platform administrator' : 'member';
 
   return (
     <PageShell title={t('dashboard.myProfile')} subtitle={t('dashboard.profileSubtitleAlt')}>

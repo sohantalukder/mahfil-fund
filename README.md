@@ -28,21 +28,20 @@ cd mobile && pnpm install && pnpm check
 
 ### API
 
-- Copy [`api/.env.example`](api/.env.example) to `api/.env` and fill in Supabase + Postgres values.
+- Copy [`api/.env.example`](api/.env.example) to `api/.env` and fill in PostgreSQL, JWT, mail, and server-only Supabase Storage values.
 - Generate Prisma client:
   - `cd api && pnpm prisma:generate`
-- (After DB is reachable) run migrations + seed roles:
+- After the database is reachable, run migrations and seed the initial platform account:
   - `cd api && pnpm prisma:migrate`
   - `cd api && pnpm exec prisma db seed`
 
 ### Web
 
-- Set env vars:
-  - `web/.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`
+- Set `API_INTERNAL_URL` in `web/.env.local`; browser requests always use the same-origin `/backend` proxy.
 - Run `cd web && pnpm dev`, then use `/` for the customer portal or `/admin` for administration.
 
 ### Mobile
 
-- Copy [`mobile/.env.example`](mobile/.env.example) to `mobile/.env` and set API + Supabase values.
+- Copy [`mobile/.env.example`](mobile/.env.example) to `mobile/.env` and set only the API URL.
 - Run:
   - `cd mobile && pnpm ios` or `cd mobile && pnpm android`

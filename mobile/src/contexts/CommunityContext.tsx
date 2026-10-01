@@ -40,7 +40,10 @@ export function CommunityProvider({ children }: { children: ReactNode }) {
   const setCommunities = useCallback(
     (list: Community[]) => {
       setCommunitiesState(list);
-      if (list.length === 0) return;
+      if (list.length === 0) {
+        setActiveCommunity(null);
+        return;
+      }
       const savedId = activeRef.current?.id;
       const fromSaved = savedId ? list.find((x) => x.id === savedId) : null;
       const next = fromSaved ?? list[0]!;

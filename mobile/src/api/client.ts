@@ -1,8 +1,7 @@
 import { createApiClient, type ApiClient } from '@/api/createApiClient';
-import DeviceInfo from 'react-native-device-info';
 import localStore from '@/services/storage/localStore.service';
 import { getApiBaseUrl } from '@/config/env';
-import { supabase } from '@/lib/supabase';
+import { clearSession, getAccessToken, refreshSession } from '@/services/auth/session.service';
 
 export type CommunityRef = { id: string; name: string; slug: string; role?: string };
 
@@ -27,38 +26,37 @@ export function getApi(): ApiClient {
   if (!memberClient) {
     memberClient = createApiClient({
       baseUrl: getApiBaseUrl(),
-      getAccessToken: async () => {
-        const { data } = await supabase.auth.getSession();
-        return data.session?.access_token ?? null;
-      },
-      getDeviceId: () => DeviceInfo.getUniqueIdSync(),
+      getAccessToken,
+      getDeviceId: () => localStore.getInstallationId(),
       getCommunityId,
       enforceCommunityId: false,
       communityOptionalUrl: () => true,
+      onUnauthorizedRetry: async () => Boolean(await refreshSession()),
+      onAuthFailure: clearSession,
     });
   }
   return memberClient;
 }
 
 /**
- * Admin-style calls: require X-Community-Id except for explicit optional paths.
+ * Admin-style calls require an active community except for explicit platform paths.
  */
 export function getAdminApi(): ApiClient {
   if (!adminClient) {
     adminClient = createApiClient({
       baseUrl: getApiBaseUrl(),
-      getAccessToken: async () => {
-        const { data } = await supabase.auth.getSession();
-        return data.session?.access_token ?? null;
-      },
-      getDeviceId: () => DeviceInfo.getUniqueIdSync(),
+      getAccessToken,
+      getDeviceId: () => localStore.getInstallationId(),
       getCommunityId,
       enforceCommunityId: true,
       communityOptionalUrl: (p) =>
         p === '/communities' ||
         p === '/communities/mine' ||
         p === '/communities/creation-stats' ||
-        p.startsWith('/me'),
+        p.startsWith('/me') ||
+        p.startsWith('/platform/'),
+      onUnauthorizedRetry: async () => Boolean(await refreshSession()),
+      onAuthFailure: clearSession,
     });
   }
   return adminClient;

@@ -8,7 +8,7 @@ export type MeMembership = {
 };
 
 export type MeUser = {
-  roles?: string[];
+  isSuperAdmin?: boolean;
   memberships?: MeMembership[];
 };
 
@@ -31,7 +31,7 @@ export function useMe(enabled = true) {
   });
 
   const user = q.data?.user;
-  const globalRoles = user?.roles ?? [];
+  const isSuperAdmin = user?.isSuperAdmin ?? false;
   const memberships = user?.memberships ?? [];
 
   const communities: Community[] = memberships.map((m) => ({
@@ -44,7 +44,7 @@ export function useMe(enabled = true) {
   return {
     ...q,
     user,
-    globalRoles,
+    isSuperAdmin,
     memberships,
     communities,
     invalidateMe: () => queryClient.invalidateQueries({ queryKey: ME_KEY }),

@@ -7,7 +7,6 @@ import routes from './routes';
 import { screenOptions } from './screenOptions';
 import { Splash } from '@/modules';
 import LoginScreen from '@/modules/login/LoginScreen';
-import SignUpScreen from '@/modules/signup/SignUpScreen';
 import ForgotPasswordScreen from '@/modules/forgot-password/ForgotPasswordScreen';
 import MainNavigator from './MainNavigator';
 
@@ -21,7 +20,6 @@ const Navigation = () => {
       <Stack.Navigator initialRouteName={routes.splash} key={variant} screenOptions={screenOptions}>
         <Stack.Screen name={routes.splash} component={Splash} />
         <Stack.Screen name={routes.login} component={LoginScreen} />
-        <Stack.Screen name={routes.signup} component={SignUpScreen} />
         <Stack.Screen name={routes.forgotPassword} component={ForgotPasswordScreen} />
         <Stack.Screen name={routes.main} component={MainNavigator} options={{ headerShown: false, gestureEnabled: false }} />
       </Stack.Navigator>

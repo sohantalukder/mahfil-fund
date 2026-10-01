@@ -21,6 +21,6 @@ mobile/ios/Podfile.lock
 .vercel
 
 # Local diagnostics and generated reports
-logcat*.txt
+*logcat*.txt
 coverage
 *.tsbuildinfo

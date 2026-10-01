@@ -17,6 +17,25 @@ export interface LogErrorInput {
   userAgent?: string;
 }
 
+export function sanitizeLogMessage(message: string): string {
+  return message
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\beyJ[A-Za-z0-9_-]{20,}(?:\.[A-Za-z0-9_-]{10,}){1,2}\b/g, '[redacted-token]')
+    .replace(/\b(password|otp|secret|token|authorization|cookie)\s*[:=]\s*[^\s,;]+/gi, '$1=[redacted]')
+    .slice(0, 1000);
+}
+
+const blockedMetadataKey = /authorization|cookie|token|secret|password|otp|hash|body|stack/i;
+
+export function sanitizeLogMetadata(input: Record<string, unknown>): Record<string, string | number | boolean | null> {
+  return Object.fromEntries(Object.entries(input)
+    .filter(([key]) => !blockedMetadataKey.test(key))
+    .slice(0, 20)
+    .map(([key, value]) => [key, value === null || ['string', 'number', 'boolean'].includes(typeof value)
+      ? (typeof value === 'string' ? value.slice(0, 300) : value) as string | number | boolean | null
+      : '[filtered]']));
+}
+
 export async function logError(app: FastifyInstance, input: LogErrorInput): Promise<void> {
   try {
     await app.prisma.errorLog.create({
@@ -29,11 +48,11 @@ export async function logError(app: FastifyInstance, input: LogErrorInput): Prom
         routeName: input.routeName ?? null,
         actionName: input.actionName ?? null,
         errorCode: input.errorCode ?? null,
-        message: input.message,
-        stackTrace: input.stackTrace ?? null,
-        metadata: (input.metadata ?? {}) as never,
+        message: sanitizeLogMessage(input.message),
+        stackTrace: null,
+        metadata: sanitizeLogMetadata(input.metadata ?? {}) as never,
         ipAddress: input.ipAddress ?? null,
-        userAgent: input.userAgent ?? null
+        userAgent: input.userAgent?.slice(0, 500) ?? null
       }
     });
   } catch {
@@ -64,8 +83,7 @@ export function logErrorFromRequest(
     actionName: options.actionName,
     errorCode: options.errorCode,
     message: err.message,
-    stackTrace: err.stack,
-    metadata: { method: req.method, url: req.url },
+    metadata: { method: req.method, path: req.url.split('?')[0] },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });

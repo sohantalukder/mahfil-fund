@@ -4,46 +4,50 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import multipart from '@fastify/multipart';
-import { loadEnv } from './shared/env.js';
+import cookie from '@fastify/cookie';
+import { loadEnv, parseTrustProxy } from './shared/env.js';
 import { requestContextPlugin } from './plugins/requestContext.js';
 import { prismaPlugin } from './plugins/prisma.js';
 import { requestMetadataPlugin } from './plugins/requestMetadata.js';
 import { authPlugin } from './plugins/auth.js';
 import { idempotencyPlugin } from './plugins/idempotency.js';
 import { tenantGuardPlugin } from './plugins/tenantGuard.js';
-import { initMailTransporter } from './services/mail.js';
-import { registerRoutes } from './routes/index.js';
-import { registerErrorHandler } from './routes/errorHandler.js';
+import { initMailTransporter } from './integrations/email.js';
+import { registerRoutes } from './core/routes.js';
+import { registerErrorHandler } from './core/errorHandler.js';
+import { registerOutboxWorker } from './integrations/outboxWorker.js';
 
 export function buildApp() {
   const env = loadEnv();
 
   const app = Fastify({
+    bodyLimit: 1024 * 1024,
     logger: {
       level: env.NODE_ENV === 'production' ? 'info' : 'debug'
     },
-    trustProxy: env.TRUST_PROXY
+    trustProxy: parseTrustProxy(env.TRUST_PROXY)
   });
 
   app.decorate('env', env);
 
   app.register(helmet);
   app.register(cors, {
-    origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',').map((s) => s.trim()),
+    origin: env.CORS_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean),
     credentials: true,
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'X-Community-Id',
       'X-Client',
       'X-Device-Id',
       'Idempotency-Key',
       'Accept',
       'Accept-Language',
+      'X-CSRF-Token',
     ],
   });
-  app.register(rateLimit, { max: 250, timeWindow: '1 minute' });
+  app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
   app.register(sensible);
+  app.register(cookie);
   app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }); // 10 MB
 
   app.register(requestContextPlugin);
@@ -57,6 +61,7 @@ export function buildApp() {
 
   registerErrorHandler(app);
   registerRoutes(app);
+  registerOutboxWorker(app);
 
   return app;
 }
@@ -66,4 +71,3 @@ declare module 'fastify' {
     env: ReturnType<typeof loadEnv>;
   }
 }
-

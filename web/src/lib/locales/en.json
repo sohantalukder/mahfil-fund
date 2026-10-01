@@ -200,8 +200,6 @@
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "resetPassword": "Reset password",
-    "register": "Register",
-    "verifyEmail": "Verify email",
     "fullName": "Full name",
     "changePassword": "Change password",
     "currentPassword": "Current password",
@@ -214,7 +212,6 @@
     "editCommunity": "Edit community",
     "selectCommunity": "Select community",
     "switchCommunity": "Switch community",
-    "joinCommunity": "Join community",
     "communityName": "Community name",
     "communitySlug": "Community slug",
     "description": "Description",
@@ -237,27 +234,6 @@
       "totalCollections": "Total collections",
       "totalExpenses": "Total expenses"
     }
-  },
-  "invitation": {
-    "invitation": "Invitation",
-    "invitations": "Invitations",
-    "createInvitation": "Create invitation",
-    "inviteCode": "Invite code",
-    "enterInviteCode": "Enter invite code (e.g. 4827 1934 5501 8821)",
-    "invitedBy": "Invited by",
-    "expiresAt": "Expires",
-    "status": {
-      "pending": "Pending",
-      "used": "Used",
-      "expired": "Expired",
-      "cancelled": "Cancelled"
-    },
-    "role": "Role",
-    "resend": "Resend",
-    "cancel": "Cancel invitation",
-    "note": "Note",
-    "verify": "Verify & Join",
-    "success": "You have successfully joined {{communityName}}!"
   },
   "events": {
     "events": "Events",
@@ -487,8 +463,6 @@
     "communitiesTitle": "Communities",
     "communitiesSubtitle": "Manage communities and members.",
     "communitiesSubtitleAlt": "Manage all communities and tenants",
-    "invitationsTitle": "Invitations",
-    "invitationsSubtitle": "Create and manage invitation codes.",
     "invoicesTitle": "Invoices",
     "invoicesSubtitle": "View and manage invoices.",
     "auditLogsTitle": "Audit Logs",
@@ -504,7 +478,6 @@
     "invoicesForCommunity": "Invoices for {{name}}",
     "selectCommunityForInvoices": "Select a community to view invoices",
     "selectCommunityFromHeader": "Please select a community from the header switcher.",
-    "invitationsSubtitleAlt": "Manage community invitations and invite codes",
     "reportsSubtitleAlt": "Financial summaries and statistics per event.",
     "auditLogsSubtitleAlt": "Track all admin actions across the system.",
     "errorLogsSubtitleAlt": "Monitor and review application errors"

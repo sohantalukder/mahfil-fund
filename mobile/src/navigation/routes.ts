@@ -2,7 +2,6 @@ const routes = {
   // Root
   splash: 'Splash',
   login: 'Login',
-  signup: 'SignUp',
   forgotPassword: 'ForgotPassword',
   main: 'Main',
 
@@ -13,9 +12,6 @@ const routes = {
 
   // Home stack
   notifications: 'Notifications',
-
-  // Communities stack
-  join: 'Join',
 
   // Menu stack — member features
   events: 'Events',
@@ -37,8 +33,8 @@ const routes = {
   adminInvoices: 'AdminInvoices',
   adminAddInvoice: 'AdminAddInvoice',
   adminUsers: 'AdminUsers',
-  adminInvitations: 'AdminInvitations',
   adminAuditLogs: 'AdminAuditLogs',
+  platformUsers: 'PlatformUsers',
 
   // Profile stack
   settings: 'Settings',

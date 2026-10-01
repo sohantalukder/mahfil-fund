@@ -8,14 +8,14 @@ export interface ApiClientOptions {
   baseUrl: string;
   getAccessToken?: GetAccessToken;
   getDeviceId?: () => string | null;
-  /** Called on every request; value is sent as X-Community-Id (GET/POST/PATCH/DELETE). */
+  /** Called on every request; tenant paths are rewritten to /communities/:communityId/*. */
   getCommunityId?: GetCommunityId;
   /**
    * When true, reject before network if getCommunityId is empty — except URLs matched by communityOptionalUrl.
    * Use for admin/web clients so POST/PATCH never hit the API without a tenant.
    */
   enforceCommunityId?: boolean;
-  /** Return true if this request may run without X-Community-Id (e.g. GET /communities). */
+  /** Return true if this request may run without an active community. */
   communityOptionalUrl?: (url: string) => boolean;
   onUnauthorizedRetry?: () => Promise<boolean> | boolean;
   onAuthFailure?: () => Promise<void> | void;
@@ -38,10 +38,11 @@ export interface ApiClient {
 export function createApiClient(opts: ApiClientOptions): ApiClient {
   const http = axios.create({
     baseURL: opts.baseUrl.replace(/\/+$/, ''),
-    timeout: 30_000
+    timeout: 30_000,
+    withCredentials: true,
   });
 
-  function resolveCommunityHeader(req?: RequestOptions): string | null {
+  function resolveCommunityId(req?: RequestOptions): string | null {
     const fromCall = req?.communityId?.trim();
     if (fromCall) return fromCall;
     return opts.getCommunityId?.()?.trim() || null;
@@ -60,11 +61,13 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
     const deviceId = opts.getDeviceId?.();
     if (deviceId) config.headers.set('X-Device-Id', deviceId);
 
-    const communityId = resolveCommunityHeader(
+    const communityId = resolveCommunityId(
       (config as { __mfReq?: RequestOptions }).__mfReq,
     );
     if (communityId) {
-      config.headers.set('X-Community-Id', communityId);
+      const path = urlPath(config.url);
+      const tenantRoot = /^\/(events|donors|donations|expenses|invoices|reports|uploads|sync|members|audit-logs|error-logs)(\/|$)/;
+      if (tenantRoot.test(path)) config.url = `/communities/${communityId}${config.url}`;
     } else if (opts.enforceCommunityId && opts.getCommunityId) {
       const p = urlPath(config.url);
       const optional =
@@ -77,13 +80,13 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
       } else {
         return Promise.reject(
           new Error(
-            'Missing community: select a community in the app (stored as X-Community-Id on every API call via axios).',
+            'Missing community: select a community before using this feature.',
           ),
         );
       }
     }
 
-    config.headers.set('X-Client', 'mahfil');
+    config.headers.set('X-Client', 'web');
     return config;
   });
 
@@ -118,8 +121,6 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
   function buildHeaders(req?: RequestOptions): Record<string, string> | undefined {
     const headers: Record<string, string> = {};
     if (req?.idempotencyKey) headers['Idempotency-Key'] = req.idempotencyKey;
-    const cid = resolveCommunityHeader(req);
-    if (cid) headers['X-Community-Id'] = cid;
     return Object.keys(headers).length > 0 ? headers : undefined;
   }
 

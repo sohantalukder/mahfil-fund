@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useCommunity } from '../../providers';
 
 const ROLE_COLOR: Record<string, string> = {
-  super_admin: '#7c3aed',
   admin: '#2563eb',
   collector: '#059669',
   viewer: '#6b7280',
@@ -22,9 +20,6 @@ export default function CommunitiesPage() {
           <div className="db-page-title">My Communities</div>
           <div className="db-page-subtitle">Communities you are a member of</div>
         </div>
-        <div className="db-header-actions">
-          <Link href="/join" className="db-btn db-btn-primary">+ Join Community</Link>
-        </div>
       </div>
 
       {communities.length === 0 ? (
@@ -32,9 +27,8 @@ export default function CommunitiesPage() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>🕌</div>
           <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--color-text-primary)', marginBottom: 8 }}>No communities yet</div>
           <div style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: 14 }}>
-            Ask a community admin to send you an invite code, or join an existing one.
+            Ask a community administrator to add this account as a member.
           </div>
-          <Link href="/join" className="db-btn db-btn-primary">Join with Invite Code</Link>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>

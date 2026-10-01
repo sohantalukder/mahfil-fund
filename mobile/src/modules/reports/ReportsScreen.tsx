@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +12,6 @@ import { useTheme } from '@/theme';
 import { getApi } from '@/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommunity } from '@/contexts/CommunityContext';
-import { getApiBaseUrl } from '@/config/env';
-import { supabase } from '@/lib/supabase';
 import {
   ArrowBackIcon,
   SearchIcon,
@@ -178,27 +176,12 @@ export default function ReportsScreen() {
     if (!activeCommunity?.id) return;
     setDownloading(true);
     try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) throw new Error('Not signed in');
-      const params = new URLSearchParams({ reportType: 'balance_summary', format: 'pdf' });
-      const url = `${getApiBaseUrl()}/reports/export?${params.toString()}`;
-      const res = await fetch(url, {
-        headers: {
-          'X-Community-Id': activeCommunity.id,
-          Authorization: `Bearer ${token}`,
-          'X-Client': 'mahfil',
-        },
+      const res = await getApi().http.post('/reports/export', {
+        type: 'balance_summary', format: 'pdf',
+      }, {
+        responseType: 'arraybuffer',
       });
-      if (!res.ok) throw new Error('Export failed');
-      const buf = await res.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
-      const b64 =
-        typeof global.btoa !== 'undefined'
-          ? global.btoa(binary)
-          : Buffer.from(bytes).toString('base64');
+      const b64 = Buffer.from(res.data as ArrayBuffer).toString('base64');
       const path = `${RNFS.CachesDirectoryPath}/financial-summary.pdf`;
       await RNFS.writeFile(path, b64, 'base64');
       await Share.share(
@@ -207,7 +190,7 @@ export default function ReportsScreen() {
           : { message: t('reports.download_pdf'), url: `file://${path}` },
       );
     } catch {
-      // silently fail — user can retry
+      Alert.alert(t('reports.export_failed'), t('common.error_generic'));
     } finally {
       setDownloading(false);
     }

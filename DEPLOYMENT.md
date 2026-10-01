@@ -70,17 +70,13 @@ NODE_ENV=production
 ### `web/.env.local`
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+API_INTERNAL_URL=http://localhost:4000
 ```
 
 ### `mobile/.env`
 
 ```env
 API_URL=http://localhost:4000
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ---
@@ -89,18 +85,15 @@ SUPABASE_ANON_KEY=your-anon-key
 
 ```bash
 cd api
-pnpm exec prisma migrate dev --name init
-
-# After adding communityId to existing tables:
-pnpm exec prisma migrate dev --name add_community_tenant
+PREFLIGHT_REPORT_PATH=./preflight-production.json pnpm security:preflight
+pnpm exec prisma migrate deploy
 ```
 
 ---
 
 ## 4. Seed Data
 
-The seed creates the role records, a default community for existing-data
-backfill, and one super admin from `SEED_ADMIN_EMAIL` and
+The seed validates the schema and creates one API-owned super admin from `SEED_ADMIN_EMAIL` and
 `SEED_ADMIN_PASSWORD`. It does not create demo users or print passwords.
 
 ```bash
@@ -167,38 +160,38 @@ The canonical customer URL is `/`; the canonical administration URL is `/admin`.
 
 ## 10. Multi-Tenancy Notes
 
-- Every API request to tenant-scoped endpoints must include `X-Community-Id` header
-- The `tenantGuard` plugin validates membership automatically
-- Super admins bypass tenant checks
+- The community ID in `/communities/:communityId/...` is the only tenant source
+- The common tenant guard requires an active membership and active community
+- Super admins have platform authority only and never bypass tenant membership
 - Each community is fully isolated — data never leaks across tenants
 
 ---
 
 ## 11. User Roles
 
-| Role          | Read | Write | Delete | Admin |
-| ------------- | ---- | ----- | ------ | ----- |
-| `super_admin` | ✓    | ✓     | ✓      | ✓     |
-| `admin`       | ✓    | ✓     | ✓      | —     |
-| `collector`   | ✓    | ✓     | —      | —     |
-| `viewer`      | ✓    | —     | —      | —     |
+| Community role | Read | Write | Delete | Member admin |
+| -------------- | ---- | ----- | ------ | ------------ |
+| `ADMIN`        | ✓    | ✓     | ✓      | ✓            |
+| `COLLECTOR`    | ✓    | ✓     | —      | —            |
+| `VIEWER`       | ✓    | —     | —      | —            |
+
+`User.isSuperAdmin` is a separate platform privilege used only by `/platform/*` routes.
 
 ---
 
 ## 12. Community Creation Limits
 
-- `super_admin`: unlimited communities
-- `admin`: max 10 communities (configurable via `ADMIN_COMMUNITY_LIMIT`)
+- Platform super admins: unlimited communities
+- Other eligible accounts: max 10 communities (configurable via `ADMIN_COMMUNITY_LIMIT`)
 - Enforced in the backend `communityLimit.ts` service
 
 ---
 
-## 13. Invite Code Flow
+## 13. Account Provisioning
 
-1. Admin creates invitation via `/api/invitations` with email, role, expiry
-2. System generates a 16-digit numeric code (e.g., `1234 5678 9012 3456`)
-3. Admin shares code with the invitee
-4. Invitee calls `/api/invitations/verify` with the code to join
+There is no public signup, invitation, join, magic-link, or passwordless flow. Community
+administrators create accounts with temporary passwords or add an existing account by
+normalized email. Existing-account credential resets are platform-super-admin only.
 
 ---
 

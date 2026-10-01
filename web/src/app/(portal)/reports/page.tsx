@@ -39,9 +39,7 @@ export default function ReportsPage() {
     queryFn: async () => {
       if (!activeCommunity?.id) return [];
       const api = getApi();
-      const res = await api.get<{ events?: Event[] }>('/events', {
-        headers: { 'X-Community-Id': activeCommunity.id }
-      });
+      const res = await api.get<{ events?: Event[] }>('/events');
       if (!res.success) return [];
       return (res.data as { events?: Event[] }).events ?? [];
     },
@@ -53,21 +51,14 @@ export default function ReportsPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Community-Id': activeCommunity.id,
-          Authorization: `Bearer ${await getAccessToken()}`
-        },
-        body: JSON.stringify({
+      const res = await getApi().http.post('/reports/export', {
           type: reportType,
           format,
           filters: eventId ? { eventId } : undefined,
-        }),
+        }, {
+          responseType: 'blob',
       });
-      if (!res.ok) throw new Error('Export failed');
-      const blob = await res.blob();
+      const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -184,11 +175,4 @@ export default function ReportsPage() {
       </div>
     </div>
   );
-}
-
-async function getAccessToken(): Promise<string> {
-  const { createSupabaseBrowserClient } = await import('@/lib/supabase/client');
-  const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? '';
 }

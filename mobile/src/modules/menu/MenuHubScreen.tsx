@@ -32,9 +32,9 @@ export default function MenuHubScreen() {
   const navigation = useNavigation();
   const { activeCommunity } = useCommunity();
   const { session } = useAuth();
-  const { globalRoles } = useMe(!!session);
+  useMe(!!session);
   const role = activeCommunityRole(activeCommunity);
-  const isAdmin = canAccessAdminArea(role, globalRoles);
+  const isAdmin = canAccessAdminArea(role);
 
   const menuItems: MenuItem[] = useMemo(
     () => [

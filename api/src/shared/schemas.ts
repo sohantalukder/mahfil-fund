@@ -4,7 +4,6 @@ import { z } from 'zod';
 
 export const UUIDSchema = z.string().uuid();
 export const LocaleSchema = z.enum(['bn', 'en']);
-export const UserRoleSchema = z.enum(['super_admin', 'admin', 'collector', 'viewer']);
 export const DonorTypeSchema = z.enum(['individual', 'family', 'business', 'organization']);
 export const PaymentMethodSchema = z.enum(['CASH', 'BKASH', 'NAGAD', 'BANK']);
 
@@ -23,24 +22,6 @@ export const CommunityCreateSchema = z.object({
 
 export const CommunityUpdateSchema = CommunityCreateSchema.partial().omit({ slug: true }).extend({
   status: z.enum(['ACTIVE', 'ARCHIVED', 'SUSPENDED']).optional()
-});
-
-// ─── Invitation schemas ────────────────────────────────────────────────────────
-
-export const InvitationCreateSchema = z.object({
-  email: z.string().email(),
-  fullName: z.string().min(2).max(120),
-  phoneNumber: z.string().max(20).optional(),
-  role: z.enum(['admin', 'collector', 'viewer']),
-  expiresInDays: z.coerce.number().int().min(1).max(30).default(7),
-  note: z.string().max(300).optional()
-});
-
-export const InvitationVerifySchema = z.object({
-  email: z.string().email(),
-  inviteCode: z.string().min(16).max(19),
-  fullName: z.string().min(2).max(120).optional(),
-  password: z.string().min(8).max(72).optional()
 });
 
 // ─── Event schemas ─────────────────────────────────────────────────────────────
@@ -138,8 +119,6 @@ export const UploadEntityTypeSchema = z.enum([
 
 export type CommunityCreateInput = z.infer<typeof CommunityCreateSchema>;
 export type CommunityUpdateInput = z.infer<typeof CommunityUpdateSchema>;
-export type InvitationCreateInput = z.infer<typeof InvitationCreateSchema>;
-export type InvitationVerifyInput = z.infer<typeof InvitationVerifySchema>;
 export type EventCreateInput = z.infer<typeof EventCreateSchema>;
 export type DonorCreateInput = z.infer<typeof DonorCreateSchema>;
 export type DonationCreateInput = z.infer<typeof DonationCreateSchema>;

@@ -26,17 +26,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMe } from '@/hooks/useMe';
 import { useCommunity } from '@/contexts/CommunityContext';
 import { getApi } from '@/api/client';
-import { supabase } from '@/lib/supabase';
+import { adoptTokenPair, type TokenPair } from '@/services/auth/session.service';
 import routes from '@/navigation/routes';
 import { navigationRef } from '@/navigation/navigationRef';
 import { toast } from '@/shared/contexts/toast';
-import { bottomSheet } from '@/shared/contexts/bottom-sheet';
 import rs from '@/shared/utilities/responsiveSize';
 import {
   ArrowBackIcon,
   GearIcon,
   LocationPinIcon,
-  PencilIcon,
   ShieldIcon,
   ChevronRightIcon,
   PersonIcon,
@@ -45,8 +43,6 @@ import {
 } from '@/shared/components/atoms/svg-icons/AppSvgIcons';
 import IconByVariant from '@/shared/components/atoms/icon-by-variant/IconByVariant';
 import { getStyles } from './styles';
-import UpdateImageBottomSheet from './components/UpdateImageBottomSheet';
-import type { ImagePickerResult } from '@/services/image-picker/image-picker.service';
 
 const fmtBDT = (n: number) =>
   `৳${new Intl.NumberFormat('en-BD', { maximumFractionDigits: 0 }).format(n)}`;
@@ -92,15 +88,14 @@ export default function ProfileScreen() {
   const { colors, gutters } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const navigation = useNavigation();
-  const { session, signOut } = useAuth();
-  const { globalRoles, isLoading, invalidateMe } = useMe(!!session);
+  const { session, signOut, refresh } = useAuth();
+  const { isSuperAdmin, isLoading, invalidateMe } = useMe(!!session);
   const { activeCommunity } = useCommunity();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // Edit profile sheet
   const [showEditSheet, setShowEditSheet] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [editName, setEditName] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -111,21 +106,21 @@ export default function ProfileScreen() {
 
   // Change password sheet
   const [showPasswordSheet, setShowPasswordSheet] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
 
-  const meta = session?.user.user_metadata as Record<string, string> | undefined;
-  const name = meta?.full_name ?? session?.user.email ?? '';
-  const avatarUrl = meta?.avatar_url ?? null;
+  const name = session?.user.fullName ?? session?.user.email ?? '';
+  const avatarUrl = null;
   const initials = name
     .split(' ')
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
-  const role = globalRoles.length ? globalRoles[0] : '—';
+  const role = activeCommunity?.role ?? '—';
 
   const { data: summary, isLoading: summaryLoading } = useQuery<CommunitySummary>({
     queryKey: ['community-summary', activeCommunity?.id],
@@ -188,8 +183,9 @@ export default function ProfileScreen() {
     if (!editName.trim()) { setEditError('Name cannot be empty.'); return; }
     setEditSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ data: { full_name: editName.trim() } });
-      if (error) { setEditError(error.message); return; }
+      const response = await getApi().patch('/me/profile', { fullName: editName.trim() });
+      if (!response.success) { setEditError(response.error.message); return; }
+      await refresh();
       setEditSuccess(true);
       invalidateMe?.();
       toast.show({ title: 'Profile updated!', type: 'success' });
@@ -199,9 +195,10 @@ export default function ProfileScreen() {
     } finally {
       setEditSaving(false);
     }
-  }, [editName, invalidateMe]);
+  }, [editName, invalidateMe, refresh]);
 
   const openPasswordSheet = useCallback(() => {
+    setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
     setPwError(null);
@@ -211,13 +208,15 @@ export default function ProfileScreen() {
 
   const onChangePassword = useCallback(async () => {
     setPwError(null);
+    if (!currentPassword) { setPwError('Please enter your current password.'); return; }
     if (!newPassword) { setPwError('Please enter a new password.'); return; }
-    if (newPassword.length < 8) { setPwError('Password must be at least 8 characters.'); return; }
+    if (newPassword.length < 10) { setPwError('Password must be at least 10 characters.'); return; }
     if (newPassword !== confirmPassword) { setPwError('Passwords do not match.'); return; }
     setPwSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) { setPwError(error.message); return; }
+      const response = await getApi().patch<{ message: string } & TokenPair>('/me/password', { currentPassword, newPassword });
+      if (!response.success) { setPwError(response.error.message); return; }
+      await adoptTokenPair(response.data);
       setPwSuccess(true);
       toast.show({ title: 'Password changed successfully!', type: 'success' });
       setTimeout(() => { setShowPasswordSheet(false); setPwSuccess(false); }, 1200);
@@ -226,60 +225,7 @@ export default function ProfileScreen() {
     } finally {
       setPwSaving(false);
     }
-  }, [newPassword, confirmPassword]);
-
-  const openImagePicker = useCallback(() => {
-    void bottomSheet.show({
-      component: UpdateImageBottomSheet,
-      componentProps: {
-        onConfirm: (result: ImagePickerResult) => {
-          setUploadingAvatar(true);
-          void bottomSheet.close();
-
-          // Try uploading to server; fall back to saving local URI if endpoint not ready
-          const api = getApi();
-          const formData = new FormData();
-          formData.append('avatar', {
-            uri: result.signedUrl,
-            name: result.fileName,
-            type: 'image/jpeg',
-          } as unknown as Blob);
-
-          api
-            .postForm<{ avatarUrl?: string; url?: string }>('/users/avatar', formData)
-            .then((res) => {
-              const uploadedUrl =
-                res.success
-                  ? ((res.data as { avatarUrl?: string; url?: string }).avatarUrl ??
-                     (res.data as { avatarUrl?: string; url?: string }).url ??
-                     result.signedUrl)
-                  : result.signedUrl; // fall back to local URI
-              return supabase.auth.updateUser({ data: { avatar_url: uploadedUrl } });
-            })
-            .then(({ error }) => {
-              if (error) {
-                toast.show({ title: 'Failed to update photo.', type: 'error' });
-              } else {
-                toast.show({ title: 'Profile photo updated!', type: 'success' });
-                invalidateMe?.();
-              }
-            })
-            .catch(() => {
-              // Server upload failed — save local URI so it shows in this session
-              void supabase.auth
-                .updateUser({ data: { avatar_url: result.signedUrl } })
-                .then(() => {
-                  toast.show({ title: 'Profile photo updated!', type: 'success' });
-                  invalidateMe?.();
-                });
-            })
-            .finally(() => setUploadingAvatar(false));
-        },
-        isLoading: uploadingAvatar,
-      },
-      options: { snapPoints: ['38%'], initialSnapIndex: 0, enablePanDownToClose: true },
-    });
-  }, [uploadingAvatar, invalidateMe]);
+  }, [confirmPassword, currentPassword, newPassword, refresh]);
 
   return (
     <SafeScreen>
@@ -321,14 +267,6 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity
-              style={[styles.editPencil, uploadingAvatar && { opacity: 0.5 }]}
-              activeOpacity={0.7}
-              onPress={openImagePicker}
-              disabled={uploadingAvatar}
-            >
-              <PencilIcon color={colors.white} size={rs(13)} />
-            </TouchableOpacity>
           </View>
           <Text variant="heading2" weight="bold" style={styles.nameText}>{name}</Text>
           {isLoading ? (
@@ -391,6 +329,18 @@ export default function ProfileScreen() {
               rightElement={<ChevronRightIcon color={colors.gray5} size={rs(18)} />}
               onPress={openPasswordSheet}
             />
+            {isSuperAdmin ? (
+              <>
+                <Divider />
+                <ProfileRow
+                  leftIcon={<ShieldIcon color={colors.primary} size={rs(18)} />}
+                  title="Platform accounts"
+                  subtitle="Manage activation, platform privilege, and temporary passwords"
+                  rightElement={<ChevronRightIcon color={colors.gray5} size={rs(18)} />}
+                  onPress={() => navigation.navigate(routes.platformUsers as never)}
+                />
+              </>
+            ) : null}
             <Divider />
             <ProfileRow
               leftIcon={<IconByVariant path="notification" width={rs(18)} height={rs(18)} color={colors.primary} />}
@@ -488,12 +438,20 @@ export default function ProfileScreen() {
             </View>
 
             <Text variant="body3" color="secondary" style={gutters.marginBottom_20}>
-              Choose a strong password with at least 8 characters.
+              Choose a strong password with at least 10 characters.
             </Text>
 
             <PasswordInput
+              label="Current password"
+              placeholder="Your current password"
+              value={currentPassword}
+              onChangeText={(v) => { setCurrentPassword(v); setPwError(null); }}
+              wrapperStyle={gutters.marginBottom_16}
+            />
+
+            <PasswordInput
               label="New password"
-              placeholder="Min. 8 characters"
+              placeholder="Min. 10 characters"
               value={newPassword}
               onChangeText={(v) => { setNewPassword(v); setPwError(null); }}
               wrapperStyle={gutters.marginBottom_16}

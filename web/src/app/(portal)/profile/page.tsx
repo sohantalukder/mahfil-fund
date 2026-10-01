@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { getApi } from '@/lib/api';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { useCurrentUser } from '../../providers';
+import { logout } from '@/lib/auth-session';
+import { useCommunity, useCurrentUser } from '../../providers';
 
 type Profile = {
   name: string;
@@ -13,10 +14,9 @@ type Profile = {
   createdAt: string;
 };
 
-const ALL_ROLES = ['super_admin', 'admin', 'collector', 'viewer'] as const;
+const ALL_ROLES = ['admin', 'collector', 'viewer'] as const;
 
 const ROLE_COLOR: Record<string, string> = {
-  super_admin: '#7c3aed',
   admin: '#2563eb',
   collector: '#059669',
   viewer: '#6b7280',
@@ -26,11 +26,9 @@ const ROLE_PERMS: Record<string, { read: boolean; write: boolean; del: boolean; 
   viewer:      { read: true,  write: false, del: false, admin: false },
   collector:   { read: true,  write: true,  del: false, admin: false },
   admin:       { read: true,  write: true,  del: true,  admin: false },
-  super_admin: { read: true,  write: true,  del: true,  admin: true  },
 };
 
 const ROLE_DESC: Record<string, string> = {
-  super_admin: 'Full system access including user management and all data operations.',
   admin:       'Can read, write, and delete data across the platform.',
   collector:   'Can record and manage donations and expenses.',
   viewer:      'Read-only access to view reports and data.',
@@ -39,13 +37,15 @@ const ROLE_DESC: Record<string, string> = {
 const fmt = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, loading, refresh } = useCurrentUser();
+  const { activeCommunity } = useCommunity();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
-  const roles = user?.roles ?? [];
+  const roles = activeCommunity?.role ? [activeCommunity.role] : [];
 
   useEffect(() => {
     if (!user) return;
@@ -59,13 +59,6 @@ export default function ProfilePage() {
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ data: { full_name: fullName } });
-    if (error) {
-      setSaving(false);
-      setSaveError(error.message);
-      return;
-    }
     try {
       const profileResponse = await getApi().patch('/me/profile', { fullName });
       if (!profileResponse.success) {
@@ -93,9 +86,8 @@ export default function ProfilePage() {
   }
 
   async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    await logout();
+    router.replace('/login');
   }
 
   const topRole = roles[0];

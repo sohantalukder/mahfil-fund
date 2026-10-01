@@ -8,8 +8,8 @@ export async function checkAdminCommunityLimit(
   req: FastifyRequest,
   userId: string
 ): Promise<void> {
-  const isSuperAdmin = req.currentUser?.roles.includes('super_admin');
-  if (isSuperAdmin) return; // super_admin has no limit
+  const isSuperAdmin = req.currentUser?.isSuperAdmin;
+  if (isSuperAdmin) return; // Platform authority is not constrained by tenant creation quotas.
 
   const limit = app.env.ADMIN_COMMUNITY_LIMIT;
   const count = await app.prisma.community.count({

@@ -1,43 +1,31 @@
 import type { FastifyInstance } from 'fastify';
+import { Prisma } from '@prisma/client';
 import { amountToWordsBangla } from './banglaUtils.js';
-import { generateInvoicePdfAsync } from '../services/pdfGenerator.js';
-import { buildStoragePath, uploadFile } from '../services/storage.js';
+import { nextInvoiceNumber } from '../services/invoiceNumber.js';
+import { Errors } from './errors.js';
 
 export async function ensureInvoiceForDonation(
   app: FastifyInstance,
   communityId: string,
   donationId: string,
-  actorUserId: string
-): Promise<{ invoiceId: string; invoiceNumber: string }> {
-  const donation = await app.prisma.donation.findFirst({
-    where: { id: donationId, communityId, status: 'ACTIVE' },
-    include: {
-      donor: true,
-      event: { select: { name: true } },
-      invoices: { where: { status: { not: 'CANCELLED' } } },
-    },
-  });
+  actorUserId: string | null,
+  transactionStore?: Prisma.TransactionClient,
+): Promise<{ invoiceId: string; invoiceNumber: string; created: boolean }> {
+  const ensure = async (store: Prisma.TransactionClient) => {
+    await store.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${donationId}, 0))`;
+    const donation = await store.donation.findFirst({
+      where: { id: donationId, communityId, status: 'ACTIVE' },
+      include: {
+        donor: { select: { address: true } },
+        invoices: { where: { status: { not: 'CANCELLED' } }, take: 1 },
+      },
+    });
+    if (!donation) throw Errors.notFound('Donation not found');
+    const existing = donation.invoices[0];
+    if (existing) return { invoiceId: existing.id, invoiceNumber: existing.invoiceNumber, created: false };
 
-  if (!donation) throw new Error('Donation not found');
-
-  if (donation.invoices.length > 0) {
-    return { invoiceId: donation.invoices[0]!.id, invoiceNumber: donation.invoices[0]!.invoiceNumber };
-  }
-
-  const community = await app.prisma.community.findUnique({
-    where: { id: communityId },
-    select: { name: true, location: true, slug: true },
-  });
-
-  const year = new Date().getFullYear();
-  const communityCode = (community?.slug ?? 'MHF').toUpperCase().slice(0, 4).replace(/[^A-Z0-9]/g, '');
-  const count = await app.prisma.invoice.count({
-    where: { communityId, issueDate: { gte: new Date(`${year}-01-01`), lt: new Date(`${year + 1}-01-01`) } },
-  });
-  const invoiceNumber = `MF-${year}-${communityCode}-${String(count + 1).padStart(5, '0')}`;
-
-  const invoice = await app.prisma.invoice.create({
-    data: {
+    const invoiceNumber = await nextInvoiceNumber(app, communityId, donation.donationDate, store);
+    const invoice = await store.invoice.create({ data: {
       communityId,
       eventId: donation.eventId,
       donorId: donation.donorId,
@@ -55,51 +43,27 @@ export async function ensureInvoiceForDonation(
       status: 'ISSUED',
       createdByUserId: actorUserId,
       updatedByUserId: actorUserId,
-    },
-  });
+    } });
+    await store.outboxJob.create({ data: {
+      type: 'GENERATE_INVOICE_PDF',
+      communityId,
+      entityId: invoice.id,
+      createdByUserId: actorUserId,
+    } });
+    return { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, created: true };
+  };
 
-  generateInvoicePdfAsync({
-    invoiceNumber,
-    issueDate: donation.donationDate,
-    communityName: community?.name ?? 'Community',
-    communityLocation: community?.location ?? undefined,
-    payerName: donation.donorSnapshotName,
-    payerPhone: donation.donorSnapshotPhone,
-    payerAddress: donation.donor.address ?? undefined,
-    amount: donation.amount,
-    paymentMethod: donation.paymentMethod,
-    referenceNumber: donation.receiptNo ?? donation.transactionId ?? undefined,
-    invoiceType: 'DONATION_RECEIPT',
-    eventName: donation.event.name,
-  })
-    .then(async (pdfBuffer) => {
-      const fileName = `${invoiceNumber}.pdf`;
-      const objectPath = buildStoragePath('invoice_pdf', communityId, { fileName });
-      const { bucket, objectPath: storedPath } = await uploadFile(app.env, objectPath, pdfBuffer, 'application/pdf');
-
-      const attachment = await app.prisma.attachment.create({
-        data: {
-          communityId,
-          entityType: 'invoice',
-          entityId: invoice.id,
-          bucket,
-          objectPath: storedPath,
-          originalName: fileName,
-          mimeType: 'application/pdf',
-          sizeBytes: pdfBuffer.length,
-          uploadedByUserId: actorUserId,
-        },
+  if (transactionStore) return ensure(transactionStore);
+  try {
+    return await app.prisma.$transaction(ensure, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const replay = await app.prisma.invoice.findFirst({
+        where: { communityId, donationId, status: { not: 'CANCELLED' } },
+        select: { id: true, invoiceNumber: true },
       });
-
-      await app.prisma.invoice.update({
-        where: { id: invoice.id },
-        data: { pdfAttachmentId: attachment.id },
-      });
-    })
-    .catch((err) => {
-      app.log.error({ err }, 'Failed to generate invoice PDF');
-    });
-
-  return { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber };
+      if (replay) return { invoiceId: replay.id, invoiceNumber: replay.invoiceNumber, created: false };
+    }
+    throw error;
+  }
 }
-

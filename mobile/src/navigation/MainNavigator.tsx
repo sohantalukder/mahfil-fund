@@ -10,7 +10,6 @@ import type { MenuStackParamList } from './types';
 // Core screens
 import HomeScreen from '@/modules/home/HomeScreen';
 import CommunitiesScreen from '@/modules/communities/CommunitiesScreen';
-import JoinScreen from '@/modules/join/JoinScreen';
 import MenuHubScreen from '@/modules/menu/MenuHubScreen';
 import EventsScreen from '@/modules/events/EventsScreen';
 import DonationsScreen from '@/modules/donations/DonationsScreen';
@@ -38,18 +37,16 @@ import DonorDonationsScreen from '@/modules/donors/DonorDonationsScreen';
 import InvoicesScreen from '@/modules/invoices/InvoicesScreen';
 import AddInvoiceScreen from '@/modules/invoices/AddInvoiceScreen';
 
-// Users & Invitations
+// Community members
 import UsersScreen from '@/modules/users/UsersScreen';
-import InvitationsScreen from '@/modules/invitations/InvitationsScreen';
 
 // Audit Logs
 import AuditLogsScreen from '@/modules/audit-logs/AuditLogsScreen';
+import PlatformUsersScreen from '@/modules/platform-users/PlatformUsersScreen';
 
 import { useCommunity } from '@/contexts/CommunityContext';
 import { useMe } from '@/hooks/useMe';
 import { useAuth } from '@/contexts/AuthContext';
-import { isSuperAdmin } from '@/lib/guards';
-import { getApi } from '@/api/client';
 
 const Tab = createBottomTabNavigator();
 const CommunitiesStack = createStackNavigator();
@@ -71,6 +68,7 @@ function ProfileStackNav() {
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name={routes.profile} component={ProfileScreen} />
       <ProfileStack.Screen name={routes.settings} component={SettingsScreen} />
+      <ProfileStack.Screen name={routes.platformUsers} component={PlatformUsersScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -89,11 +87,6 @@ function CommunitiesStackNav() {
         name={routes.communities}
         component={CommunitiesScreen}
         options={{ title: 'Communities' }}
-      />
-      <CommunitiesStack.Screen
-        name={routes.join}
-        component={JoinScreen}
-        options={{ title: 'Join Community' }}
       />
     </CommunitiesStack.Navigator>
   );
@@ -146,12 +139,12 @@ function MenuStackNav() {
       <MenuStack.Screen name={routes.adminInvoices} component={InvoicesScreen} options={{ title: 'Invoices' }} />
       <MenuStack.Screen name={routes.adminAddInvoice} component={AddInvoiceScreen} options={{ title: 'Create Invoice' }} />
 
-      {/* Admin — Users & Invitations */}
-      <MenuStack.Screen name={routes.adminUsers} component={UsersScreen} options={{ title: 'Manage Users' }} />
-      <MenuStack.Screen name={routes.adminInvitations} component={InvitationsScreen} options={{ title: 'Invitations' }} />
+      {/* Admin — Community members */}
+      <MenuStack.Screen name={routes.adminUsers} component={UsersScreen} options={{ title: 'Manage Members' }} />
 
       {/* Admin — Audit Logs */}
       <MenuStack.Screen name={routes.adminAuditLogs} component={AuditLogsScreen} options={{ title: 'Audit Logs' }} />
+      <MenuStack.Screen name={routes.platformUsers} component={PlatformUsersScreen} options={{ title: 'Platform Accounts' }} />
     </MenuStack.Navigator>
   );
 }
@@ -159,38 +152,15 @@ function MenuStackNav() {
 function MeBootstrap({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const { setCommunities } = useCommunity();
-  const { communities, globalRoles, refetch, isSuccess } = useMe(!!session);
+  const { communities, refetch, isSuccess } = useMe(!!session);
 
   useEffect(() => {
     if (session) void refetch();
   }, [session, refetch]);
 
-  // Seed communities from memberships (regular users)
   useEffect(() => {
-    if (isSuccess && communities.length) setCommunities(communities);
+    if (isSuccess) setCommunities(communities);
   }, [isSuccess, communities, setCommunities]);
-
-  // Super admin: fetch all communities from the server when they have no memberships
-  useEffect(() => {
-    if (!isSuccess) return;
-    if (!isSuperAdmin(globalRoles)) return;
-    if (communities.length > 0) return; // already seeded via memberships
-    const api = getApi();
-    void api
-      .get<{ communities?: { id: string; name: string; slug: string }[] } | { id: string; name: string; slug: string }[]>(
-        '/communities',
-      )
-      .then((res) => {
-        if (!res.success) return;
-        const raw = res.data as { communities?: { id: string; name: string; slug: string }[] } | { id: string; name: string; slug: string }[];
-        const list = Array.isArray(raw)
-          ? raw
-          : ((raw as { communities?: { id: string; name: string; slug: string }[] }).communities ?? []);
-        if (list.length) {
-          setCommunities(list.map((c) => ({ id: c.id, name: c.name, slug: c.slug, role: 'super_admin' })));
-        }
-      });
-  }, [isSuccess, globalRoles, communities.length, setCommunities]);
 
   return <>{children}</>;
 }

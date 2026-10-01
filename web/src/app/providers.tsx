@@ -14,7 +14,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { I18nextProvider } from 'react-i18next';
 import { ensureI18n } from '@/lib/i18n';
 import { COMMUNITY_STORAGE_KEY, getApi } from '@/lib/api';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getAccessToken, refreshSession, subscribeAuthFailure } from '@/lib/auth-session';
 import { ToastProvider } from '@/components/portal/toast';
 import { ErrorBoundary } from '@/components/portal/ErrorBoundary';
 
@@ -37,7 +37,7 @@ export type CurrentUser = {
   email: string;
   fullName?: string | null;
   createdAt?: string;
-  roles: string[];
+  isSuperAdmin: boolean;
   communities: CommunityInfo[];
 };
 
@@ -182,38 +182,27 @@ export function Providers({ children }: { children: ReactNode }) {
     setAuthError(null);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData.session;
-      if (!session) {
+      if (!getAccessToken() && !(await refreshSession())) {
         setUser(null);
         setCommunitiesState([]);
         return;
       }
 
       const api = getApi();
-      const response = await api.get<{ user?: CurrentUser }>('/me');
+      const response = await api.get<{ user?: Omit<CurrentUser, 'communities'> & {
+        memberships?: Array<{ community: Omit<CommunityInfo, 'role'>; role: string }>;
+      } }>('/me');
       if (!response.success || !response.data?.user) {
         throw new Error(response.success ? 'User profile was not returned.' : response.error.message);
       }
 
       const profile = response.data.user;
-      let nextCommunities = profile.communities ?? [];
-      const canListAll = profile.roles.some((role) => role === 'super_admin' || role === 'admin');
-      if (nextCommunities.length === 0 && canListAll) {
-        const communitiesResponse = await api.get<{
-          communities?: Array<{ id: string; name: string; slug: string }>;
-        }>('/communities?page=1&pageSize=100');
-        if (communitiesResponse.success) {
-          const role = profile.roles.includes('super_admin') ? 'super_admin' : 'admin';
-          nextCommunities = (communitiesResponse.data?.communities ?? []).map((community) => ({
-            ...community,
-            role,
-          }));
-        }
-      }
+      const nextCommunities = (profile.memberships ?? []).map((membership) => ({
+        ...membership.community,
+        role: membership.role,
+      }));
 
-      const normalizedUser = { ...profile, communities: nextCommunities };
+      const normalizedUser: CurrentUser = { ...profile, communities: nextCommunities };
       setUser(normalizedUser);
       setCommunitiesState(nextCommunities);
 
@@ -227,6 +216,7 @@ export function Providers({ children }: { children: ReactNode }) {
           nextCommunities[0] ??
           null;
         if (selected) window.localStorage.setItem(COMMUNITY_STORAGE_KEY, JSON.stringify(selected));
+        else window.localStorage.removeItem(COMMUNITY_STORAGE_KEY);
         return selected;
       });
     } catch (error) {
@@ -240,12 +230,15 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refreshCurrentUser();
-    const supabase = createSupabaseBrowserClient();
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      void refreshCurrentUser();
-    });
-    return () => data.subscription.unsubscribe();
   }, [refreshCurrentUser]);
+
+  useEffect(() => subscribeAuthFailure(() => {
+    setUser(null);
+    setCommunitiesState([]);
+    setActiveCommunityState(null);
+    window.localStorage.removeItem(COMMUNITY_STORAGE_KEY);
+    queryClient.clear();
+  }), [queryClient]);
 
   const themeValue = useMemo(() => ({ theme, setTheme }), [theme, setTheme]);
   const languageValue = useMemo(() => ({ language, setLanguage }), [language, setLanguage]);

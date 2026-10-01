@@ -1,143 +1,193 @@
-import { SignJWT, jwtVerify, createRemoteJWKSet } from 'jose';
-import { randomBytes, createHash } from 'node:crypto';
+import { SignJWT, jwtVerify } from 'jose';
+import { randomBytes, randomUUID, createHash, createHmac } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 
-// Cached JWKS fetcher — one instance per Supabase URL.
-const jwkSets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+const ACCESS_TYPE = 'access';
+const PASSWORD_CHANGE_TYPE = 'password_change';
 
-function getJwkSet(supabaseUrl: string) {
-  if (!jwkSets.has(supabaseUrl)) {
-    const url = new URL('/auth/v1/.well-known/jwks.json', supabaseUrl);
-    jwkSets.set(supabaseUrl, createRemoteJWKSet(url));
-  }
-  return jwkSets.get(supabaseUrl)!;
-}
+export type TokenSecurityContext = { client?: string; deviceId?: string };
 
-export type SupabaseTokenPayload = {
-  sub: string;
-  email?: string;
-  fullName?: string;
-};
-
-export async function verifySupabaseToken(
-  token: string,
-  supabaseUrl: string
-): Promise<SupabaseTokenPayload> {
-  const jwkSet = getJwkSet(supabaseUrl);
-  const { payload } = await jwtVerify(token, jwkSet, {
-    algorithms: ['ES256', 'RS256']
-  });
-  if (typeof payload.sub !== 'string') throw new Error('Invalid token subject');
-
-  const meta = payload.user_metadata as Record<string, string> | undefined;
-  return {
-    sub: payload.sub,
-    email: typeof payload.email === 'string' ? payload.email : undefined,
-    fullName: meta?.full_name
-  };
+export function securityEventContext(app: FastifyInstance, context?: TokenSecurityContext) {
+  const client = context?.client?.slice(0, 32);
+  const deviceHash = context?.deviceId
+    ? createHmac('sha256', app.env.JWT_SECRET).update(context.deviceId).digest('hex')
+    : undefined;
+  return { client, deviceHash };
 }
 
 function parseExpiry(expr: string): number {
   const match = expr.match(/^(\d+)\s*(s|m|h|d)$/);
   if (!match) throw new Error(`Invalid expiry format: ${expr}`);
-  const val = parseInt(match[1]!, 10);
-  const unit = match[2]! as keyof typeof multipliers;
   const multipliers = { s: 1, m: 60, h: 3600, d: 86400 } as const;
-  return val * multipliers[unit] * 1000;
+  return Number(match[1]) * multipliers[match[2] as keyof typeof multipliers] * 1000;
 }
 
 function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
+function key(secret: string) {
+  return new TextEncoder().encode(secret);
+}
+
 export async function signAccessToken(
   userId: string,
   secret: string,
-  expiresIn: string
+  expiresIn: string,
+  issuer: string,
+  audience: string,
 ): Promise<string> {
-  const key = new TextEncoder().encode(secret);
-  return new SignJWT({ sub: userId })
-    .setProtectedHeader({ alg: 'HS256' })
+  return new SignJWT({ tokenType: ACCESS_TYPE })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setSubject(userId)
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(expiresIn)
-    .sign(key);
+    .sign(key(secret));
 }
 
 export async function verifyAccessToken(
   token: string,
-  secret: string
+  secret: string,
+  issuer: string,
+  audience: string,
 ): Promise<{ sub: string }> {
-  const key = new TextEncoder().encode(secret);
-  const { payload } = await jwtVerify(token, key, { algorithms: ['HS256'] });
-  if (typeof payload.sub !== 'string') throw new Error('Invalid token subject');
+  const { payload } = await jwtVerify(token, key(secret), {
+    algorithms: ['HS256'], issuer, audience,
+  });
+  if (payload.tokenType !== ACCESS_TYPE || typeof payload.sub !== 'string') {
+    throw new Error('Invalid access token');
+  }
   return { sub: payload.sub };
+}
+
+export async function signPasswordChangeChallenge(
+  userId: string,
+  secret: string,
+  issuer: string,
+  audience: string,
+): Promise<string> {
+  return new SignJWT({ tokenType: PASSWORD_CHANGE_TYPE })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setSubject(userId)
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setJti(randomUUID())
+    .setIssuedAt()
+    .setExpirationTime('10m')
+    .sign(key(secret));
+}
+
+export async function verifyPasswordChangeChallenge(
+  token: string,
+  secret: string,
+  issuer: string,
+  audience: string,
+): Promise<string> {
+  const { payload } = await jwtVerify(token, key(secret), {
+    algorithms: ['HS256'], issuer, audience,
+  });
+  if (payload.tokenType !== PASSWORD_CHANGE_TYPE || typeof payload.sub !== 'string') {
+    throw new Error('Invalid password-change challenge');
+  }
+  return payload.sub;
 }
 
 export async function createRefreshToken(
   app: FastifyInstance,
   userId: string,
-  expiresIn: string
+  expiresIn: string,
+  familyId = randomUUID(),
+  context?: TokenSecurityContext,
 ): Promise<string> {
-  const raw = randomBytes(48).toString('hex');
-  const hashed = hashToken(raw);
-  const expiresAt = new Date(Date.now() + parseExpiry(expiresIn));
-
-  await app.prisma.refreshToken.create({
-    data: { token: hashed, userId, expiresAt },
+  const raw = randomBytes(48).toString('base64url');
+  await app.prisma.$transaction(async (tx) => {
+    await tx.refreshToken.create({ data: {
+        token: hashToken(raw), userId, familyId,
+        expiresAt: new Date(Date.now() + parseExpiry(expiresIn)),
+    } });
+    await tx.securityEvent.create({ data: {
+      type: 'TOKEN_FAMILY_CREATED', userId, familyId, ...securityEventContext(app, context),
+    } });
   });
-
   return raw;
 }
 
 export async function rotateRefreshToken(
   app: FastifyInstance,
   rawToken: string,
-  expiresIn: string
+  expiresIn: string,
+  context?: TokenSecurityContext,
 ): Promise<{ userId: string; newRawToken: string } | null> {
-  const hashed = hashToken(rawToken);
-
-  const existing = await app.prisma.refreshToken.findUnique({
-    where: { token: hashed },
-  });
-
-  if (!existing || existing.revokedAt || new Date() > existing.expiresAt) {
+  const existing = await app.prisma.refreshToken.findUnique({ where: { token: hashToken(rawToken) } });
+  if (!existing || new Date() > existing.expiresAt) return null;
+  if (existing.revokedAt || existing.usedAt) {
+    await app.prisma.$transaction(async (tx) => {
+      await tx.refreshToken.updateMany({
+        where: { familyId: existing.familyId, revokedAt: null }, data: { revokedAt: new Date() },
+      });
+      await tx.securityEvent.create({ data: {
+        type: 'TOKEN_REUSE_DETECTED', userId: existing.userId, familyId: existing.familyId,
+        ...securityEventContext(app, context),
+      } });
+    });
     return null;
   }
 
-  const newRaw = randomBytes(48).toString('hex');
-  const newHashed = hashToken(newRaw);
-  const expiresAt = new Date(Date.now() + parseExpiry(expiresIn));
-
-  await app.prisma.$transaction([
-    app.prisma.refreshToken.update({
-      where: { id: existing.id },
-      data: { revokedAt: new Date() },
-    }),
-    app.prisma.refreshToken.create({
-      data: { token: newHashed, userId: existing.userId, expiresAt },
-    }),
-  ]);
-
-  return { userId: existing.userId, newRawToken: newRaw };
+  const newRawToken = randomBytes(48).toString('base64url');
+  const rotated = await app.prisma.$transaction(async (tx) => {
+    const consumed = await tx.refreshToken.updateMany({
+      where: { id: existing.id, usedAt: null, revokedAt: null },
+      data: { usedAt: new Date(), revokedAt: new Date() },
+    });
+    if (consumed.count !== 1) {
+      await tx.refreshToken.updateMany({
+        where: { familyId: existing.familyId, revokedAt: null }, data: { revokedAt: new Date() },
+      });
+      await tx.securityEvent.create({ data: {
+        type: 'TOKEN_REUSE_DETECTED', userId: existing.userId, familyId: existing.familyId,
+        ...securityEventContext(app, context),
+      } });
+      return false;
+    }
+    await tx.refreshToken.create({
+      data: {
+        token: hashToken(newRawToken), userId: existing.userId, familyId: existing.familyId,
+        expiresAt: new Date(Date.now() + parseExpiry(expiresIn)),
+      },
+    });
+    await tx.securityEvent.create({ data: {
+      type: 'TOKEN_ROTATED', userId: existing.userId, familyId: existing.familyId,
+      ...securityEventContext(app, context),
+    } });
+    return true;
+  });
+  return rotated ? { userId: existing.userId, newRawToken } : null;
 }
 
-export async function revokeRefreshToken(
-  app: FastifyInstance,
-  rawToken: string
-): Promise<void> {
-  const hashed = hashToken(rawToken);
-  await app.prisma.refreshToken.updateMany({
-    where: { token: hashed, revokedAt: null },
-    data: { revokedAt: new Date() },
+export async function revokeRefreshToken(app: FastifyInstance, rawToken: string, context?: TokenSecurityContext): Promise<void> {
+  const existing = await app.prisma.refreshToken.findUnique({ where: { token: hashToken(rawToken) } });
+  if (!existing) return;
+  await app.prisma.$transaction(async (tx) => {
+    await tx.refreshToken.updateMany({
+      where: { familyId: existing.familyId, revokedAt: null }, data: { revokedAt: new Date() },
+    });
+    await tx.securityEvent.create({ data: {
+      type: 'TOKEN_FAMILY_REVOKED', userId: existing.userId, familyId: existing.familyId,
+      ...securityEventContext(app, context),
+    } });
   });
 }
 
-export async function revokeAllUserTokens(
-  app: FastifyInstance,
-  userId: string
-): Promise<void> {
-  await app.prisma.refreshToken.updateMany({
-    where: { userId, revokedAt: null },
-    data: { revokedAt: new Date() },
+export async function revokeAllUserTokens(app: FastifyInstance, userId: string, context?: TokenSecurityContext): Promise<void> {
+  await app.prisma.$transaction(async (tx) => {
+    await tx.refreshToken.updateMany({
+      where: { userId, revokedAt: null }, data: { revokedAt: new Date() },
+    });
+    await tx.securityEvent.create({ data: {
+      type: 'ACCOUNT_TOKENS_REVOKED', userId, ...securityEventContext(app, context),
+    } });
   });
 }

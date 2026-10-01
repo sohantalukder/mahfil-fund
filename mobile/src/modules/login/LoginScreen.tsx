@@ -11,18 +11,17 @@ import { useNavigation } from '@react-navigation/native';
 import { navigationRef } from '@/navigation/navigationRef';
 import { SafeScreen } from '@/shared/components/templates';
 import Text from '@/shared/components/atoms/text/Text';
-import { Button, Card, Divider, Image } from '@/shared/components/atoms';
+import { Button, Card, Image } from '@/shared/components/atoms';
 import TextInput from '@/shared/components/atoms/text-input/TextInput';
 import { PasswordInput } from '@/shared/components/molecules';
 import { useTheme } from '@/theme';
-import { supabase } from '@/lib/supabase';
 import { isEnvConfigured } from '@/config/env';
 import { useAuth } from '@/contexts/AuthContext';
 import routes from '@/navigation/routes';
 import rs from '@/shared/utilities/responsiveSize';
 
 export default function LoginScreen() {
-  const { session } = useAuth();
+  const { session, signIn, completeFirstLogin } = useAuth();
   const { gutters, colors, layout, logo } = useTheme();
   const navigation = useNavigation();
 
@@ -30,6 +29,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     if (session) {
@@ -39,21 +41,33 @@ export default function LoginScreen() {
 
   const onSubmit = useCallback(async () => {
     setError(null);
-    if (!email.trim()) { setError('Please enter your email address.'); return; }
-    if (!password) { setError('Please enter your password.'); return; }
+    if (challengeToken) {
+      if (newPassword.length < 10) { setError('Password must contain at least 10 characters.'); return; }
+      if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    } else {
+      if (!email.trim()) { setError('Please enter your email address.'); return; }
+      if (!password) { setError('Please enter your password.'); return; }
+    }
     if (!isEnvConfigured()) { setError('App is not configured. Contact support.'); return; }
 
     setLoading(true);
     try {
-      const { error: e } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (e) setError(e.message);
+      if (challengeToken) {
+        await completeFirstLogin(challengeToken, newPassword);
+      } else {
+        const result = await signIn(email.trim(), password);
+        if (result.requiresPasswordChange) {
+          setChallengeToken(result.challengeToken);
+          setPassword('');
+        }
+      }
+    } catch (caught) {
+      const message = (caught as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      setError(message ?? (caught instanceof Error ? caught.message : 'Unable to sign in.'));
     } finally {
       setLoading(false);
     }
-  }, [email, password]);
+  }, [challengeToken, completeFirstLogin, confirmPassword, email, newPassword, password, signIn]);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -111,7 +125,7 @@ export default function LoginScreen() {
 
           {/* ── Form card ──────────────────────────────────────────────── */}
           <View>
-            {/* Email */}
+            {!challengeToken ? <>{/* Email */}
             <TextInput
               label="Email address"
               placeholder="you@example.com"
@@ -142,6 +156,15 @@ export default function LoginScreen() {
                 Forgot password?
               </Text>
             </TouchableOpacity>
+            </> : <>
+              <Text variant="body2" color="secondary" style={gutters.marginBottom_16}>
+                Replace your administrator-issued temporary password before continuing.
+              </Text>
+              <PasswordInput label="New password" placeholder="At least 10 characters" value={newPassword}
+                onChangeText={(value) => { setNewPassword(value); clearError(); }} wrapperStyle={gutters.marginBottom_16} />
+              <PasswordInput label="Confirm password" placeholder="Repeat new password" value={confirmPassword}
+                onChangeText={(value) => { setConfirmPassword(value); clearError(); }} wrapperStyle={gutters.marginBottom_16} />
+            </>}
 
             {/* Error */}
             {error ? (
@@ -162,23 +185,12 @@ export default function LoginScreen() {
 
             {/* Primary action button */}
             <Button
-              text={loading ? 'Signing in…' : 'Sign in'}
+              text={loading ? 'Please wait…' : challengeToken ? 'Set password and continue' : 'Sign in'}
               onPress={onSubmit}
               disabled={loading}
               isLoading={loading}
               borderRadius={12}
             />
-
-            <Divider style={gutters.marginVertical_20} />
-            <View style={styles.signupRow}>
-              <Text variant="body3" color="secondary">Don't have an account? </Text>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate(routes.signup as never)}
-              >
-                <Text variant="body3" color="primary" weight="semibold">Create one</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* ── Footer ─────────────────────────────────────────────────── */}
@@ -228,10 +240,5 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: 24,
     paddingTop: 40,
-  },
-  signupRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
   },
 });

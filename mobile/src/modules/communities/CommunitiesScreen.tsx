@@ -1,16 +1,12 @@
 import { StyleSheet, View, Pressable } from 'react-native';
 import { SafeScreen } from '@/shared/components/templates';
 import Text from '@/shared/components/atoms/text/Text';
-import Button from '@/shared/components/atoms/buttons/Button';
 import { useTheme } from '@/theme';
 import { useCommunity } from '@/contexts/CommunityContext';
-import { useNavigation } from '@react-navigation/native';
-import routes from '@/navigation/routes';
 
 export default function CommunitiesScreen() {
   const { gutters, colors } = useTheme();
   const { communities, activeCommunity, setActiveCommunity } = useCommunity();
-  const navigation = useNavigation();
 
   return (
     <SafeScreen>
@@ -18,14 +14,8 @@ export default function CommunitiesScreen() {
         <Text variant="heading3" style={gutters.marginBottom_8}>
           My communities
         </Text>
-        <Button
-          text="Join with invite code"
-          variant="outline"
-          wrapStyle={gutters.marginBottom_20}
-          onPress={() => navigation.navigate(routes.join as never)}
-        />
         {communities.length === 0 ? (
-          <Text color="secondary">No communities yet. Join one with an invite code.</Text>
+          <Text color="secondary">No communities yet. Ask a community administrator to add your account.</Text>
         ) : (
           communities.map((c) => {
             const active = activeCommunity?.id === c.id;

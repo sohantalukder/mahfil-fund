@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Alert, TextInput as NativeTextInput } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdminApi } from '@/api/client';
@@ -7,7 +7,7 @@ import { useTheme } from '@/theme';
 import { SafeScreen } from '@/shared/components/templates';
 import FlashList from '@/shared/components/organisms/flash-list/FlashList';
 import Text from '@/shared/components/atoms/text/Text';
-import { Badge, Card, Dialog } from '@/shared/components/atoms';
+import { Badge, Button, Card, Dialog } from '@/shared/components/atoms';
 import { ArrowBackIcon } from '@/shared/components/atoms/svg-icons/AppSvgIcons';
 import { canManageUsers, activeCommunityRole } from '@/lib/guards';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,11 +22,12 @@ interface UserRow {
   email: string;
   roles: string[];
   status: 'ACTIVE' | 'INACTIVE';
+  mustChangePassword: boolean;
 }
 
 interface RoleEditState {
   userId: string;
-  roles: string[];
+  status: UserRow['status'];
 }
 
 const UsersScreen: React.FC = () => {
@@ -34,13 +35,19 @@ const UsersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<MenuStackParamList>>();
   const { session } = useAuth();
   const { activeCommunity } = useCommunity();
-  const { globalRoles } = useMe(!!session);
+  useMe(!!session);
   const queryClient = useQueryClient();
 
   const userRole = activeCommunityRole(activeCommunity);
-  const canEdit = canManageUsers(userRole, globalRoles);
+  const canEdit = canManageUsers(userRole);
 
   const [roleEditState, setRoleEditState] = useState<RoleEditState | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [createKind, setCreateKind] = useState<'new' | 'existing'>('new');
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [newRole, setNewRole] = useState<'admin' | 'collector' | 'viewer'>('viewer');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['users'],
@@ -50,9 +57,14 @@ const UsersScreen: React.FC = () => {
         page: '1',
         pageSize: '25',
       });
-      const response = await api.get(`/users?${params.toString()}`);
+      const response = await api.get(`/members?${params.toString()}`);
       if (!response.success) throw new Error('Failed to fetch users');
-      return response.data as { users?: UserRow[]; total?: number };
+      const raw = response.data as { members?: Array<{ role: string; status: string; user: { id: string; fullName?: string; email: string; mustChangePassword?: boolean } }>; total?: number };
+      return { total: raw.total, users: (raw.members ?? []).map((member) => ({
+        id: member.user.id, name: member.user.fullName || member.user.email, email: member.user.email,
+        roles: [member.role], status: member.status === 'ACTIVE' ? 'ACTIVE' as const : 'INACTIVE' as const,
+        mustChangePassword: member.user.mustChangePassword ?? false,
+      })) };
     },
   });
 
@@ -122,26 +134,25 @@ const UsersScreen: React.FC = () => {
   const getRoleColor = useCallback((role: string): string => {
     const roleColorMap: Record<string, string> = {
       admin: '#8A2BE2',
-      super_admin: '#FF5630',
       collector: '#E8A800',
       viewer: '#00B8D9',
     };
     return roleColorMap[role] || colors.secondary;
   }, [colors]);
 
-  const { mutate: updateRoles, isPending: isUpdatingRoles } = useMutation({
-    mutationFn: async (userId: string) => {
-      if (!roleEditState || roleEditState.userId !== userId) return;
+  const { mutate: updateMembership, isPending: isUpdatingMembership } = useMutation({
+    mutationFn: async ({ userId, role, status }: { userId: string; role?: string; status?: 'ACTIVE' | 'SUSPENDED' }) => {
       const api = getAdminApi();
-      await api.patch(`/users/${userId}/roles`, { roles: roleEditState.roles });
+      const response = await api.patch(`/members/${userId}`, { ...(role ? { role } : {}), ...(status ? { status } : {}) });
+      if (!response.success) throw new Error(response.error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setRoleEditState(null);
     },
     onError: (err) => {
-      console.error('Update roles error:', err);
-      Alert.alert('Error', 'Failed to update user roles');
+      console.error('Update membership error:', err);
+      Alert.alert('Error', 'Failed to update membership');
     },
   });
 
@@ -152,15 +163,24 @@ const UsersScreen: React.FC = () => {
     }
     setRoleEditState({
       userId: user.id,
-      roles: user.roles,
+      status: user.status,
     });
   }, [canEdit]);
 
-const handleSaveRoles = useCallback(() => {
-    if (roleEditState) {
-      updateRoles(roleEditState.userId);
-    }
-  }, [roleEditState, updateRoles]);
+  const createMember = useMutation({
+    mutationFn: async () => {
+      const body = createKind === 'new'
+        ? { kind: 'new', email, fullName, temporaryPassword, role: newRole }
+        : { kind: 'existing', email, role: newRole };
+      const response = await getAdminApi().post('/members', body);
+      if (!response.success) throw new Error(response.error.message);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+      setShowAdd(false); setEmail(''); setFullName(''); setTemporaryPassword('');
+    },
+    onError: (caught) => Alert.alert('Error', caught instanceof Error ? caught.message : 'Unable to add member'),
+  });
 
   const renderItem = useCallback(
     ({ item: user }: { item: UserRow }) => (
@@ -210,6 +230,14 @@ const handleSaveRoles = useCallback(() => {
                 size="small"
               />
             )}
+            {user.mustChangePassword && (
+              <Badge
+                text="PASSWORD CHANGE REQUIRED"
+                bgColor={colors.warning}
+                textColor={colors.white}
+                size="small"
+              />
+            )}
           </View>
         </View>
       </Card>
@@ -224,9 +252,27 @@ const handleSaveRoles = useCallback(() => {
           <ArrowBackIcon size={rs(24)} color={colors.primary} />
         </TouchableOpacity>
         <Text variant="heading2" style={styles.headerTitle}>
-          Users
+          Community Members
         </Text>
+        {canEdit && <Button text={showAdd ? 'Close' : 'Add'} onPress={() => setShowAdd((value) => !value)} />}
       </View>
+
+      {showAdd && <Card variant="outlined" padding={rs(12)} style={styles.row}>
+        <View style={styles.rowContent}>
+          <TouchableOpacity onPress={() => setCreateKind((value) => value === 'new' ? 'existing' : 'new')}>
+            <Text color="primary">{createKind === 'new' ? 'Create new account' : 'Add existing account'} (tap to switch)</Text>
+          </TouchableOpacity>
+          <NativeTextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} style={{ borderWidth: 1, borderColor: colors.gray7, borderRadius: 8, padding: 10, color: colors.primary }} />
+          {createKind === 'new' && <>
+            <NativeTextInput placeholder="Full name" value={fullName} onChangeText={setFullName} style={{ borderWidth: 1, borderColor: colors.gray7, borderRadius: 8, padding: 10, color: colors.primary }} />
+            <NativeTextInput placeholder="Temporary password (10+ characters)" secureTextEntry value={temporaryPassword} onChangeText={setTemporaryPassword} style={{ borderWidth: 1, borderColor: colors.gray7, borderRadius: 8, padding: 10, color: colors.primary }} />
+          </>}
+          <TouchableOpacity onPress={() => setNewRole((role) => role === 'viewer' ? 'collector' : role === 'collector' ? 'admin' : 'viewer')}>
+            <Text>Role: {newRole} (tap to change)</Text>
+          </TouchableOpacity>
+          <Button text={createMember.isPending ? 'Saving…' : 'Add member'} disabled={!email || (createKind === 'new' && (fullName.length < 2 || temporaryPassword.length < 10)) || createMember.isPending} onPress={() => createMember.mutate()} />
+        </View>
+      </Card>}
 
       <FlashList
         data={data?.users || []}
@@ -243,8 +289,8 @@ const handleSaveRoles = useCallback(() => {
 
       <Dialog
         visible={!!roleEditState}
-        title="Edit User Roles"
-        description={roleEditState ? `Update roles for user` : ''}
+        title="Change Community Role"
+        description="Choose one tenant role. Platform super-admin access is managed separately."
         buttons={[
           {
             label: 'Cancel',
@@ -252,10 +298,29 @@ const handleSaveRoles = useCallback(() => {
             onPress: () => setRoleEditState(null),
           },
           {
-            label: 'Save',
+            label: 'Viewer',
             type: 'primary',
-            onPress: handleSaveRoles,
-            isLoading: isUpdatingRoles,
+            onPress: () => roleEditState && updateMembership({ userId: roleEditState.userId, role: 'viewer' }),
+            isLoading: isUpdatingMembership,
+          },
+          {
+            label: 'Collector', type: 'primary',
+            onPress: () => roleEditState && updateMembership({ userId: roleEditState.userId, role: 'collector' }),
+            isLoading: isUpdatingMembership,
+          },
+          {
+            label: 'Admin', type: 'primary',
+            onPress: () => roleEditState && updateMembership({ userId: roleEditState.userId, role: 'admin' }),
+            isLoading: isUpdatingMembership,
+          },
+          {
+            label: roleEditState?.status === 'ACTIVE' ? 'Suspend' : 'Reactivate',
+            type: 'outline',
+            onPress: () => roleEditState && updateMembership({
+              userId: roleEditState.userId,
+              status: roleEditState.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE',
+            }),
+            isLoading: isUpdatingMembership,
           },
         ]}
         onDismiss={() => setRoleEditState(null)}

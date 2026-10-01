@@ -56,21 +56,11 @@ jest.mock('react-native-permissions', () => ({
   RESULTS: { BLOCKED: 'blocked', DENIED: 'denied', GRANTED: 'granted' },
 }));
 
-jest.mock('../src/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: jest.fn(async () => ({ data: { session: null } })),
-      onAuthStateChange: jest.fn(() => ({
-        data: { subscription: { unsubscribe: jest.fn() } },
-      })),
-      resend: jest.fn(async () => ({ error: null })),
-      signInWithPassword: jest.fn(async () => ({ error: null })),
-      signOut: jest.fn(async () => ({ error: null })),
-      signUp: jest.fn(async () => ({ error: null })),
-      updateUser: jest.fn(async () => ({ error: null })),
-      verifyOtp: jest.fn(async () => ({ error: null })),
-    },
-  },
+jest.mock('react-native-keychain', () => ({
+  ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly' },
+  getGenericPassword: jest.fn(async () => false),
+  setGenericPassword: jest.fn(async () => true),
+  resetGenericPassword: jest.fn(async () => true),
 }));
 
 import App from '../src/';

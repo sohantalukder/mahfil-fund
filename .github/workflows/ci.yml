@@ -29,9 +29,24 @@ jobs:
             lockfile: mobile/pnpm-lock.yaml
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahfil_fund
-      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
-      NEXT_PUBLIC_API_URL: https://placeholder.api.example.com
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahfil_fund
+      API_INTERNAL_URL: http://localhost:4000
+      NODE_ENV: test
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mahfil_fund
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mahfil_fund"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     defaults:
       run:
@@ -56,5 +71,61 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Migrate isolated PostgreSQL database
+        if: matrix.name == 'API'
+        run: pnpm exec prisma migrate deploy
+
+      - name: Verify generated OpenAPI clients are current
+        if: matrix.name == 'API'
+        run: pnpm openapi:generate && git diff --exit-code -- openapi.json ../web/src/types/generated-api.ts ../mobile/src/types/generated-api.ts
+
       - name: Run application quality gate
         run: pnpm check
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high
+
+  android-release:
+    name: Android release compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: mobile/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: pnpm install --frozen-lockfile
+        working-directory: mobile
+      - name: Create ephemeral CI signing key
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/mahfil-ci-release.keystore" \
+            -storepass ci-release-password \
+            -alias mahfil-ci \
+            -keypass ci-release-password \
+            -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=Mahfil CI,OU=CI,O=Mahfil Fund,L=Dhaka,C=BD"
+          echo "MAHFIL_UPLOAD_STORE_FILE=$RUNNER_TEMP/mahfil-ci-release.keystore" >> "$GITHUB_ENV"
+          echo "MAHFIL_UPLOAD_STORE_PASSWORD=ci-release-password" >> "$GITHUB_ENV"
+          echo "MAHFIL_UPLOAD_KEY_ALIAS=mahfil-ci" >> "$GITHUB_ENV"
+          echo "MAHFIL_UPLOAD_KEY_PASSWORD=ci-release-password" >> "$GITHUB_ENV"
+      - run: pnpm build:android
+        working-directory: mobile
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2

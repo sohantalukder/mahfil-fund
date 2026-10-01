@@ -200,8 +200,6 @@
     "password": "পাসওয়ার্ড",
     "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
     "resetPassword": "পাসওয়ার্ড রিসেট",
-    "register": "নিবন্ধন",
-    "verifyEmail": "ইমেইল যাচাই",
     "fullName": "পূর্ণ নাম",
     "changePassword": "পাসওয়ার্ড পরিবর্তন",
     "currentPassword": "বর্তমান পাসওয়ার্ড",
@@ -214,7 +212,6 @@
     "editCommunity": "কমিউনিটি সম্পাদনা",
     "selectCommunity": "কমিউনিটি নির্বাচন করুন",
     "switchCommunity": "কমিউনিটি পরিবর্তন",
-    "joinCommunity": "কমিউনিটিতে যোগ দিন",
     "communityName": "কমিউনিটির নাম",
     "communitySlug": "কমিউনিটি স্লাগ",
     "description": "বিবরণ",
@@ -237,27 +234,6 @@
       "totalCollections": "মোট সংগ্রহ",
       "totalExpenses": "মোট ব্যয়"
     }
-  },
-  "invitation": {
-    "invitation": "আমন্ত্রণ",
-    "invitations": "আমন্ত্রণ সমূহ",
-    "createInvitation": "আমন্ত্রণ তৈরি করুন",
-    "inviteCode": "আমন্ত্রণ কোড",
-    "enterInviteCode": "আমন্ত্রণ কোড লিখুন (যেমন: 4827 1934 5501 8821)",
-    "invitedBy": "আমন্ত্রণকারী",
-    "expiresAt": "মেয়াদ শেষ",
-    "status": {
-      "pending": "অপেক্ষমাণ",
-      "used": "ব্যবহৃত",
-      "expired": "মেয়াদ উত্তীর্ণ",
-      "cancelled": "বাতিল"
-    },
-    "role": "ভূমিকা",
-    "resend": "পুনরায় পাঠান",
-    "cancel": "আমন্ত্রণ বাতিল",
-    "note": "মন্তব্য",
-    "verify": "যাচাই ও যোগ দিন",
-    "success": "আপনি সফলভাবে {{communityName}}-এ যোগ দিয়েছেন!"
   },
   "events": {
     "events": "ইভেন্ট সমূহ",
@@ -487,8 +463,6 @@
     "communitiesTitle": "কমিউনিটি",
     "communitiesSubtitle": "কমিউনিটি ও সদস্য পরিচালনা করুন।",
     "communitiesSubtitleAlt": "সব কমিউনিটি ও টেন্যান্ট পরিচালনা করুন",
-    "invitationsTitle": "আমন্ত্রণ",
-    "invitationsSubtitle": "আমন্ত্রণ কোড তৈরি ও পরিচালনা করুন।",
     "invoicesTitle": "ইনভয়েস",
     "invoicesSubtitle": "ইনভয়েস দেখুন ও পরিচালনা করুন।",
     "auditLogsTitle": "অডিট লগ",
@@ -504,7 +478,6 @@
     "invoicesForCommunity": "{{name}}-এর ইনভয়েস",
     "selectCommunityForInvoices": "ইনভয়েস দেখতে কমিউনিটি নির্বাচন করুন",
     "selectCommunityFromHeader": "হেডার স্যুইচার থেকে একটি কমিউনিটি নির্বাচন করুন।",
-    "invitationsSubtitleAlt": "কমিউনিটি আমন্ত্রণ ও আমন্ত্রণ কোড পরিচালনা করুন",
     "reportsSubtitleAlt": "ইভেন্ট অনুযায়ী আর্থিক সারসংক্ষেপ ও পরিসংখ্যান।",
     "auditLogsSubtitleAlt": "সিস্টেম জুড়ে সব অ্যাডমিন ক্রিয়া ট্র্যাক করুন।",
     "errorLogsSubtitleAlt": "অ্যাপ্লিকেশন ত্রুটি পর্যবেক্ষণ ও পর্যালোচনা করুন"

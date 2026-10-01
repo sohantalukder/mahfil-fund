@@ -1,6 +1,6 @@
 /**
  * API client owned by the Mahfil mobile application.
- * Same contract as web/admin: Bearer, X-Community-Id, X-Client, 401 retry.
+ * Same contract as web/admin: Bearer, path-owned community, X-Client, 401 retry.
  * Uses Http from http.config.ts for axios (NetInfo, timeout, retry, auth).
  */
 import { type AxiosInstance, type AxiosRequestConfig } from 'axios';
@@ -53,21 +53,24 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
   });
   const http = baseHttp.getInstance();
 
-  function resolveCommunityHeader(req?: RequestOptions): string | null {
+  function resolveCommunityId(req?: RequestOptions): string | null {
     const fromCall = req?.communityId?.trim();
     if (fromCall) return fromCall;
     return opts.getCommunityId?.()?.trim() || null;
   }
 
   http.interceptors.request.use((config) => {
+    let resolvedUrl = config.url;
     const deviceId = opts.getDeviceId?.();
     if (deviceId) config.headers.set('X-Device-Id', deviceId);
 
-    const communityId = resolveCommunityHeader(
+    const communityId = resolveCommunityId(
       (config as { __mfReq?: RequestOptions }).__mfReq
     );
     if (communityId) {
-      config.headers.set('X-Community-Id', communityId);
+      const path = urlPath(resolvedUrl);
+      const tenantRoot = /^\/(events|donors|donations|expenses|invoices|reports|uploads|sync|members|audit-logs|error-logs)(\/|$)/;
+      if (tenantRoot.test(path)) resolvedUrl = `/communities/${communityId}${resolvedUrl}`;
     } else if (opts.enforceCommunityId && opts.getCommunityId) {
       const p = urlPath(config.url);
       const optional =
@@ -78,14 +81,14 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
       if (!optional) {
         return Promise.reject(
           new Error(
-            'Missing community: select a community in the app (X-Community-Id required).'
+            'Missing community: select a community before using this feature.'
           )
         );
       }
     }
 
-    config.headers.set('X-Client', 'mahfil');
-    return config;
+    config.headers.set('X-Client', 'mobile');
+    return resolvedUrl === undefined ? config : { ...config, url: resolvedUrl };
   });
 
   http.interceptors.response.use(
@@ -119,8 +122,6 @@ export function createApiClient(opts: ApiClientOptions): ApiClient {
   function buildHeaders(req?: RequestOptions): Record<string, string> | undefined {
     const headers: Record<string, string> = {};
     if (req?.idempotencyKey) headers['Idempotency-Key'] = req.idempotencyKey;
-    const cid = resolveCommunityHeader(req);
-    if (cid) headers['X-Community-Id'] = cid;
     return Object.keys(headers).length > 0 ? headers : undefined;
   }
 

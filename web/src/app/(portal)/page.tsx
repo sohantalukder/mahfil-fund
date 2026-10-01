@@ -13,7 +13,6 @@ import { useApiQuery } from '@/lib/query';
 import { useCommunity, useCurrentUser } from '../providers';
 
 const ROLE_COLOR: Record<string, string> = {
-  super_admin: '#7c3aed',
   admin: '#2563eb',
   collector: '#059669',
   viewer: '#6b7280',
@@ -23,7 +22,6 @@ const ROLE_PERMS: Record<string, { read: boolean; write: boolean; del: boolean; 
   viewer:      { read: true,  write: false, del: false, admin: false },
   collector:   { read: true,  write: true,  del: false, admin: false },
   admin:       { read: true,  write: true,  del: true,  admin: false },
-  super_admin: { read: true,  write: true,  del: true,  admin: true  },
 };
 
 const fmt = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -34,7 +32,7 @@ export default function DashboardPage() {
   const { user } = useCurrentUser();
   const { activeCommunity } = useCommunity();
   const displayName = user?.fullName || user?.email.split('@')[0] || 'Friend';
-  const roles = user?.roles ?? [];
+  const roles = activeCommunity?.role ? [activeCommunity.role] : [];
   const communityId = activeCommunity?.id ?? '';
 
   const { data: summary, isLoading: summaryLoading } = useApiQuery<UserDonationSummary>(

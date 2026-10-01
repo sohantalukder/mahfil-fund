@@ -16,6 +16,7 @@ export type AppUser = {
   email?: string;
   fullName?: string;
   isActive: boolean;
+  mustChangePassword?: boolean;
   roles: string[];
   createdAt: string;
 };

@@ -9,11 +9,10 @@ datasource db {
 
 // ─── Platform-level enums ────────────────────────────────────────────────────
 
-enum UserRoleName {
-  super_admin
-  admin
-  collector
-  viewer
+enum CommunityRole {
+  ADMIN
+  COLLECTOR
+  VIEWER
 }
 
 enum Locale {
@@ -51,11 +50,50 @@ enum SyncOpStatus {
   PENDING
   IN_PROGRESS
   SUCCESS
+  PARTIAL
   FAILED
 }
 
+enum SyncItemStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+}
+
+enum IdempotencyStatus {
+  PENDING
+  COMPLETED
+}
+
+enum AttachmentStatus {
+  PENDING
+  READY
+  DELETING
+}
+
+enum OutboxJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum OutboxJobType {
+  CREATE_DONATION_INVOICE
+  GENERATE_INVOICE_PDF
+  DELETE_STORAGE_OBJECT
+}
+
+enum SecurityEventType {
+  TOKEN_FAMILY_CREATED
+  TOKEN_ROTATED
+  TOKEN_REUSE_DETECTED
+  TOKEN_FAMILY_REVOKED
+  ACCOUNT_TOKENS_REVOKED
+}
+
 enum OtpType {
-  EMAIL_VERIFICATION
   PASSWORD_RESET
 }
 
@@ -71,13 +109,6 @@ enum MembershipStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
-}
-
-enum InvitationStatus {
-  PENDING
-  USED
-  EXPIRED
-  CANCELLED
 }
 
 enum InvoiceType {
@@ -112,40 +143,42 @@ enum ErrorSource {
 // ─── Platform-level models ────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique
-  passwordHash  String
-  phone         String?
-  fullName      String?
-  emailVerified Boolean  @default(false)
-  isActive      Boolean  @default(true)
+  id                 String  @id @default(uuid()) @db.Uuid
+  email              String
+  passwordHash       String
+  phone              String?
+  fullName           String?
+  isActive           Boolean @default(true)
+  isSuperAdmin       Boolean @default(false)
+  mustChangePassword Boolean @default(false)
 
-  roles         UserRole[]
   refreshTokens RefreshToken[]
 
   // Community relations
-  communitiesCreated   Community[]           @relation("CommunityCreatedBy")
-  memberships          CommunityMembership[]
-  membershipInvites    CommunityMembership[] @relation("MembershipInvitedBy")
-  invitationsCreated   CommunityInvitation[] @relation("InvitationCreatedBy")
-  invitationsUsed      CommunityInvitation[] @relation("InvitationUsedBy")
+  communitiesCreated Community[]           @relation("CommunityCreatedBy")
+  memberships        CommunityMembership[]
+  membershipsAdded   CommunityMembership[] @relation("MembershipAddedBy")
 
   // Entity audit relations
-  eventsCreated    Event[]     @relation("EventCreatedBy")
-  eventsUpdated    Event[]     @relation("EventUpdatedBy")
-  donorsCreated    Donor[]     @relation("DonorCreatedBy")
-  donorsUpdated    Donor[]     @relation("DonorUpdatedBy")
-  donationsCreated Donation[]  @relation("DonationCreatedBy")
-  donationsUpdated Donation[]  @relation("DonationUpdatedBy")
-  expensesCreated  Expense[]   @relation("ExpenseCreatedBy")
-  expensesUpdated  Expense[]   @relation("ExpenseUpdatedBy")
-  invoicesCreated  Invoice[]   @relation("InvoiceCreatedBy")
-  invoicesUpdated  Invoice[]   @relation("InvoiceUpdatedBy")
+  eventsCreated    Event[]    @relation("EventCreatedBy")
+  eventsUpdated    Event[]    @relation("EventUpdatedBy")
+  donorsCreated    Donor[]    @relation("DonorCreatedBy")
+  donorsUpdated    Donor[]    @relation("DonorUpdatedBy")
+  donationsCreated Donation[] @relation("DonationCreatedBy")
+  donationsUpdated Donation[] @relation("DonationUpdatedBy")
+  expensesCreated  Expense[]  @relation("ExpenseCreatedBy")
+  expensesUpdated  Expense[]  @relation("ExpenseUpdatedBy")
+  invoicesCreated  Invoice[]  @relation("InvoiceCreatedBy")
+  invoicesUpdated  Invoice[]  @relation("InvoiceUpdatedBy")
 
-  auditLogs      AuditLog[]
-  syncOperations SyncOperation[]
-  errorLogs      ErrorLog[]   @relation("ErrorLogUser")
-  errorReviews   ErrorLog[]   @relation("ErrorLogReviewer")
+  auditLogs          AuditLog[]
+  syncOperations     SyncOperation[]
+  idempotencyKeys    IdempotencyKey[]
+  syncOperationItems SyncOperationItem[]
+  outboxJobsCreated  OutboxJob[]         @relation("OutboxJobCreatedBy")
+  securityEvents     SecurityEvent[]
+  errorLogs          ErrorLog[]          @relation("ErrorLogUser")
+  errorReviews       ErrorLog[]          @relation("ErrorLogReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -153,10 +186,17 @@ model User {
   @@index([email])
 }
 
+model MigrationAudit {
+  id          String   @id @default(uuid()) @db.Uuid
+  migration   String   @unique
+  counts      Json
+  completedAt DateTime @default(now())
+}
+
 model Otp {
   id        String   @id @default(uuid()) @db.Uuid
   email     String
-  code      String
+  codeHash  String
   type      OtpType
   expiresAt DateTime
   attempts  Int      @default(0)
@@ -165,43 +205,52 @@ model Otp {
   createdAt DateTime @default(now())
 
   @@index([email, type])
+  @@index([expiresAt, used])
+}
+
+model RecoveryThrottle {
+  identifierHash  String
+  kind            String
+  hits            Int      @default(0)
+  windowStartedAt DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@id([identifierHash, kind])
+  @@index([windowStartedAt])
 }
 
 model RefreshToken {
   id        String    @id @default(uuid()) @db.Uuid
   token     String    @unique
   userId    String    @db.Uuid
+  familyId  String    @db.Uuid
   expiresAt DateTime
   revokedAt DateTime?
+  usedAt    DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt, revokedAt])
 }
 
-model Role {
-  id    String       @id @default(uuid()) @db.Uuid
-  name  UserRoleName @unique
-  users UserRole[]
+model SecurityEvent {
+  id         String            @id @default(uuid()) @db.Uuid
+  type       SecurityEventType
+  userId     String?           @db.Uuid
+  familyId   String?           @db.Uuid
+  client     String?
+  deviceHash String?
+  createdAt  DateTime          @default(now())
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-model UserRole {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  roleId String @db.Uuid
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, roleId])
-  @@index([roleId])
+  @@index([userId, createdAt])
+  @@index([familyId, createdAt])
+  @@index([type, createdAt])
 }
 
 // ─── Tenant / Community models ────────────────────────────────────────────────
@@ -220,19 +269,22 @@ model Community {
   status           CommunityStatus @default(ACTIVE)
   createdByUserId  String          @db.Uuid
 
-  createdBy      User                  @relation("CommunityCreatedBy", fields: [createdByUserId], references: [id])
-  logoAttachment Attachment?           @relation("CommunityLogo", fields: [logoAttachmentId], references: [id])
-  memberships    CommunityMembership[]
-  invitations    CommunityInvitation[]
-  events         Event[]
-  donors         Donor[]
-  donations      Donation[]
-  expenses       Expense[]
-  invoices       Invoice[]
-  attachments    Attachment[]          @relation("CommunityAttachments")
-  auditLogs      AuditLog[]
-  errorLogs      ErrorLog[]
-  syncOperations SyncOperation[]
+  createdBy          User                  @relation("CommunityCreatedBy", fields: [createdByUserId], references: [id])
+  logoAttachment     Attachment?           @relation("CommunityLogo", fields: [logoAttachmentId, id], references: [id, communityId])
+  memberships        CommunityMembership[]
+  events             Event[]
+  donors             Donor[]
+  donations          Donation[]
+  expenses           Expense[]
+  invoices           Invoice[]
+  attachments        Attachment[]          @relation("CommunityAttachments")
+  auditLogs          AuditLog[]
+  errorLogs          ErrorLog[]
+  syncOperations     SyncOperation[]
+  idempotencyKeys    IdempotencyKey[]
+  syncOperationItems SyncOperationItem[]
+  invoiceSequences   InvoiceSequence[]
+  outboxJobs         OutboxJob[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -243,17 +295,17 @@ model Community {
 }
 
 model CommunityMembership {
-  id              String           @id @default(uuid()) @db.Uuid
-  userId          String           @db.Uuid
-  communityId     String           @db.Uuid
-  role            UserRoleName
-  status          MembershipStatus @default(ACTIVE)
-  invitedByUserId String?          @db.Uuid
-  joinedAt        DateTime         @default(now())
+  id            String           @id @default(uuid()) @db.Uuid
+  userId        String           @db.Uuid
+  communityId   String           @db.Uuid
+  role          CommunityRole
+  status        MembershipStatus @default(ACTIVE)
+  addedByUserId String?          @db.Uuid
+  joinedAt      DateTime         @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  invitedBy User?     @relation("MembershipInvitedBy", fields: [invitedByUserId], references: [id])
+  addedBy   User?     @relation("MembershipAddedBy", fields: [addedByUserId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -263,43 +315,12 @@ model CommunityMembership {
   @@index([userId])
 }
 
-model CommunityInvitation {
-  id                   String           @id @default(uuid()) @db.Uuid
-  communityId          String           @db.Uuid
-  email                String
-  fullName             String
-  phoneNumber          String?
-  role                 UserRoleName
-  inviteCode           String           @unique
-  inviteCodeNormalized String           @unique
-  createdByUserId      String           @db.Uuid
-  sentByUserId         String?          @db.Uuid
-  status               InvitationStatus @default(PENDING)
-  expiresAt            DateTime
-  usedAt               DateTime?
-  usedByUserId         String?          @db.Uuid
-  note                 String?
-  verificationAttempts Int              @default(0)
-
-  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy User      @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id])
-  usedBy    User?     @relation("InvitationUsedBy", fields: [usedByUserId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([communityId, status])
-  @@index([email])
-  @@index([inviteCodeNormalized])
-  @@index([expiresAt])
-}
-
 // ─── Domain models ────────────────────────────────────────────────────────────
 
 model Event {
-  id                String       @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?      @unique @db.Uuid
-  communityId       String?      @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @db.Uuid
+  communityId       String  @db.Uuid
 
   name     String
   year     Int
@@ -312,9 +333,9 @@ model Event {
   updatedByUserId String?      @db.Uuid
   createdMetaId   String?      @db.Uuid
 
-  community  Community?       @relation(fields: [communityId], references: [id])
-  createdBy  User?            @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy  User?            @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id])
+  community   Community        @relation(fields: [communityId], references: [id])
+  createdBy   User?            @relation("EventCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy   User?            @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id])
   createdMeta RequestMetadata? @relation("EventCreatedMeta", fields: [createdMetaId], references: [id])
 
   donations Donation[]
@@ -325,39 +346,41 @@ model Event {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([communityId, clientGeneratedId])
+  @@unique([id, communityId])
   @@index([communityId, isActive])
   @@index([communityId, year])
   @@index([isActive])
 }
 
 model Donor {
-  id                String     @id @default(uuid()) @db.Uuid
-  clientGeneratedId String?    @unique @db.Uuid
-  communityId       String?    @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @db.Uuid
+  communityId       String  @db.Uuid
 
-  fullName          String
-  phone             String
-  altPhone          String?
-  address           String?
-  area              String?
-  district          String?
-  thana             String?
-  donorType         DonorType
-  note              String?
-  preferredLanguage Locale     @default(bn)
-  tags              String[]   @default([])
-  profileAttachmentId String?  @db.Uuid
+  fullName            String
+  phone               String
+  altPhone            String?
+  address             String?
+  area                String?
+  district            String?
+  thana               String?
+  donorType           DonorType
+  note                String?
+  preferredLanguage   Locale    @default(bn)
+  tags                String[]  @default([])
+  profileAttachmentId String?   @db.Uuid
 
   status          RecordStatus @default(ACTIVE)
   createdByUserId String?      @db.Uuid
   updatedByUserId String?      @db.Uuid
   createdMetaId   String?      @db.Uuid
 
-  community       Community?       @relation(fields: [communityId], references: [id])
-  profileAttachment Attachment?    @relation("DonorProfile", fields: [profileAttachmentId], references: [id])
-  createdBy       User?            @relation("DonorCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy       User?            @relation("DonorUpdatedBy", fields: [updatedByUserId], references: [id])
-  createdMeta     RequestMetadata? @relation("DonorCreatedMeta", fields: [createdMetaId], references: [id])
+  community         Community        @relation(fields: [communityId], references: [id])
+  profileAttachment Attachment?      @relation("DonorProfile", fields: [profileAttachmentId, communityId], references: [id, communityId])
+  createdBy         User?            @relation("DonorCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy         User?            @relation("DonorUpdatedBy", fields: [updatedByUserId], references: [id])
+  createdMeta       RequestMetadata? @relation("DonorCreatedMeta", fields: [createdMetaId], references: [id])
 
   donations Donation[]
   invoices  Invoice[]
@@ -366,37 +389,39 @@ model Donor {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([communityId, clientGeneratedId])
+  @@unique([id, communityId])
   @@index([communityId])
   @@index([phone])
   @@index([fullName])
 }
 
 model Donation {
-  id                String @id @default(uuid()) @db.Uuid
-  clientGeneratedId String? @unique @db.Uuid
-  communityId       String? @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @db.Uuid
+  communityId       String  @db.Uuid
 
-  eventId             String        @db.Uuid
-  donorId             String        @db.Uuid
-  donorSnapshotName   String
-  donorSnapshotPhone  String
-  amount              Int
-  paymentMethod       PaymentMethod
-  donationDate        DateTime
-  note                String?
-  receiptNo           String?
-  transactionId       String?
-  proofAttachmentId   String?       @db.Uuid
+  eventId            String        @db.Uuid
+  donorId            String        @db.Uuid
+  donorSnapshotName  String
+  donorSnapshotPhone String
+  amount             Int
+  paymentMethod      PaymentMethod
+  donationDate       DateTime
+  note               String?
+  receiptNo          String?
+  transactionId      String?
+  proofAttachmentId  String?       @db.Uuid
 
   status          RecordStatus @default(ACTIVE)
   createdByUserId String?      @db.Uuid
   updatedByUserId String?      @db.Uuid
   createdMetaId   String?      @db.Uuid
 
-  community       Community?       @relation(fields: [communityId], references: [id])
-  event           Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  donor           Donor            @relation(fields: [donorId], references: [id], onDelete: Restrict)
-  proofAttachment Attachment?      @relation("DonationProof", fields: [proofAttachmentId], references: [id])
+  community       Community        @relation(fields: [communityId], references: [id])
+  event           Event            @relation(fields: [eventId, communityId], references: [id, communityId], onDelete: Restrict)
+  donor           Donor            @relation(fields: [donorId, communityId], references: [id, communityId], onDelete: Restrict)
+  proofAttachment Attachment?      @relation("DonationProof", fields: [proofAttachmentId, communityId], references: [id, communityId])
   createdBy       User?            @relation("DonationCreatedBy", fields: [createdByUserId], references: [id])
   updatedBy       User?            @relation("DonationUpdatedBy", fields: [updatedByUserId], references: [id])
   createdMeta     RequestMetadata? @relation("DonationCreatedMeta", fields: [createdMetaId], references: [id])
@@ -407,15 +432,17 @@ model Donation {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([communityId, clientGeneratedId])
+  @@unique([id, communityId])
   @@index([communityId])
   @@index([eventId, donationDate])
   @@index([donorId, eventId])
 }
 
 model Expense {
-  id                String @id @default(uuid()) @db.Uuid
-  clientGeneratedId String? @unique @db.Uuid
-  communityId       String? @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  clientGeneratedId String? @db.Uuid
+  communityId       String  @db.Uuid
 
   eventId             String        @db.Uuid
   title               String
@@ -432,9 +459,9 @@ model Expense {
   updatedByUserId String?      @db.Uuid
   createdMetaId   String?      @db.Uuid
 
-  community         Community?       @relation(fields: [communityId], references: [id])
-  event             Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  receiptAttachment Attachment?      @relation("ExpenseReceipt", fields: [receiptAttachmentId], references: [id])
+  community         Community        @relation(fields: [communityId], references: [id])
+  event             Event            @relation(fields: [eventId, communityId], references: [id, communityId], onDelete: Restrict)
+  receiptAttachment Attachment?      @relation("ExpenseReceipt", fields: [receiptAttachmentId, communityId], references: [id, communityId])
   createdBy         User?            @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id])
   updatedBy         User?            @relation("ExpenseUpdatedBy", fields: [updatedByUserId], references: [id])
   createdMeta       RequestMetadata? @relation("ExpenseCreatedMeta", fields: [createdMetaId], references: [id])
@@ -443,19 +470,20 @@ model Expense {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([communityId, clientGeneratedId])
   @@index([communityId])
   @@index([eventId, expenseDate])
   @@index([category])
 }
 
 model Invoice {
-  id          String @id @default(uuid()) @db.Uuid
-  communityId String @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
+  communityId String  @db.Uuid
   eventId     String? @db.Uuid
   donorId     String? @db.Uuid
   donationId  String? @db.Uuid
 
-  invoiceNumber       String        @unique
+  invoiceNumber       String
   invoiceType         InvoiceType
   issueDate           DateTime
   payerName           String
@@ -466,43 +494,54 @@ model Invoice {
   paymentMethod       PaymentMethod?
   referenceNumber     String?
   note                String?
-  status              InvoiceStatus @default(DRAFT)
-  pdfAttachmentId     String?       @db.Uuid
-  createdByUserId     String?       @db.Uuid
-  updatedByUserId     String?       @db.Uuid
+  status              InvoiceStatus  @default(DRAFT)
+  pdfAttachmentId     String?        @db.Uuid
+  createdByUserId     String?        @db.Uuid
+  updatedByUserId     String?        @db.Uuid
 
-  community      Community  @relation(fields: [communityId], references: [id])
-  event          Event?     @relation(fields: [eventId], references: [id])
-  donor          Donor?     @relation(fields: [donorId], references: [id])
-  donation       Donation?  @relation(fields: [donationId], references: [id])
-  pdfAttachment  Attachment? @relation("InvoicePdf", fields: [pdfAttachmentId], references: [id])
-  createdBy      User?      @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
-  updatedBy      User?      @relation("InvoiceUpdatedBy", fields: [updatedByUserId], references: [id])
+  community     Community   @relation(fields: [communityId], references: [id])
+  event         Event?      @relation(fields: [eventId, communityId], references: [id, communityId])
+  donor         Donor?      @relation(fields: [donorId, communityId], references: [id, communityId])
+  donation      Donation?   @relation(fields: [donationId, communityId], references: [id, communityId])
+  pdfAttachment Attachment? @relation("InvoicePdf", fields: [pdfAttachmentId, communityId], references: [id, communityId])
+  createdBy     User?       @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  updatedBy     User?       @relation("InvoiceUpdatedBy", fields: [updatedByUserId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([communityId, invoiceNumber])
+  @@unique([id, communityId])
   @@index([communityId])
-  @@index([invoiceNumber])
   @@index([donationId])
   @@index([status])
   @@index([issueDate])
 }
 
-model Attachment {
-  id          String  @id @default(uuid()) @db.Uuid
-  communityId String? @db.Uuid
-  entityType  String?
-  entityId    String?
-  bucket      String
-  objectPath  String
-  originalName String?
-  mimeType    String?
-  sizeBytes   Int?
-  isPublic    Boolean @default(false)
-  uploadedByUserId String? @db.Uuid
+model InvoiceSequence {
+  communityId String    @db.Uuid
+  year        Int
+  current     Int       @default(0)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
-  community        Community?  @relation("CommunityAttachments", fields: [communityId], references: [id])
+  @@id([communityId, year])
+}
+
+model Attachment {
+  id               String           @id @default(uuid()) @db.Uuid
+  communityId      String           @db.Uuid
+  entityType       String?
+  entityId         String?
+  bucket           String
+  objectPath       String
+  originalName     String?
+  mimeType         String?
+  sizeBytes        Int?
+  isPublic         Boolean          @default(false)
+  uploadedByUserId String?          @db.Uuid
+  status           AttachmentStatus @default(PENDING)
+
+  community        Community   @relation("CommunityAttachments", fields: [communityId], references: [id])
   communityLogoFor Community[] @relation("CommunityLogo")
   donorProfiles    Donor[]     @relation("DonorProfile")
   donationProofs   Donation[]  @relation("DonationProof")
@@ -511,12 +550,14 @@ model Attachment {
 
   createdAt DateTime @default(now())
 
+  @@unique([id, communityId])
   @@index([communityId])
   @@index([entityType, entityId])
+  @@index([status, createdAt])
 }
 
 model RequestMetadata {
-  id         String  @id @default(uuid()) @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
   ip         String?
   userAgent  String?
   deviceType String?
@@ -534,16 +575,16 @@ model RequestMetadata {
 }
 
 model AuditLog {
-  id          String       @id @default(uuid()) @db.Uuid
-  communityId String?      @db.Uuid
+  id          String      @id @default(uuid()) @db.Uuid
+  communityId String?     @db.Uuid
   entityType  String
-  entityId    String       @db.Uuid
+  entityId    String      @db.Uuid
   action      AuditAction
-  actorUserId String?      @db.Uuid
-  actorRole   UserRoleName?
+  actorUserId String?     @db.Uuid
+  actorRole   String?
   before      Json?
   after       Json?
-  metaId      String?      @db.Uuid
+  metaId      String?     @db.Uuid
 
   community Community?       @relation(fields: [communityId], references: [id])
   meta      RequestMetadata? @relation("AuditLogMeta", fields: [metaId], references: [id])
@@ -588,33 +629,90 @@ model ErrorLog {
 }
 
 model IdempotencyKey {
-  key          String   @id
-  userId       String?  @db.Uuid
+  id           String            @id @default(uuid()) @db.Uuid
+  key          String
+  userId       String            @db.Uuid
+  communityId  String            @db.Uuid
   method       String
   path         String
   requestHash  String?
   responseBody Json?
   statusCode   Int?
-  createdAt    DateTime @default(now())
+  status       IdempotencyStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
   expiresAt    DateTime?
 
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId, method, path, key])
   @@index([userId, createdAt])
+  @@index([status, expiresAt])
 }
 
 model SyncOperation {
   id          String       @id @default(uuid()) @db.Uuid
   userId      String       @db.Uuid
-  communityId String?      @db.Uuid
+  communityId String       @db.Uuid
   deviceId    String
   status      SyncOpStatus @default(PENDING)
   startedAt   DateTime     @default(now())
   finishedAt  DateTime?
   error       String?
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  community Community? @relation(fields: [communityId], references: [id])
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community           @relation(fields: [communityId], references: [id])
+  items     SyncOperationItem[]
 
   @@index([userId, deviceId])
   @@index([status, startedAt])
   @@index([communityId])
+}
+
+model SyncOperationItem {
+  id              String         @id @default(uuid()) @db.Uuid
+  syncOperationId String         @db.Uuid
+  userId          String         @db.Uuid
+  communityId     String         @db.Uuid
+  deviceId        String
+  opId            String         @db.Uuid
+  status          SyncItemStatus @default(PENDING)
+  success         Boolean?
+  serverId        String?        @db.Uuid
+  error           String?
+  createdAt       DateTime       @default(now())
+
+  syncOperation SyncOperation @relation(fields: [syncOperationId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community     Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId, deviceId, opId])
+  @@index([syncOperationId])
+  @@index([status, createdAt])
+}
+
+model OutboxJob {
+  id              String          @id @default(uuid()) @db.Uuid
+  type            OutboxJobType
+  status          OutboxJobStatus @default(PENDING)
+  communityId     String          @db.Uuid
+  entityId        String          @db.Uuid
+  objectBucket    String?
+  objectPath      String?
+  createdByUserId String?         @db.Uuid
+  attempts        Int             @default(0)
+  maxAttempts     Int             @default(5)
+  availableAt     DateTime        @default(now())
+  leaseUntil      DateTime?
+  lastErrorCode   String?
+  completedAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("OutboxJobCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, availableAt])
+  @@index([leaseUntil])
+  @@index([communityId, entityId])
 }

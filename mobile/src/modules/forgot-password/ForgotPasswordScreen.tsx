@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -197,6 +197,10 @@ export default function ForgotPasswordScreen() {
 
   const clearError = useCallback(() => setError(null), []);
 
+  useEffect(() => () => {
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+  }, []);
+
   const startCooldown = useCallback(() => {
     setResendCooldown(60);
     cooldownRef.current = setInterval(() => {
@@ -270,8 +274,8 @@ export default function ForgotPasswordScreen() {
       setError('Please enter a new password.');
       return;
     }
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (newPassword.length < 10) {
+      setError('Password must be at least 10 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {

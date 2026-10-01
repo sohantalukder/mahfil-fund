@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useTheme, useLanguage, useCommunity, useCurrentUser } from '@/app/providers';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { logout } from '@/lib/auth-session';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import styles from './shell.module.css';
 
@@ -90,6 +90,11 @@ const NAV_ITEMS: { href: string; labelKey: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: '/platform-users',
+    labelKey: 'Platform Accounts',
+    icon: <span className={styles.navIcon}>◆</span>,
+  },
+  {
     href: '/communities',
     labelKey: 'community.communities',
     icon: (
@@ -99,16 +104,6 @@ const NAV_ITEMS: { href: string; labelKey: string; icon: React.ReactNode }[] = [
         <circle cx="8" cy="3" r="2" />
         <path d="M0 14c0-2.2 1.8-4 4-4s4 1.8 4 4H0z" />
         <path d="M8 14c0-2.2 1.8-4 4-4s4 1.8 4 4H8z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/invitations',
-    labelKey: 'invitation.invitations',
-    icon: (
-      <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
-        <rect x="1" y="4" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
-        <path d="M1 6l7 4 7-4" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -164,11 +159,11 @@ type PortalKind = 'customer' | 'admin';
 
 const GOVERNANCE_ROUTES = new Set([
   '/users',
-  '/communities',
-  '/invitations',
   '/audit-logs',
   '/error-logs',
 ]);
+
+const PLATFORM_ROUTES = new Set(['/platform-users', '/communities']);
 
 const CUSTOMER_ROUTE_KEYS = new Map([
   ['/', 'dashboard.dashboard'],
@@ -204,14 +199,11 @@ export function PortalShell({
   const { user, loading } = useCurrentUser();
   const [searchValue, setSearchValue] = useState('');
   const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const canGovern =
-    user?.roles.some((role) => role === 'super_admin' || role === 'admin') ||
-    activeCommunity?.role === 'super_admin' ||
-    activeCommunity?.role === 'admin';
+  const canGovern = activeCommunity?.role === 'admin';
   const canAccessAdmin =
     canGovern ||
-    user?.roles.includes('collector') ||
-    activeCommunity?.role === 'collector';
+    activeCommunity?.role === 'collector' ||
+    Boolean(user?.isSuperAdmin);
 
   useEffect(() => {
     if (loading) return;
@@ -225,31 +217,37 @@ export function PortalShell({
       return;
     }
 
+    const platformPath = Array.from(PLATFORM_ROUTES).some((route) =>
+      pathname === prefixAdminRoute(route) || pathname?.startsWith(`${prefixAdminRoute(route)}/`),
+    );
+
+    if (portal === 'admin' && !activeCommunity && user.isSuperAdmin && !platformPath) {
+      router.replace('/admin/platform-users');
+      return;
+    }
+
     const governancePath = Array.from(GOVERNANCE_ROUTES).some((route) =>
       pathname === prefixAdminRoute(route) || pathname?.startsWith(`${prefixAdminRoute(route)}/`),
     );
     if (portal === 'admin' && governancePath && !canGovern) router.replace('/admin');
-  }, [canAccessAdmin, canGovern, loading, pathname, portal, router, user]);
+  }, [activeCommunity, canAccessAdmin, canGovern, loading, pathname, portal, router, user]);
 
   const navItems = useMemo(() => {
     if (portal === 'admin') {
       return NAV_ITEMS
-        .filter((item) => canGovern || !GOVERNANCE_ROUTES.has(item.href))
+        .filter((item) => {
+          if (item.href === '/platform-users') return Boolean(user?.isSuperAdmin);
+          if (item.href === '/communities') return canGovern || Boolean(user?.isSuperAdmin);
+          if (!activeCommunity) return false;
+          return canGovern || !GOVERNANCE_ROUTES.has(item.href);
+        })
         .map((item) => ({ ...item, href: prefixAdminRoute(item.href) }));
     }
 
-    const items = NAV_ITEMS
+    return NAV_ITEMS
       .filter((item) => CUSTOMER_ROUTE_KEYS.has(item.href))
       .map((item) => ({ ...item, labelKey: CUSTOMER_ROUTE_KEYS.get(item.href) ?? item.labelKey }));
-    return [
-      ...items,
-      {
-        href: '/join',
-        labelKey: 'invitation.joinCommunity',
-        icon: <span className={styles.navIcon}>＋</span>,
-      },
-    ];
-  }, [canGovern, portal]);
+  }, [activeCommunity, canGovern, portal, user?.isSuperAdmin]);
 
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'User';
   const initials = displayName
@@ -260,8 +258,7 @@ export function PortalShell({
     .slice(0, 2);
 
   async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    await logout();
     router.replace('/login');
   }
 
@@ -291,7 +288,7 @@ export function PortalShell({
               className={`${styles.navLink} ${active ? styles.navLinkActive : ''}`}
             >
               {item.icon}
-              <span className={styles.navLabel}>{t(item.labelKey, { defaultValue: item.labelKey === 'invitation.joinCommunity' ? 'Join Community' : item.labelKey })}</span>
+              <span className={styles.navLabel}>{t(item.labelKey)}</span>
             </Link>
           );
         })}

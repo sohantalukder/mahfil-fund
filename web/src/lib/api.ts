@@ -1,9 +1,9 @@
 import { createApiClient } from './api-client';
-import { createSupabaseBrowserClient } from './supabase/client';
+import { clearAccessToken, getAccessToken, refreshSession } from './auth-session';
 
 export const COMMUNITY_STORAGE_KEY = 'mahfil_active_community_web';
 
-/** Persisted active community (same key as Providers). Required as X-Community-Id on API. */
+/** Persisted active community used to construct tenant route paths. */
 export function getStoredCommunityId(): string | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -16,25 +16,21 @@ export function getStoredCommunityId(): string | null {
   }
 }
 
-export function getApi() {
-  const supabase = createSupabaseBrowserClient();
-  return createApiClient({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL!,
+const api = createApiClient({
+    baseUrl: '/backend',
     getCommunityId: () => getStoredCommunityId(),
-    /** Every axios request sends X-Community-Id from localStorage; block tenant calls until a community is chosen. */
     enforceCommunityId: true,
     communityOptionalUrl: (path) =>
       path === '/me' ||
       path === '/communities' ||
       path === '/communities/mine' ||
       path === '/communities/creation-stats' ||
-      path === '/invitations/verify',
-    getAccessToken: async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session?.access_token ?? null;
-    },
-    onAuthFailure: async () => {
-      await supabase.auth.signOut();
-    }
+      path.startsWith('/platform/'),
+    getAccessToken,
+    onUnauthorizedRetry: refreshSession,
+    onAuthFailure: clearAccessToken,
   });
+
+export function getApi() {
+  return api;
 }

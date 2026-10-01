@@ -9,8 +9,8 @@ services:
 
     buildCommand: pnpm install --frozen-lockfile && pnpm build
 
-    # Runs migrations before the new version goes live (zero-downtime deploy)
-    preDeployCommand: pnpm exec prisma migrate deploy
+    # Refuses release when tenant, identity, invoice, or attachment invariants fail.
+    preDeployCommand: pnpm release:deploy
 
     startCommand: node dist/server.js
 
@@ -79,4 +79,4 @@ services:
 
       # ── Proxy ─────────────────────────────────────────────────────────────────
       - key: TRUST_PROXY
-        value: "true"
+        value: "loopback,linklocal,uniquelocal"

@@ -9,8 +9,9 @@ export type UserListParams = {
 };
 
 export type CreateUserInput = {
+  kind: 'new' | 'existing';
   email: string;
-  password: string;
+  password?: string;
   fullName?: string | null;
   roles: RoleName[];
 };
@@ -32,35 +33,43 @@ export async function listUsers(
     pageSize: params.pageSize ?? 25,
     search: params.search,
   });
-  const res = await api.get<UserListResponse>(`/users?${qs}`);
+  const res = await api.get<{ members: Array<{
+    role: string; status: string; joinedAt: string;
+    user: AppUser & { mustChangePassword?: boolean };
+  }>; total: number; totalPages: number; page: number }>(`/members?${qs}`);
   if (!res.success) throw new Error(res.error.message);
-  const d = res.data as UserListResponse | AppUser[];
-  if (Array.isArray(d)) {
-    return { users: d, total: d.length, totalPages: 1, page: 1 };
-  }
+  const d = res.data;
   return {
-    users: d.users ?? [],
+    users: (d.members ?? []).map((member) => ({
+      ...member.user,
+      roles: [member.role],
+      isActive: member.status === 'ACTIVE' && member.user.isActive,
+      createdAt: member.joinedAt,
+    })),
     total: d.total ?? 0,
     totalPages: Math.max(1, d.totalPages ?? 1),
     page: d.page ?? 1,
   };
 }
 
-export async function getMe(api: ApiClient): Promise<{ id: string; roles: string[] }> {
-  const res = await api.get<{ user?: { id: string; roles: string[] } } | { id: string; roles: string[] }>('/me');
+export async function getMe(api: ApiClient): Promise<{ id: string }> {
+  const res = await api.get<{ user?: { id: string } } | { id: string }>('/me');
   if (!res.success) throw new Error(res.error.message);
-  const d = res.data as { user?: { id: string; roles: string[] } } | { id: string; roles: string[] };
-  return (d as { user?: { id: string; roles: string[] } }).user ?? (d as { id: string; roles: string[] });
+  const d = res.data as { user?: { id: string } } | { id: string };
+  return (d as { user?: { id: string } }).user ?? (d as { id: string });
 }
 
 export async function createUser(
   api: ApiClient,
   input: CreateUserInput
 ): Promise<AppUser> {
-  const res = await api.post<{ user: AppUser } | AppUser>('/users', input);
+  const role = input.roles[0] ?? 'viewer';
+  const body = input.kind === 'new'
+    ? { kind: 'new' as const, email: input.email, fullName: input.fullName, temporaryPassword: input.password, role }
+    : { kind: 'existing' as const, email: input.email, role };
+  const res = await api.post<{ member: { user: AppUser } }>('/members', body);
   if (!res.success) throw new Error(res.error.message);
-  const d = res.data as { user?: AppUser } | AppUser;
-  return (d as { user?: AppUser }).user ?? (d as AppUser);
+  return res.data.member.user;
 }
 
 export async function updateUserRoles(
@@ -68,7 +77,8 @@ export async function updateUserRoles(
   userId: string,
   roles: RoleName[]
 ): Promise<void> {
-  const res = await api.patch(`/users/${userId}/roles`, { roles });
+  const role = roles[0] ?? 'viewer';
+  const res = await api.patch(`/members/${userId}`, { role });
   if (!res.success) throw new Error(res.error.message);
 }
 
@@ -77,6 +87,6 @@ export async function toggleUserStatus(
   userId: string,
   isActive: boolean
 ): Promise<void> {
-  const res = await api.patch(`/users/${userId}/status`, { isActive });
+  const res = await api.patch(`/members/${userId}`, { status: isActive ? 'ACTIVE' : 'SUSPENDED' });
   if (!res.success) throw new Error(res.error.message);
 }

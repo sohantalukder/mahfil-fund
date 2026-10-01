@@ -19,7 +19,7 @@ import { UserAvatar } from '@/components/shared/UserAvatar';
 import { StatGrid, StatCard } from '@/components/shared/StatGrid';
 import { ListToolbar } from '@/components/shared/ListToolbar';
 import { PaginationControls } from '@/components/shared/PaginationControls';
-import { InviteUserModal } from '@/components/shared/InviteUserModal';
+import { MemberAccountModal, type MemberAccountForm } from '@/components/shared/MemberAccountModal';
 import { EditRolesModal } from '@/components/shared/EditRolesModal';
 import { ALL_ROLES, ROLE_COLOR, ROLE_PERMS, formatRole } from '@/constants/roles';
 import type { RoleName } from '@/constants/roles';
@@ -53,25 +53,24 @@ export default function AdminUsersPage() {
   const updateRoles = useUpdateUserRoles();
   const toggleStatus = useToggleUserStatus();
 
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [roleTarget, setRoleTarget] = useState<AppUser | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
 
   const users = usersData?.users ?? [];
   const total = usersData?.total ?? 0;
   const totalPages = usersData?.totalPages ?? 1;
-  const isSuperAdmin = me?.roles.includes('super_admin') ?? false;
-
-  async function handleInvite(form: { email: string; password: string; fullName: string; roles: RoleName[] }) {
+  async function handleAddMember(form: MemberAccountForm) {
     try {
       await createUser.mutateAsync({
+        kind: form.kind,
         email: form.email,
-        password: form.password,
+        password: form.kind === 'new' ? form.password : undefined,
         fullName: form.fullName || null,
         roles: form.roles,
       });
-      setInviteOpen(false);
-      toast(`User created: ${form.email}`, 'success');
+      setMemberModalOpen(false);
+      toast(`Member added: ${form.email}`, 'success');
     } catch {
       // error surfaced via createUser.error
     }
@@ -105,9 +104,7 @@ export default function AdminUsersPage() {
     <PageShell
       title={t('dashboard.usersManagement')}
       subtitle={t('dashboard.usersSubtitle')}
-      actions={
-        <Button onClick={() => setInviteOpen(true)}>+ Create User</Button>
-      }
+      actions={<Button onClick={() => setMemberModalOpen(true)}>+ Add Member</Button>}
     >
       <ListToolbar
         searchPlaceholder="Search by name, email, role…"
@@ -127,7 +124,7 @@ export default function AdminUsersPage() {
       </StatGrid>
 
       <TableCard
-        title="All Users"
+        title="Community Members"
         badge={`${users.length} on page / ${total} total`}
         badgeVariant="blue"
         empty={!isLoading && users.length === 0 ? 'No users found.' : undefined}
@@ -140,6 +137,7 @@ export default function AdminUsersPage() {
                 <th>Email</th>
                 <th>Roles</th>
                 <th>Status</th>
+                <th>Credential</th>
                 <th>Joined</th>
                 <th>Actions</th>
               </tr>
@@ -183,21 +181,22 @@ export default function AdminUsersPage() {
                     <td>
                       <StatusBadge status={u.isActive ? 'active' : 'archived'} />
                     </td>
+                    <td>{u.mustChangePassword ? 'Password change required' : 'Current'}</td>
                     <td className={styles.date}>{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className={styles.actionRow}>
                         <button
                           type="button"
-                          disabled={!isSuperAdmin}
+                          disabled={isMe}
                           onClick={() => openRoleEdit(u)}
-                          title={isSuperAdmin ? 'Edit roles' : 'Requires super_admin'}
+                          title={isMe ? 'You cannot change your own membership' : 'Edit community role'}
                           className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
                         >
                           Roles
                         </button>
                         <button
                           type="button"
-                          disabled={!isSuperAdmin || isMe || isToggling}
+                          disabled={isMe || isToggling}
                           onClick={() => handleToggleStatus(u)}
                           title={isMe ? 'Cannot change your own status' : (u.isActive ? 'Disable' : 'Enable')}
                           className={`${styles.actionBtn} ${u.isActive ? styles.actionBtnDisable : styles.actionBtnEnable}`}
@@ -259,12 +258,12 @@ export default function AdminUsersPage() {
         </table>
       </TableCard>
 
-      <InviteUserModal
-        open={inviteOpen}
+      <MemberAccountModal
+        open={memberModalOpen}
         loading={createUser.isPending}
         error={createUser.error?.message}
-        onClose={() => { setInviteOpen(false); createUser.reset(); }}
-        onSubmit={handleInvite}
+        onClose={() => { setMemberModalOpen(false); createUser.reset(); }}
+        onSubmit={handleAddMember}
       />
 
       <EditRolesModal
@@ -273,9 +272,7 @@ export default function AdminUsersPage() {
         selectedRoles={selectedRoles}
         loading={updateRoles.isPending}
         onToggleRole={(role) =>
-          setSelectedRoles((prev) =>
-            prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-          )
+          setSelectedRoles([role])
         }
         onSave={handleSaveRoles}
         onClose={() => { setRoleTarget(null); updateRoles.reset(); }}

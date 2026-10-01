@@ -9,7 +9,6 @@ export const ROUTES = {
   donors: '/admin/donors',
   expenses: '/admin/expenses',
   invoices: '/admin/invoices',
-  invitations: '/admin/invitations',
   reports: '/admin/reports',
   auditLogs: '/admin/audit-logs',
   errorLogs: '/admin/error-logs',

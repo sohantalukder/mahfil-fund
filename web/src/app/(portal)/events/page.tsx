@@ -35,9 +35,7 @@ export default function EventsPage() {
     queryFn: async () => {
       if (!activeCommunity?.id) return { events: [], total: 0 };
       const api = getApi();
-      const res = await api.get<{ events: Event[]; total: number }>('/events', {
-        headers: { 'X-Community-Id': activeCommunity.id }
-      });
+      const res = await api.get<{ events: Event[]; total: number }>('/events');
       if (!res.success) throw new Error((res as { error?: { message?: string } }).error?.message);
       return res.data as { events: Event[]; total: number };
     },

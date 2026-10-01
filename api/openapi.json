@@ -1,0 +1,581 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mahfil Fund API",
+    "version": "2.0.0",
+    "description": "API-owned authentication and path-scoped multi-tenant operations."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Login": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "CompleteFirstLogin": {
+        "type": "object",
+        "required": [
+          "challengeToken",
+          "newPassword"
+        ],
+        "properties": {
+          "challengeToken": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      },
+      "MemberCreate": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "email",
+              "fullName",
+              "temporaryPassword",
+              "role"
+            ],
+            "properties": {
+              "kind": {
+                "const": "new"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "temporaryPassword": {
+                "type": "string",
+                "minLength": 10
+              },
+              "role": {
+                "enum": [
+                  "admin",
+                  "collector",
+                  "viewer"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "email",
+              "role"
+            ],
+            "properties": {
+              "kind": {
+                "const": "existing"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "role": {
+                "enum": [
+                  "admin",
+                  "collector",
+                  "viewer"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Healthy"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session or password-change challenge"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/complete-first-login": {
+      "post": {
+        "operationId": "completeFirstLogin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteFirstLogin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session created"
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "operationId": "forgotPassword",
+        "responses": {
+          "200": {
+            "description": "Non-enumerating recovery response"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "operationId": "resetPassword",
+        "responses": {
+          "200": {
+            "description": "Password reset"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "refreshSession",
+        "responses": {
+          "200": {
+            "description": "Rotated session"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "Token family revoked"
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "getMe",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user and memberships"
+          }
+        }
+      }
+    },
+    "/communities": {
+      "get": {
+        "operationId": "listCommunities",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accessible communities"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/members": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listMembers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Community members"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMember",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account and membership created"
+          }
+        }
+      }
+    },
+    "/platform/users": {
+      "get": {
+        "operationId": "listPlatformUsers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Super-admin account list"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/events": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listevents",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/donors": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listdonors",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/donations": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listdonations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/expenses": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listexpenses",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/invoices": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listinvoices",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/reports": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listreports",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/uploads": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listuploads",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/sync": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listsync",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/audit-logs": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listaudit-logs",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    },
+    "/communities/{communityId}/error-logs": {
+      "parameters": [
+        {
+          "name": "communityId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listerror-logs",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant-scoped response"
+          }
+        }
+      }
+    }
+  }
+}

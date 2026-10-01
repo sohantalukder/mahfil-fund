@@ -1,10 +1,11 @@
 import type { ApiClient } from '@/lib/api-client';
+import { setAccessToken } from '@/lib/auth-session';
 
 export type UserProfile = {
   id: string;
   email: string;
   fullName?: string | null;
-  roles: string[];
+  isSuperAdmin: boolean;
   createdAt: string;
 };
 
@@ -28,6 +29,7 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string
 ): Promise<void> {
-  const res = await api.patch('/me/password', { currentPassword, newPassword });
+  const res = await api.patch<{ accessToken: string }>('/me/password', { currentPassword, newPassword });
   if (!res.success) throw new Error(res.error.message);
+  setAccessToken(res.data.accessToken);
 }

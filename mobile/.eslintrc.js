@@ -23,6 +23,7 @@ module.exports = {
     'android',
     'ios',
     'vendor',
+    'src/types/generated-api.ts',
   ],
 
   /* Parser and Plugins */

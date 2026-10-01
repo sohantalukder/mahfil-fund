@@ -6,7 +6,7 @@ export type Locale = 'bn' | 'en';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-export type UserRole = 'super_admin' | 'admin' | 'collector' | 'viewer';
+export type CommunityRole = 'admin' | 'collector' | 'viewer';
 
 export type DonorType = 'individual' | 'family' | 'business' | 'organization';
 
@@ -19,8 +19,6 @@ export type SyncStatus = 'SYNCED' | 'PENDING' | 'SYNCING' | 'FAILED';
 export type CommunityStatus = 'ACTIVE' | 'ARCHIVED' | 'SUSPENDED';
 
 export type MembershipStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-
-export type InvitationStatus = 'PENDING' | 'USED' | 'EXPIRED' | 'CANCELLED';
 
 export type InvoiceType = 'DONATION_RECEIPT' | 'SPONSOR_RECEIPT' | 'MANUAL';
 
@@ -60,7 +58,7 @@ export interface Community {
 }
 
 export interface CommunityWithMembership extends Community {
-  memberRole: UserRole;
+  memberRole: CommunityRole;
   joinedAt: string;
 }
 
@@ -68,26 +66,10 @@ export interface CommunityMembership {
   id: UUID;
   userId: UUID;
   communityId: UUID;
-  role: UserRole;
+  role: CommunityRole;
   status: MembershipStatus;
-  invitedByUserId?: UUID | null;
+  addedByUserId?: UUID | null;
   joinedAt: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CommunityInvitation {
-  id: UUID;
-  communityId: UUID;
-  email: string;
-  fullName: string;
-  phoneNumber?: string | null;
-  role: UserRole;
-  inviteCode?: string; // Only shown to admins at creation time
-  status: InvitationStatus;
-  expiresAt: string;
-  usedAt?: string | null;
-  note?: string | null;
   createdAt: string;
   updatedAt: string;
 }

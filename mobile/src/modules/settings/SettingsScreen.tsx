@@ -114,9 +114,7 @@ export default function SettingsScreen() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
-  const name =
-    (session?.user.user_metadata as Record<string, string> | undefined)
-      ?.full_name ?? session?.user.email ?? '';
+  const name = session?.user.fullName ?? session?.user.email ?? '';
   const email = session?.user.email ?? '';
   const initials = name
     .split(' ')

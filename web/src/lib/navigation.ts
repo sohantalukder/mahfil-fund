@@ -6,12 +6,9 @@ export function safeNextPath(value: string | null | undefined): string | null {
   return value;
 }
 
-export function canAccessAdminPortal(user: Pick<CurrentUser, 'roles' | 'communities'>): boolean {
-  if (user.roles.some((role) => role === 'super_admin' || role === 'admin' || role === 'collector')) {
-    return true;
-  }
+export function canAccessAdminPortal(user: Pick<CurrentUser, 'isSuperAdmin' | 'communities'>): boolean {
+  if (user.isSuperAdmin) return true;
   return user.communities.some((community) =>
-    community.role === 'super_admin' || community.role === 'admin' || community.role === 'collector',
+    community.role === 'admin' || community.role === 'collector',
   );
 }
-
